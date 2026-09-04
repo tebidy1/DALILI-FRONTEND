@@ -1,0 +1,38 @@
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import type { LibraryOverviewDto } from '@dalili/shared'
+import { client } from '../api'
+
+/**
+ * المرحلة ب: نظرة المساحة المشتركة — نداء واحد /api/library/overview يغذي
+ * الشريط الجانبي (اسم المساحة والدور والعدادات) وشريط إحصاءات الهوم وفلتر الموقع.
+ * reload بعد كل كتابة تؤثر في العدادات (إنشاء/حذف/بوكمارك…).
+ */
+
+interface OverviewState {
+  overview: LibraryOverviewDto | null
+  reload: () => void
+}
+
+const Ctx = createContext<OverviewState>({ overview: null, reload: () => {} })
+
+export function OverviewProvider({ children }: { children: ReactNode }) {
+  const [overview, setOverview] = useState<LibraryOverviewDto | null>(null)
+  const [seq, setSeq] = useState(0)
+
+  useEffect(() => {
+    const ac = new AbortController()
+    client
+      .libraryOverview(ac.signal)
+      .then((ov) => setOverview(ov))
+      .catch(() => {})
+    return () => ac.abort()
+  }, [seq])
+
+  const reload = useCallback(() => setSeq((s) => s + 1), [])
+
+  return <Ctx.Provider value={{ overview, reload }}>{children}</Ctx.Provider>
+}
+
+export function useOverview(): OverviewState {
+  return useContext(Ctx)
+}

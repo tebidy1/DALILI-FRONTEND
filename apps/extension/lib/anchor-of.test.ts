@@ -1,0 +1,62 @@
+// @vitest-environment jsdom
+import { describe, expect, it } from 'vitest'
+import { anchorOf, anchorTextOf } from './anchor-of'
+import { resolveAnchor, type AnchorDom } from '@dalili/core'
+
+/** DOM حقيقي (jsdom) لواجهة الحل — كما يستعملها وضع التدريب في الصفحة الهدف */
+const realDom: AnchorDom<Element> = {
+  queryAll: (sel) => Array.from(document.querySelectorAll(sel)),
+  textOf: (el) => anchorTextOf(el),
+}
+
+describe('anchorOf — بطاقة تعريف العنصر من DOM (AUTO-01)', () => {
+  it('زر بid: أول مرشح هو id ويحل فريدًا في صفحة أخرى', () => {
+    document.body.innerHTML = '<button id="save-btn">حفظ</button>'
+    const btn = document.querySelector('button')!
+    const chain = anchorOf(btn)!
+    expect(chain[0]).toEqual({ k: 'id', v: 'save-btn' })
+    const hit = resolveAnchor(chain, realDom)
+    expect(hit?.el).toBe(btn)
+  })
+
+  it('زر حديث بلا id: يمر عبر data-testid/aria/النص إلى مسار nth-of-type', () => {
+    document.body.innerHTML = '<div><span data-testid="next">التالي</span><span>آخر</span></div>'
+    const span = document.querySelector('span')!
+    const chain = anchorOf(span)!
+    expect(chain.map((c) => c.k)).toEqual(['testid', 'text', 'path'])
+    const hit = resolveAnchor(chain, realDom)
+    expect(hit?.el).toBe(span)
+  })
+
+  it('مسار nth-of-type يميّز الزر الثاني من نفس النوع داخل الأب', () => {
+    document.body.innerHTML = '<div><button>إلغاء</button><button>حفظ</button></div>'
+    const second = document.querySelectorAll('button')[1]!
+    const chain = anchorOf(second)!
+    const path = chain.find((c) => c.k === 'path')!
+    expect(path.v).toContain('button:nth-of-type(2)')
+    expect(resolveAnchor([path], realDom)?.el).toBe(second)
+  })
+
+  it('يقف عند أقرب سلف بid فيبنى المسار منه — لا نصعد للجذر عبثًا', () => {
+    document.body.innerHTML = '<div id="toolbar"><div><button>حفظ</button></div></div>'
+    const btn = document.querySelector('button')!
+    const path = anchorOf(btn)!.find((c) => c.k === 'path')!
+    expect(path.v.startsWith('[id="toolbar"]')).toBe(true)
+    expect(path.v).not.toContain('body')
+  })
+
+  it('نص زر الإدخال submit يؤخذ من value لا من innerText الفارغ', () => {
+    document.body.innerHTML = '<input type="submit" value="اعتماد الفاتورة">'
+    const input = document.querySelector('input')!
+    expect(anchorTextOf(input)).toBe('اعتماد الفاتورة')
+    expect(anchorOf(input)!.some((c) => c.k === 'text' && c.v === 'اعتماد الفاتورة')).toBe(true)
+  })
+
+  it('زر بلا أي ملامح: سلسلته تنحصر في المسار (الملاذ الأخير) وتظل صالحة', () => {
+    document.body.innerHTML = '<div><div></div></div>'
+    const inner = document.querySelector('div > div')!
+    const chain = anchorOf(inner)!
+    expect(chain.map((c) => c.k)).toEqual(['path'])
+    expect(resolveAnchor(chain, realDom)?.el).toBe(inner)
+  })
+})

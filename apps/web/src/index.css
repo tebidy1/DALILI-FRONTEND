@@ -1,0 +1,3168 @@
+@import './ui/tokens.css';
+
+* {
+  box-sizing: border-box;
+}
+
+/* VIEW-12: منع تضخيم الخط التلقائي في iOS/أندرويد — العربي يتضخم بشع بلا هذا */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.7;
+}
+
+/* UX-03: حلقة تركيز مرئية لمستخدمي لوحة المفاتيح فقط */
+:is(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* نص لقارئ الشاشة فقط */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* الأيقونات الاتجاهية تنعكس في RTL */
+[dir='rtl'] .icon-flip {
+  transform: scaleX(-1);
+}
+
+.page {
+  max-width: 980px;
+  margin-inline: auto;
+  padding: var(--sp-6) var(--sp-5) 72px;
+}
+
+/* — أدوات تخطيط (UX-01: لا نمط خام داخل مكوّن) — */
+.page-narrow {
+  max-width: 420px;
+  padding-top: 64px;
+}
+.page-title {
+  margin-bottom: var(--sp-1);
+}
+.page-sub {
+  margin-top: 0;
+}
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.library-search {
+  margin-bottom: var(--sp-4);
+}
+
+/* — تنظيم المكتبة (LIB-01..04/06) — */
+.lib-tabs {
+  margin-bottom: var(--sp-3);
+  align-items: center;
+}
+.lib-tab.sel {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.lib-sort {
+  width: auto;
+  padding: 6px 10px;
+}
+.lib-folders {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--sp-4);
+}
+.folder-chip {
+  cursor: pointer;
+  border-color: var(--line);
+}
+.folder-chip.sel {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.folder-item {
+  display: inline-flex;
+  align-items: center;
+}
+.folder-del {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 4px;
+}
+.folder-del:hover {
+  color: var(--danger);
+}
+.folder-ren {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0 4px;
+}
+.folder-ren:hover {
+  color: var(--ink);
+}
+.folder-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.folder-input {
+  width: 160px;
+  padding: 4px 10px;
+}
+.guide-card-head {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+/* LIB-05: رقاقة تحديد البطاقة وشريط العمليات الجماعية */
+.pick {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--line-strong);
+  background: var(--card);
+  color: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0;
+  transition: border-color var(--t-fast), background-color var(--t-fast), color var(--t-fast);
+}
+.pick:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.pick.on {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+.guide-card.picked {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  background: var(--brand-soft);
+  border: 1px solid var(--brand);
+  border-radius: var(--r-md);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.bulk-count {
+  font-weight: 700;
+  color: var(--brand-dark);
+  padding-inline-end: var(--sp-2);
+}
+.lib-move {
+  width: auto;
+  padding: 3px 8px;
+  font-size: 0.85rem;
+}
+.tag-chip {
+  border-style: dashed;
+}
+.lib-pager {
+  margin-top: var(--sp-5);
+  gap: var(--sp-3);
+}
+.col-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+/* CAP-17: مواضع إدراج «+» بين الشرائح — مرئية دائمًا (لا تُخفى حتى التحويم) */
+.insert-step {
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+/* BLK-01: منبثقة أنواع الكتل تحت زر «+» — متوسّطة، تعلو المحتوى */
+.insert-menu {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  inset-inline-start: 50%;
+  transform: translateX(50%);
+  margin-top: 4px;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+.insert-menu-item {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.insert-menu-item:hover {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+}
+.insert-step-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast), background-color var(--t-fast);
+}
+.insert-step-btn:hover:not(:disabled) {
+  color: var(--brand);
+  border-color: var(--brand);
+  border-style: solid;
+  background: var(--brand-soft);
+}
+.insert-step-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.push-end {
+  margin-top: auto;
+}
+.row.center,
+.center {
+  justify-content: center;
+}
+.guide-title-input {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+.share-card {
+  margin-bottom: var(--sp-4);
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.search-bar {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+.search-bar input {
+  flex: 1;
+}
+.search-toolbar {
+  margin-bottom: var(--sp-3);
+}
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.viewer-note {
+  margin: 0;
+}
+.viewer-footer {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+h2 {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+/* — الأزرار: مقياس واحد موحّد —
+   .btn ارتفاع 36px · .btn.sm ارتفاع 30px · .icon-btn مربع 34px.
+   لا أحجام مرتجلة خارج هذه الثلاثة. */
+.btn {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 36px;
+  background: var(--brand);
+  color: var(--brand-ink);
+  border: 1px solid var(--brand);
+  /* زوايا أكثر حدّة = طابع رسمي معتمد */
+  border-radius: var(--r-btn);
+  padding: 0 16px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--t-fast),
+    border-color var(--t-fast),
+    color var(--t-fast);
+}
+/* الانعكاس عند المرور: الجرافيت يصير أبيض، والأبيض يصير جرافيت (لونان) */
+.btn:hover {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.btn.ghost {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.btn.ghost:hover {
+  background: var(--ink);
+  color: var(--card);
+  border-color: var(--ink);
+}
+.btn.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn.danger:hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+.btn.sm {
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  border-radius: var(--r-btn);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.btn .spinner {
+  flex-shrink: 0;
+}
+
+/* — الحقول — */
+input[type='text'],
+input[type='search'],
+input[type='email'],
+input[type='password'],
+textarea,
+select {
+  font: inherit;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  background: var(--card);
+  width: 100%;
+}
+input:focus,
+textarea:focus {
+  border-color: var(--brand);
+}
+
+/* — البطاقات — */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 18px var(--sp-5);
+}
+
+.err {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-radius: var(--r-md);
+  padding: 8px 14px;
+  margin: 10px 0;
+}
+.ok-note {
+  background: var(--ok-bg);
+  color: var(--ok);
+  border-radius: var(--r-md);
+  padding: 8px 14px;
+  margin: 10px 0;
+}
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+  flex-wrap: wrap;
+}
+
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--sp-4);
+}
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  transition: border-color var(--t-base);
+}
+.guide-card {
+  position: relative;
+}
+.guide-card:hover {
+  border-color: var(--line-strong);
+}
+/* البطاقة المدمجة: العنوان سطر واحد والبقية بتحويم المؤشر (طلب المالك 2026-09-03) */
+.guide-card .title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-meta {
+  margin-top: var(--sp-1);
+}
+.more-btn {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast);
+}
+.more-btn:hover,
+.more-btn.on {
+  background: var(--brand-soft);
+  color: var(--ink);
+}
+/* قائمة «⋯»: المعلومات مرتّبة أعلى ثم الإجراءات — فوق محتوى البطاقة */
+.guide-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+.guide-menu {
+  position: absolute;
+  top: 42px;
+  inset-inline-end: 8px;
+  z-index: 31;
+  width: min(300px, calc(100% - 16px));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+}
+.guide-menu-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--sp-2);
+}
+.guide-menu-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-1);
+}
+.guide-menu-actions .lib-move {
+  width: 100%;
+}
+.chip {
+  display: inline-block;
+  font-size: 0.78rem;
+  border-radius: var(--r-pill);
+  padding: 1px 10px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+a.chip {
+  cursor: pointer;
+  text-decoration: none;
+}
+.chip.shared {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+.row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: 14px;
+}
+.tabs .btn {
+  flex: 1;
+}
+
+/* — الهياكل (UX-02 تحميل) — */
+.skeleton {
+  background: var(--skeleton);
+  border-radius: var(--r-sm);
+  position: relative;
+  overflow: hidden;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+  animation: shimmer 1.4s infinite;
+}
+.skeleton-chip {
+  border-radius: var(--r-pill);
+}
+.skeleton-btn {
+  border-radius: var(--r-md);
+}
+.skeleton-shot {
+  border-radius: var(--r-md);
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* — مؤشر الانتظار — */
+.spinner {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* — الحالة الفارغة/الخطأ (UX-02) — */
+.state-view {
+  min-height: 46vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  text-align: center;
+  padding: var(--sp-8) var(--sp-4);
+}
+.state-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--r-pill);
+  display: grid;
+  place-items: center;
+  background: var(--brand-soft);
+  color: var(--brand);
+  margin-bottom: var(--sp-1);
+}
+.state-view.error .state-icon {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.state-title {
+  margin: 0;
+}
+.state-desc {
+  color: var(--muted);
+  margin: 0;
+  max-width: 46ch;
+}
+
+/* — المحرر — */
+/* S7: عرض موحّد أوسع — الوضوح صار من المنظار لا من تمديد الصورة.
+   يُلغي صراحةً `width: fit-content` + `min-width` اللذين وضعتهما المرحلة ٢ */
+.step-block {
+  align-self: center;
+  width: 100%;
+  max-width: 100%;
+}
+/* صفحة المحرر أوسع من الصفحة العامّة كي تتّسع البطاقة للمنظار.
+   طلب المالك 2026-09-01: تصغير البطاقة ٢٠٪ عرضًا أيضًا — ١١٨٠→٩٤٤. */
+.editor-page {
+  max-width: 944px;
+}
+/* عمود الأدوات ثابت على `inset-inline-start` — وهو في مستند RTL الحافة
+   اليمنى؛ فالفسحة تُوضع على الجانب المنطقي نفسه لا مقابله */
+@media (min-width: 1101px) {
+  .editor-page {
+    padding-inline-start: 84px;
+  }
+}
+/* بطاقة مضغوطة: حشو أقل وفجوات أضيق كي تُرى البطاقة كاملة على الشاشة */
+/* طلب المالك 2026-09-01: صفّ يحمل البطاقة المؤطَّرة + شريطًا جانبيًا خارجها.
+   الشريط آخر عنصر في DOM فيقع على اليسار في RTL (طرف الصف)، والبطاقة تملأ الباقي. */
+.step-card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+.step-card-row > .step-card {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* الشريط الجانبي: مربّع التحديد ثم المقبض، عموديًّا ومحاذيًا لرأس البطاقة */
+.step-rail {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-top: var(--sp-3);
+}
+.step-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  transition: border-color var(--t-fast);
+}
+/* BLK-01: بطاقات الكتل (تنبيه/تحذير/هيدر) — جسم مؤطَّر ملوّن نصّي بلا لقطة */
+.block-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-4);
+}
+.block-card.tip {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+.block-card.alert {
+  background: #ffedd5;
+  border-color: #fdba74;
+}
+.block-card.header {
+  background: transparent;
+  border-color: transparent;
+  padding-block: var(--sp-2);
+}
+.block-header-input,
+.block-header-read {
+  font-weight: 700;
+  font-size: 1.15rem;
+  text-align: start;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  width: 100%;
+}
+.block-label-input {
+  font-weight: 700;
+  border: 0;
+  background: transparent;
+  width: 100%;
+}
+.block-body-input {
+  width: 100%;
+  background: transparent;
+}
+.attach-shot {
+  align-self: flex-start;
+  border: 1px dashed var(--line-strong);
+  cursor: pointer;
+}
+/* BLK-01: كتل النداء/الهيدر في العارض — نص فقط، ألوان الكتل نفسها */
+.viewer-callout {
+  border-radius: var(--r-md);
+  border: 1px solid;
+  padding: var(--sp-2) var(--sp-4);
+  margin: var(--sp-3) 0;
+}
+.viewer-callout p {
+  margin: var(--sp-1) 0 0;
+}
+.viewer-callout.tip {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+.viewer-callout.alert {
+  background: #ffedd5;
+  border-color: #fdba74;
+}
+.viewer-section {
+  margin: var(--sp-6) 0 0;
+  font-size: 1.25rem;
+  text-align: start;
+}
+.step-card:hover {
+  border-color: var(--line-strong);
+}
+.step-card.is-drawing {
+  border-color: var(--brand);
+}
+/* قائمة الخطوات في وضع العرض تتنفّس أقل — تمرير أسرع بين اللقطات */
+.col-stack {
+  gap: var(--sp-3);
+}
+.step-note-read {
+  margin: 0;
+}
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step-num {
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-radius: var(--r-pill);
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+/* العنوان أكبر ووزنه أوضح — يبدأ من جهة الرقم (يمين RTL) لا من اليسار */
+input.step-title-input,
+.step-title-read {
+  min-width: 0;
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+  text-align: start;
+}
+/* حقل التحرير يملأ السطر؛ عنوان القراءة يلتصق بالرقم (لا يتمدّد فيبدو منفصلًا) */
+input.step-title-input {
+  flex: 1;
+}
+.step-title-read {
+  flex: 0 1 auto;
+}
+/* أدوات التحرير تُدفع لآخر السطر (الطرف المقابل للرقم) */
+.step-tools {
+  margin-inline-start: auto;
+}
+input.step-title-input {
+  border-color: transparent;
+  background: transparent;
+  padding-inline: 6px;
+}
+input.step-title-input:hover {
+  border-color: var(--line);
+}
+input.step-title-input:focus {
+  border-color: var(--brand);
+  background: var(--card);
+}
+/* S6: أدوات الخطوة ظاهرة دائمًا في وضع التعديل — الحذف لا يُخبَّأ خلف تحويم */
+.step-tools {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+/* S5: مربّع تحديد الخطوة ومقبض سحبها — أول عنصرين في رأس البطاقة قبل رقمها */
+.step-pick {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--brand);
+  cursor: pointer;
+  margin: 0;
+}
+.drag-handle {
+  flex: none;
+  cursor: grab;
+  color: var(--muted);
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+/* البطاقة المحدَّدة تُعلن نفسها بحدّ جرافيتي — نفس لغة بطاقة المكتبة المحدَّدة */
+.step-card.picked {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+/* المسحوبة تشفّ فيُرى ما تحتها — الإفلات يحتاج رؤية المقصد لا حجبه */
+.step-card.dragging {
+  opacity: 0.5;
+}
+/* الشريط الجماعي يلتصق أعلى الشاشة فلا يضيع في دليل طويل */
+.steps-bulk-bar {
+  position: sticky;
+  top: var(--sp-2);
+  z-index: 5;
+}
+/* الإجراء الثانوي (تكرار) وحده هو الذي ينتظر المرور أو التركيز */
+.icon-btn.on-hover {
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.step-card:hover .icon-btn.on-hover,
+.step-card:focus-within .icon-btn.on-hover {
+  opacity: 1;
+}
+/* زر أيقونة موحّد — مربع 34px، و.wide لأزرار الأيقونة+النص */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.icon-btn.wide {
+  width: auto;
+  padding: 0 12px;
+  border-color: var(--line-strong);
+  background: var(--card);
+  color: var(--ink);
+}
+/* أيقونة مربّعة صغيرة (ترتيب/قائمة): تحويم هادئ */
+.icon-btn:hover:not(:disabled) {
+  background: var(--brand-soft);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+/* أزرار الأيقونة+النص تنعكس كبقية الأزرار: أبيض ← جرافيت */
+.icon-btn.wide:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--card);
+  border-color: var(--ink);
+}
+.icon-btn.on {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+.icon-btn.danger:hover:not(:disabled) {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* اللقطة + شريط أدواتها كأزرار حقيقية أسفلها */
+.step-figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+/* طلب المالك 2026-09-01: اللقطة تمتدّ حتى حافتَي البطاقة (لا فراغ بين الإطار
+   واللقطة) — تُوسَّع بمقدار حَشوة البطاقة على الجانبين وتُزاح لتلامسهما. أزرار
+   التنظيف والتلميح تبقى بالحشوة المريحة لأنها ليست جزءًا من `.shot`. */
+.step-figure > .shot {
+  width: calc(100% + 2 * var(--sp-4));
+  margin-inline: calc(-1 * var(--sp-4));
+}
+.step-figure > .shot .shot-viewport {
+  border-inline: 0;
+  border-radius: 0;
+}
+/* S1/S2: أدوات الاختيار غادرت البطاقة إلى العمود؛ لم يبقَ هنا إلا التنظيف
+   السياقي — أزرار تظهر فقط حين يوجد في هذه اللقطة ما يُمسح */
+.shot-cleanup {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.draw-hint {
+  color: var(--brand);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+/* إعلان اللقطة القديمة ليس تلميح أداة نشطة: يُكتب بلون خافت لا بلون العلامة.
+   القاعدة مركّبة عمدًا لأن `.muted` تسبق `.draw-hint` في الملف فتخسر بلا ذلك */
+.draw-hint.muted {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* S2: عمود الأدوات — ثابت على يمين الشاشة (في مستند RTL يقابله
+   inset-inline-start)، زر التعديل أعلاه ومجموعات الأدوات تحته.
+   لا تحويل أفقي هنا، فالمرساة المنطقية سليمة — بخلاف لوحة اللقطة
+   التي تُزاح بـtransform فتلزمها مرساة فيزيائية. */
+.tool-rail {
+  position: fixed;
+  inset-inline-start: var(--sp-4);
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: 0 10px 30px -18px rgba(43, 42, 38, 0.55);
+  max-height: 88vh;
+  overflow-y: auto;
+}
+/* زر التعديل أبرز عنصر: مربّع بحجم أزرار الأيقونة كي يستقيم العمود */
+.tool-rail .rail-edit {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  flex: none;
+}
+.rail-sep {
+  width: 22px;
+  height: 1px;
+  background: var(--line);
+  flex: none;
+}
+/* شاشة ضيّقة: العمود يصير شريطًا أفقيًا لاصقًا أسفل شريط التحكم */
+@media (max-width: 1100px) {
+  .tool-rail {
+    position: sticky;
+    inset-block-start: 56px;
+    inset-inline-start: auto;
+    transform: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-height: none;
+    margin-bottom: var(--sp-4);
+  }
+  .rail-sep {
+    width: 1px;
+    height: 22px;
+  }
+}
+/* عيّنة اللون — دائرة نظيفة، المختارة بحلقة تركيز جرافيتية */
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--card);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  cursor: pointer;
+  padding: 0;
+  transition: box-shadow var(--t-fast), transform var(--t-fast);
+}
+.swatch:hover {
+  transform: scale(1.08);
+}
+.swatch.on {
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--ink);
+}
+
+/* ملاحظة الخطوة — هادئة بلا إطار حتى التركيز */
+textarea.step-note {
+  border-color: transparent;
+  background: transparent;
+  resize: vertical;
+  min-height: 40px;
+  transition: border-color var(--t-fast), background-color var(--t-fast);
+}
+textarea.step-note:hover {
+  border-color: var(--line);
+}
+textarea.step-note:focus {
+  border-color: var(--brand);
+  background: var(--card);
+}
+
+/* تفاصيل الخطوة/الوسوم المطويّة — كتلة صامتة تُفتح عند الحاجة */
+.step-details,
+.guide-tags {
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-2);
+}
+.guide-tags {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-2) var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.step-details > summary,
+.guide-tags > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  list-style: none;
+  user-select: none;
+}
+.step-details > summary::-webkit-details-marker,
+.guide-tags > summary::-webkit-details-marker {
+  display: none;
+}
+.step-details > summary::before,
+.guide-tags > summary::before {
+  content: '›';
+  display: inline-block;
+  margin-inline-end: 6px;
+  transition: transform var(--t-fast);
+}
+.step-details[open] > summary::before,
+.guide-tags[open] > summary::before {
+  transform: rotate(90deg);
+}
+.step-details-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-top: var(--sp-2);
+}
+.step-source {
+  font-size: 0.8rem;
+  word-break: break-word;
+}
+
+/* ——— شريط المحرر وترويسة هوية الدليل ——— */
+/* ——— شريط المحرر والعارض وترويسة هوية الدليل ——— */
+.editor-page-wrapper,
+.viewer-layout {
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+/* شريط تحكم كامل العرض يمتد لأركان الشاشة */
+.editor-bar,
+.viewer-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-6);
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 4px rgba(43, 42, 38, 0.06);
+}
+.editor-bar-end,
+.viewer-bar-end {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+/* «تعديل/تم» بجانب «المكتبة» في بداية الشريط (يمين RTL) */
+.editor-bar-start,
+.viewer-bar-start {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+/* شريط مشاركة العارض — أزرار متجاورة وQR ينبثق أسفلها بلا إزاحة الشريط */
+.viewer-share {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  position: relative;
+}
+.viewer-qr.qr-holder {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  inset-inline-end: 0;
+  padding: var(--sp-3);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(43, 42, 38, 0.12);
+  z-index: 40;
+}
+.viewer-brand-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--ink);
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* هوية الدليل: خط فاصل ومسافة تنفّس أوسع */
+.guide-head {
+  margin-bottom: var(--sp-8);
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.guide-head-fields,
+.guide-head-read {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+/* العنوان يبدأ من جهة البداية (يمين RTL) */
+.guide-title-read,
+input.guide-title-input {
+  font-weight: 700;
+  font-size: 1.65rem;
+  line-height: 1.35;
+  margin: 0;
+  text-align: start;
+}
+input.guide-title-input {
+  border-color: transparent;
+  background: transparent;
+  padding-inline: 8px;
+  margin-inline-start: -8px;
+}
+input.guide-title-input:hover {
+  border-color: var(--line);
+}
+input.guide-title-input:focus {
+  border-color: var(--brand);
+  background: var(--card);
+}
+
+/* وصف الدليل */
+.guide-desc-read {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--muted);
+  margin: 0;
+}
+textarea.guide-desc-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink);
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
+  margin-inline-start: -8px;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+textarea.guide-desc-input:hover {
+  border-color: var(--line-strong);
+  background: var(--brand-soft);
+}
+textarea.guide-desc-input:focus {
+  border-color: var(--brand);
+  border-style: solid;
+  background: var(--card);
+}
+
+/* شارات المواقع والتطبيقات الملتقطة */
+.site-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--sp-1);
+}
+.site-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 4px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(43, 42, 38, 0.03);
+}
+.site-badge-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--r-pill);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  flex: none;
+}
+.site-badge-name {
+  font-family: inherit;
+}
+
+/* كبسولة رابط الانتقال المباشر في الخطوات */
+.step-url-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 380px;
+  padding: 4px 10px;
+  background: var(--brand-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  color: var(--brand);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+  cursor: pointer;
+}
+.step-url-pill:hover {
+  background: var(--paper);
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+.step-url-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.step-url-icon {
+  flex: none;
+  opacity: 0.75;
+}
+.viewer-step-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-2);
+}
+.viewer-step-head h2 {
+  margin: 0;
+}
+
+/* صف البيانات: مالك · خطوات · مدة · تحديث · موقع · مشاهدات · حالة الحفظ */
+.guide-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.meta-owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  color: var(--brand-ink);
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex: none;
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.meta-views {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+}
+.meta-views:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.site-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ——— نافذة المشاركة ——— */
+.share-dialog {
+  display: flex;
+  flex-direction: column;
+}
+.dialog-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5) var(--sp-3);
+  border-bottom: 1px solid var(--line);
+}
+.dialog-head h2 {
+  margin: 0;
+}
+/* شريط تبويبات مقسّم */
+.seg {
+  display: flex;
+  gap: 3px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 3px;
+}
+.seg-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  border: none;
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--t-fast), color var(--t-fast);
+}
+.seg-btn:hover {
+  color: var(--ink);
+}
+.seg-btn.on {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(43, 42, 38, 0.12);
+}
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  min-height: 150px;
+}
+.dialog-hint {
+  margin: 0;
+}
+.link-row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.link-row input {
+  flex: 1;
+  background: var(--paper);
+}
+.dialog-actions {
+  gap: var(--sp-2);
+}
+.views-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.qr-holder {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--sp-2);
+}
+.embed-code {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.78rem;
+  background: var(--paper);
+  resize: vertical;
+}
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-2);
+}
+
+/* المرور غير متاح (لمس): الأدوات ظاهرة دائمًا وأهداف اللمس ≥44px */
+@media (hover: none) {
+  .shot-cleanup,
+  .icon-btn.on-hover {
+    opacity: 1;
+  }
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .icon-btn.wide {
+    width: auto;
+    min-height: 44px;
+  }
+  .btn {
+    min-height: 44px;
+  }
+}
+/* منظار اللقطة: صندوق ثابت يعرض البكسل بدقّته الأصلية بدل تصغير يطمس النص.
+   ألغى هذا قرار `width: fit-content` السابق — الوضوح صار من التبؤير لا من التمديد */
+.shot {
+  position: relative;
+  user-select: none;
+  width: 100%;
+}
+.shot-viewport {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  /* طلب المالك 2026-09-01 (اللاحق — «بطاقة ونصف»): البطاقة كاملة ≈ ثلثي نافذة
+     الشاشة، فيرى قارئ الدليل بطاقةً ونصف تقريبًا في الجدار. اللقطة لكامل الشاشة
+     فتظهر كاملة بملء العرض (~٤٤١px لقطة 16:9 بعرض ٧٨٤) والفارغ الطفيف توسّط. */
+  height: clamp(300px, 54vh, 600px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  touch-action: none;
+}
+/* مرساة فيزيائية عمدًا (top/left لا inset-inline-start): الصفحة RTL فتصير
+   الخاصية المنطقية `right`، بينما transform: translate يزيح فيزيائيًا نحو
+   اليمين وأصله `0 0` الزاوية العليا اليسرى — فلا بدّ أن يطابقه المرساة */
+.shot-viewport canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+.shot.drawing .shot-viewport canvas {
+  cursor: crosshair;
+}
+.shot.panning .shot-viewport canvas {
+  cursor: grab;
+}
+/* S3: تحريك الهدف — يد ممسكة لا تقاطع رسم. تأتي بعد قاعدة .drawing عمدًا:
+   التخصيص متساوٍ فيفوز الأخير، والوضعان يجتمعان على العنصر نفسه */
+.shot.moving-target .shot-viewport canvas {
+  cursor: grab;
+}
+.shot.moving-target:active .shot-viewport canvas {
+  cursor: grabbing;
+}
+/* مقبض اليد (Pan): تصفّح لقطة مكبّرة بلا أداة نشطة — يد ممسكة عند الإمكان،
+   ومقبوضة أثناء السحب. لا يظهر إلا حين تفيض الصورة عن إطارها (can-pan). */
+.shot.can-pan .shot-viewport canvas {
+  cursor: grab;
+}
+.shot.can-pan.grabbing .shot-viewport canvas {
+  cursor: grabbing;
+}
+.selection {
+  position: absolute;
+  border: 2px dashed var(--brand);
+  background: var(--brand-soft);
+  pointer-events: none;
+  border-radius: var(--r-sm);
+}
+/* EDT-05: مربع كتابة النص فوق اللقطة — يظهر في موضع النقرة ويكتب بالحبر المختار */
+.shot-text-input {
+  position: absolute;
+  min-width: 160px;
+  padding: 4px 10px;
+  border: 2px solid var(--brand);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 5;
+}
+.shot-text-input:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+/* EDT-07: حوار استبدال الروابط */
+.url-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 30, 26, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+.url-dialog {
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  padding: 20px 22px;
+  width: min(560px, 92vw);
+  max-height: 84vh;
+  overflow: auto;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+}
+.url-dialog h3 {
+  margin: 0 0 12px;
+}
+.url-field {
+  display: block;
+  margin: 10px 0;
+}
+.url-field span {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.url-field input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+}
+.url-affected-count {
+  font-weight: 700;
+  margin: 12px 0 6px;
+}
+.url-affected-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.url-affected-list li {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: grid;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+.url-old {
+  color: var(--warn-ink);
+  text-decoration: line-through;
+  word-break: break-all;
+}
+.url-new {
+  color: var(--ok-ink, #166534);
+  word-break: break-all;
+  font-weight: 600;
+}
+/* EDT-12: بطاقة اقتراح الطمس الذكي */
+.blur-suggest {
+  border: 1px solid var(--line-strong);
+  border-inline-start: 4px solid var(--brand);
+  border-radius: 10px;
+  background: var(--brand-soft);
+  padding: 10px 14px;
+  margin: 10px 0;
+}
+.blur-suggest p {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+.blur-suggest ul {
+  margin: 0 0 8px;
+  padding-inline-start: 18px;
+}
+.missing-shot {
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  padding: 22px;
+  text-align: center;
+  color: var(--warn-ink);
+  background: var(--warn-bg);
+}
+.rect-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.save-state {
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+/* «محفوظ» حالة سكون لا إنجاز يصيح — رمادية هادئة تتسق مع الجرافيت.
+   الخطأ وحده يبقى أحمر لأنه يستدعي فعلًا. */
+.save-state.saved,
+.save-state.saving,
+.save-state.dirty {
+  color: var(--muted);
+}
+.save-state.error {
+  color: var(--danger);
+}
+
+/* — وسوم المحرر (LIB-03) — */
+.qr-canvas {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: block;
+}
+
+/* — نسخة التضمين (VIEW-04): بلا قشرة داخل iframe — */
+.embed-page {
+  max-width: 860px;
+  padding: var(--sp-3);
+}
+.embed-title {
+  font-size: 1.15rem;
+  margin-bottom: var(--sp-4);
+}
+
+.tags-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--sp-4);
+}
+.tags-row input {
+  max-width: 380px;
+}
+
+.viewer-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: 28px;
+  /* طلب المالك 2026-09-01: بطاقة الخطوة في العارض أضيق ٢٠٪ (٩٨٠→٧٨٤) ومتوسّطة،
+     كي تطابق تصغير المحرر — الارتفاع مقلَّص أصلًا من .shot-viewport المشترك. */
+  max-width: 784px;
+  margin-inline: auto;
+  width: 100%;
+}
+
+/* PERF-04: تمرير افتراضي للأدلة الطويلة — المتصفح يتخطى تخطيط ما هو خارج
+ * الشاشة (content-visibility) فوق 100 خطوة؛ التقدير الأولي يمنع إزاحة التمرير */
+.cv-steps .viewer-step {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 560px;
+}
+
+/* — VOX-03 موزّعًا (قرار المالك 2026-08-30): زر استماع داخل كل خطوة — الصوت في مكانه — */
+.step-audio {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 var(--sp-2);
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--brand-soft);
+  color: var(--brand);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.step-audio:hover {
+  background: var(--card);
+}
+/* المحرِّر: شريط الصوت يحمل مشغّلًا وزر التفريغ ورسالته — يلتفّ ولا يُزحَم */
+.audio-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+.audio-label {
+  flex: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+.audio-bar-editor {
+  flex-wrap: wrap;
+}
+.audio-bar-editor audio {
+  flex: 1 1 240px;
+  width: auto;
+}
+.viewer-step.current {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 8px;
+  padding-inline: 8px;
+}
+
+/* — VIEW-12: عارض الجوال — «سارة» تصل من واتساب: عمود واحد مريح وهدف لمس كافٍ — */
+@media (max-width: 640px) {
+  .page {
+    padding: var(--sp-4) var(--sp-3) 56px;
+  }
+  .viewer-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-2);
+  }
+  .viewer-head h1 {
+    font-size: 1.25rem;
+  }
+  .viewer-head .btn {
+    min-height: 44px;
+  }
+  .viewer-step {
+    margin-bottom: var(--sp-5);
+  }
+  .viewer-step h2 {
+    font-size: 1.05rem;
+  }
+}
+
+/* — البحث (SRCH-01) — */
+.search-hit {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--t-base);
+}
+.search-hit:hover {
+  border-color: var(--line-strong);
+}
+.hit-body {
+  flex: 1;
+  min-width: 0;
+}
+/* SRCH-01/PERF-02: مصغّرة الدليل بجانب النتيجة — صورة خفيفة lazy لا الأصل */
+.hit-thumb {
+  flex: none;
+  width: 64px;
+  height: 40px;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  display: block;
+}
+
+/* — SRCH-06: أقرب الأدلة معنًى — قائمة اختيار مرتبة لا حائط نتائج — */
+.semantic-section {
+  margin-top: 28px;
+}
+.semantic-section h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+.semantic-hint {
+  margin: 2px 0 10px;
+}
+.semantic-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.semantic-hit {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--surface, transparent);
+  transition: border-color var(--t-base);
+}
+.semantic-hit:hover {
+  border-color: var(--line-strong);
+}
+.semantic-fallback {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+.semantic-reason {
+  margin: 8px 0 0;
+}
+/* — أنماط مساعدة (UX-01) — كل ثابت كان inline صار صنفًا. */
+.row-end {
+  margin-top: auto;
+}
+.row-between {
+  justify-content: space-between;
+}
+
+/* PERF-03: عنصر نائب ثابت للقطة لم تصل الشاشة بعد — بلا حركة (يحترم reduced-motion بنيويًا) */
+.shot-idle {
+  width: 100%;
+  min-height: 140px;
+  border-radius: 12px;
+  border: 1px dashed var(--line);
+  background: var(--skeleton);
+}
+.snippet {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.9;
+}
+.snippet mark {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  border-radius: 4px;
+  padding: 0 3px;
+}
+
+/* إبراز مؤقت عند الوصول من البحث إلى خطوة */
+.flash {
+  animation: flash-fade 2.2s ease;
+}
+@keyframes flash-fade {
+  0%,
+  35% {
+    background: var(--brand-soft);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* — لوحة البحث الفوري Ctrl+K (SRCH-03) — */
+.palette-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 41, 55, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 12vh;
+  z-index: 1000;
+}
+.palette {
+  width: min(640px, 92vw);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+}
+.palette-input {
+  border: none !important;
+  border-bottom: 1px solid var(--line) !important;
+  border-radius: 0 !important;
+  padding: 14px 18px !important;
+  font-size: 1.05rem;
+}
+.palette-body {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: var(--sp-2);
+}
+.palette-msg {
+  padding: var(--sp-3) var(--sp-4);
+  text-align: center;
+}
+.palette-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.palette-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  font: inherit;
+  text-align: start;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  padding: 9px 14px;
+  cursor: pointer;
+}
+.palette-item.sel,
+.palette-item:hover {
+  background: var(--brand-soft);
+}
+.palette-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  border-top: 1px solid var(--line);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: 0.82rem;
+}
+.palette-foot a {
+  color: var(--brand);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: var(--card);
+  }
+  .page {
+    max-width: 100%;
+    padding: 0;
+  }
+  .step-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* ——— الحزمة ⑥: إكمال التجربة ——— */
+
+/* EDT-10/CAP-17: رسالة «أضف خطوات» بجانب رسائل الحالة */
+.append-msg {
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.append-msg.ok {
+  border-inline-start: 3px solid var(--ok);
+}
+.append-msg.err {
+  border-inline-start: 3px solid var(--danger);
+}
+
+/* EDT-13: حقل النص البديل تحت اللقطة */
+.alt-input {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* UX-04: قائمة الاختصارات داخل هيكل اللوحة */
+.shortcuts h2 {
+  margin: 4px 0 12px;
+  font-size: 1rem;
+}
+.shortcut-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.shortcut-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+}
+.shortcut-list kbd {
+  direction: ltr;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  background: var(--skeleton);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  padding: 3px 8px;
+  min-width: 92px;
+  text-align: center;
+  flex: none;
+}
+
+/* SRCH-02: شريط مرشحات البحث */
+.filter-folder select,
+.filter-site input {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card);
+}
+.filter-site {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.filter-site input {
+  width: 210px;
+  direction: ltr;
+  text-align: left;
+}
+
+/* UX-03: احترام تقليل الحركة — كل الانتقالات والأنيميشن تتعطل لمن يطلب ذلك */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ——— دربني (GM-01): زر التدريب الثابت أعلى الركن — القراءة أولًا ثم التدريب ——— */
+.train-fab-wrap {
+  position: fixed;
+  top: var(--sp-3, 12px);
+  left: var(--sp-3, 12px);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2, 8px);
+  max-width: min(340px, calc(100vw - 24px));
+}
+.train-fab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 800;
+  background: var(--accent);
+  color: var(--brand-ink);
+  box-shadow: 0 10px 28px rgba(43, 42, 38, 0.28);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.train-fab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(43, 42, 38, 0.38);
+}
+.train-fab-error {
+  margin: 0;
+  background: var(--paper);
+  color: var(--warn-ink);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+/* الشاشات الضيقة: الزر أسفل يسارًا حتى لا يغطي أزرار الترويسة */
+@media (max-width: 640px) {
+  .train-fab-wrap {
+    top: auto;
+    bottom: var(--sp-3, 12px);
+  }
+}
+
+/* — GM-05: تعليقات الخطوات — الضيف يسأل من العارض، والمالك يردّ من المحرر — */
+.step-comments {
+  margin-top: var(--sp-1);
+}
+.comment-toggle.has-comments {
+  color: var(--brand);
+  border-color: var(--brand);
+}
+.comments-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  margin: var(--sp-2) 0 var(--sp-4);
+}
+.comment-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px dashed var(--line);
+}
+.comment-thread.resolved {
+  opacity: 0.8;
+}
+.comment-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.comment-item.is-reply {
+  border-inline-start: 3px solid var(--line-strong);
+  padding-inline-start: var(--sp-3);
+}
+.comment-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.comment-author {
+  font-weight: 700;
+  color: var(--ink);
+}
+.comment-author.is-owner {
+  color: var(--brand);
+}
+.comment-body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.comment-thread.resolved .comment-body {
+  text-decoration-line: line-through;
+  text-decoration-color: var(--line-strong);
+}
+.resolved-chip {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+.comment-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.comment-composer .comment-name {
+  max-width: 260px;
+}
+.comment-box {
+  resize: vertical;
+  min-height: 64px;
+}
+.comment-actions {
+  gap: var(--sp-1);
+}
+.btn.ghost.danger {
+  color: var(--danger);
+}
+
+/* شارة التعليقات في بطاقة المكتبة — المفتوحة تنبّه صاحب الدليل للرد */
+.chip.comment-chip.has-open {
+  color: var(--warn-ink);
+  border-color: var(--warn-ink);
+  background: var(--warn-bg);
+  font-weight: 600;
+}
+
+/* ——— المرحلة ب: قشرة المساحة — الشريط الجانبي RTL + الهوم (WS-06) ——— */
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+.shell-main {
+  flex: 1;
+  min-width: 0;
+  /* طلب المالك 2026-09-03: المتن أفتح درجة يلاصق البطاقات، والدرجة الأغمقة للشريط الجانبي وحده */
+  background: var(--paper-raised);
+}
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--paper);
+  border-inline-end: 1px solid var(--line);
+  padding: var(--sp-5) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.side-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.side-brand .brand {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ink);
+}
+.ws-name {
+  color: var(--muted);
+  font-size: 13px;
+}
+.side-sec {
+  font-size: 12px;
+  color: var(--muted);
+  margin: var(--sp-2) 0 var(--sp-1);
+}
+.side-nav,
+.side-folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.side-item {
+  display: flex;
+  /* طلب المالك 2026-09-03: النص بجوار الأيقونة وكلاهما نحو يمين القائمة لا مبعّدان للطرفين */
+  justify-content: flex-start;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  color: var(--ink);
+  transition: background var(--t-fast);
+  text-align: start;
+  font: inherit;
+  text-decoration: none;
+}
+.side-item:hover {
+  background: var(--brand-soft);
+}
+.side-item.sel {
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 600;
+}
+.side-item .count {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.side-folder {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.side-folder .side-item {
+  flex: 1;
+  min-width: 0;
+}
+.side-folder-ops {
+  display: none;
+  gap: 2px;
+}
+.side-folder:hover .side-folder-ops,
+.side-folder-ops:focus-within {
+  display: inline-flex;
+}
+.folder-new {
+  display: flex;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+  align-items: center;
+}
+.side-user {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-size: 13px;
+}
+.side-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.role-chip {
+  align-self: flex-start;
+}
+
+/* شريط إحصاءات الهوم — كل رقم زر يضبط العرض */
+.stats-bar {
+  display: flex;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: border-color var(--t-fast);
+  min-width: 96px;
+  font: inherit;
+  color: var(--ink);
+}
+.stat:hover {
+  border-color: var(--line-strong);
+}
+.stat.sel {
+  border-color: var(--brand);
+}
+.stat b {
+  font-size: 20px;
+}
+.stat span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* صفوف الفلاتر المتقدمة — أزرار حقيقية تلَفّ ولا تُقصّ */
+.filter-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.filter-label {
+  min-width: 52px;
+  font-size: 13px;
+}
+.f-chip {
+  cursor: pointer;
+}
+.f-chip.sel {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.f-chip .count {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* الفلاتر النشطة + زر المسح */
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: var(--sp-3);
+}
+.af-chip {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  background: var(--brand-soft);
+  border: 1px solid var(--brand);
+  color: var(--brand);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.af-x {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  padding: 0 2px;
+  font: inherit;
+}
+
+/* المرحلة ج: شريط التقرير المجمّع أعلى «أنشئ بواسطي» — أربع بطاقات رقم صادقة */
+.report-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+}
+.stat-num {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (max-width: 720px) {
+  .report-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* المرحلة د: شاشة الفريق — صندوق الدعوة والفرق وجدول الأعضاء */
+.team-note {
+  margin-bottom: var(--sp-3);
+  font-size: 13px;
+}
+.invite-card {
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.invite-form {
+  gap: var(--sp-3);
+  align-items: end;
+  flex-wrap: wrap;
+}
+.invite-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+}
+.invite-field label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.invite-field input,
+.invite-field select {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  font: inherit;
+  background: var(--card);
+  color: var(--ink);
+}
+.invite-box {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px dashed var(--brand);
+  border-radius: var(--r-md);
+  background: var(--brand-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-size: 13px;
+}
+.invite-link-row {
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.invite-url {
+  font-size: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.teams-row {
+  gap: var(--sp-2);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+.team-chip {
+  gap: 6px;
+}
+.team-new input {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+  font: inherit;
+  width: 160px;
+}
+.team-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.team-table th {
+  text-align: start;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.team-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.team-table tbody tr:hover {
+  background: var(--brand-soft);
+}
+.team-table select {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 5px 8px;
+  font: inherit;
+  background: var(--card);
+  color: var(--ink);
+}
+.pending-chip {
+  margin-inline-start: var(--sp-2);
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+/* المرحلة هـ: شاشة الإعداد — فهرس بطاقات */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-3);
+  align-items: stretch;
+}
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+.settings-card h2 {
+  font-size: 15px;
+  font-weight: 700;
+  gap: 6px;
+}
+.card-desc {
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.ws-card {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+}
+.ws-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+.ws-meta {
+  font-size: 13px;
+}
+.settings-later {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.settings-folders {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.settings-folders li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-size: 14px;
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: 6px;
+}
+.settings-folder-new {
+  gap: var(--sp-2);
+  margin-top: auto;
+}
+.settings-folder-new input {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+  font: inherit;
+  flex: 1;
+  min-width: 0;
+}
+.entry-card .entry-foot {
+  margin-top: auto;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+}
+.entry-count {
+  font-size: 20px;
+  font-weight: 700;
+  margin-inline-end: auto;
+}
+
+
+
+/* بطاقة الهوم: شارة الحالة ورقاقة الموقع وزر المحفوظات */
+.chip.status-chip.priv {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  border-color: transparent;
+}
+.chip.site-chip {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.bm-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 15px;
+  padding: 2px 4px;
+}
+.bm-btn.on {
+  color: var(--star);
+}
+.rel-time {
+  font-size: 13px;
+}
+
+/* تبديل شبكة/قائمة — القائمة: بطاقة بعرض كامل لكل صف */
+.view-toggle {
+  margin-inline-start: auto;
+}
+.grid-cards.list-view {
+  grid-template-columns: 1fr;
+}
+
+/* تحت ١٠٢٤px: الشريط يطوي إلى رأس علوي (حد أدنى مسؤول — المالك يختبر سطح مكتب) */
+@media (max-width: 1023px) {
+  .shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    border-inline-end: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .side-user {
+    margin-top: 0;
+    margin-inline-start: auto;
+    border-top: none;
+    padding-top: 0;
+    flex-direction: row;
+    align-items: center;
+  }
+  .side-nav,
+  .side-folder-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+/* ——— نمط المرجع: شريط أعلى الشاشة + الفلاتر المنسدلة + الجدول ——— */
+
+/* طلب المالك 2026-09-03: البحث عنصر أساسي يعرض في شريط الشاشات الأولى لا في الشريط الجانبي */
+.home-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  padding: 6px 8px;
+  color: var(--muted);
+  /* في سطر الشريط يتمدد باعتدال، وعند الالتفاف يملك سطره */
+  flex: 1 1 220px;
+  max-width: 360px;
+}
+.home-search input {
+  border: none;
+  background: transparent;
+  padding: 0;
+  min-width: 0;
+  flex: 1;
+  color: var(--ink);
+  font: inherit;
+}
+.home-search-btn {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+.home-search-btn:hover {
+  color: var(--ink);
+}
+.home-search:focus-within {
+  border-color: var(--line-strong);
+}
+/* سطر البحث المستقل — فاصل بين الشريط العلوي وقائمة البطاقات (طلب المالك 2026-09-03) */
+.home-search-row {
+  max-width: none;
+  width: 100%;
+  margin-bottom: var(--sp-4);
+}
+
+/* ——— المجلدات بنمط Team Directory المرفق (طلب المالك 2026-09-03) ——— */
+/* رأس قسم المجلدات: العنوان + زر «+» للإنشاء */
+.side-sec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: var(--sp-2) 0 var(--sp-1);
+}
+.side-sec-row .side-sec {
+  margin: 0;
+}
+.side-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background var(--t-fast),
+    color var(--t-fast);
+}
+.side-add:hover {
+  background: var(--brand-soft);
+  color: var(--ink);
+}
+/* شارة الحرف الأولى — بنود المجلدات وبطاقات الرئيسية */
+.folder-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: var(--r-btn);
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 700;
+}
+.side-item.sel .folder-chip {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+.side-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+}
+/* بحث المجلدات داخل الشريط + «لا نتائج» */
+.side-folder-search {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  width: 100%;
+  min-width: 0;
+}
+.side-folder-search:focus {
+  border-color: var(--line-strong);
+  outline: none;
+}
+.side-empty {
+  color: var(--muted);
+  font-size: 12px;
+  padding: var(--sp-2) var(--sp-1);
+}
+/* بطاقات «حسب المجلدات» في الرئيسية */
+.folder-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: var(--sp-3);
+}
+.folder-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  text-align: start;
+  transition: border-color var(--t-fast);
+}
+.folder-card:hover {
+  border-color: var(--line-strong);
+}
+.folder-card .folder-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+}
+/* أيقونة المجلد المعروفة داخل بطاقة المجلد */
+.folder-ic {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.folder-card-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.folder-card-count {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.side-ws {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-2);
+}
+.side-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-3);
+}
+.invite-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--card);
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink);
+  transition: background var(--t-fast);
+}
+.invite-btn:hover {
+  background: var(--brand-soft);
+}
+
+/* شريط أعلى الشاشة: العنوان يمينًا والأدوات يسارًا */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+.screen-title {
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: 20px;
+}
+.toolbar-actions {
+  gap: var(--sp-2);
+}
+.filters-wrap {
+  position: relative;
+}
+.filters-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.filters-btn.sel {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.filter-badge {
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 7px;
+}
+.filters-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.filters-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-end: 0;
+  z-index: 41;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  min-width: 380px;
+  max-width: min(92vw, 480px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  box-shadow: 0 8px 24px rgba(43, 42, 38, 0.08);
+}
+.filters-pop-foot {
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-2);
+  display: flex;
+  justify-content: flex-end;
+}
+.icon-btn {
+  padding: 7px 9px;
+}
+.view-toggle .icon-btn.sel {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+/* الجدول (عرض قائمة) — أعمدة المرجع: العنوان · المجلد · الموقع · أُنشئ · عُدِّل · مشاهدات */
+.table-wrap {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow-x: auto;
+}
+.guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.guide-table th {
+  text-align: start;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12.5px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.guide-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.guide-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.guide-table tbody tr:hover {
+  background: var(--brand-soft);
+}
+.guide-table tr.picked {
+  background: var(--brand-soft);
+}
+.th-sort {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.th-sort.on {
+  color: var(--brand);
+}
+.col-title {
+  min-width: 220px;
+}
+.row-title {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 0;
+  text-align: start;
+}
+.row-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.col-views {
+  text-align: center;
+  min-width: 64px;
+}
+.col-actions {
+  display: flex;
+  gap: var(--sp-1);
+  white-space: nowrap;
+}
+.chip.site-chip.static {
+  cursor: default;
+  text-decoration: none;
+}
+
+/* البطاقة بنمط المرجع: رأس الموقع (حرف بدائرة) + «الزمن · الكاتب» */
+.card-site-row {
+  gap: var(--sp-2);
+  align-items: center;
+}
+.site-who {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+}
+.site-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand);
+}
+.site-name {
+  font-size: 13px;
+  color: var(--muted);
+}
+.folder-chip-static {
+  background: var(--brand-soft);
+  border-color: transparent;
+}
+.card-byline {
+  font-size: 13px;
+}
+.saved-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* شاشة الإعداد (هـ) */
+.settings-note {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 560px;
+}
+.settings-note p {
+  margin: 0;
+}
+
+/* ——— VOX-09 «ميك الخطوة»: شارة 🎙 بجانب عنوان البطاقة ——— */
+.step-voice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.step-voice-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+.step-voice-dur {
+  font-variant-numeric: tabular-nums;
+}
+.step-voice-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.step-voice-err {
+  color: var(--warn-ink);
+  font-weight: 600;
+}
