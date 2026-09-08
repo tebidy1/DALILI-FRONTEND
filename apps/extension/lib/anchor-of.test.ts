@@ -45,6 +45,19 @@ describe('anchorOf — بطاقة تعريف العنصر من DOM (AUTO-01)', (
     expect(path.v).not.toContain('body')
   })
 
+  it('معرّف متطاير (React useId) لا يُلتقط id ولا يُثبَّت في المسار — يسقط لمرساةٍ مستقرّة', () => {
+    // علة حقيقية: `_r_6_` كأقوى مرساة يطابق عنصرًا خاطئًا على صفحة التدريب الطازجة.
+    document.body.innerHTML = '<div id="_r_5_"><div><button id="_r_6_">فعّل cowork</button></div></div>'
+    const btn = document.querySelector('button')!
+    const chain = anchorOf(btn)!
+    // لا مرشّح id متطاير، والمسار بنيوي لا مثبّت على سلفٍ بمعرّف React
+    expect(chain.some((c) => c.k === 'id')).toBe(false)
+    const path = chain.find((c) => c.k === 'path')!
+    expect(path.v).not.toContain('_r_')
+    expect(path.v).toContain('body')
+    expect(chain.some((c) => c.k === 'text' && c.v === 'فعّل cowork')).toBe(true)
+  })
+
   it('نص زر الإدخال submit يؤخذ من value لا من innerText الفارغ', () => {
     document.body.innerHTML = '<input type="submit" value="اعتماد الفاتورة">'
     const input = document.querySelector('input')!

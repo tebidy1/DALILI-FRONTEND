@@ -202,6 +202,7 @@ export function StepCard({
         onDragOver={editing ? onDragOver : undefined}
         onDrop={editing ? onDrop : undefined}
       >
+        {editing && <StepRail index={index} picked={picked} onPick={onPick} onDragStart={onDragStart} onDragEnd={onDragEnd} />}
         <div className="card step-body block-card header">
           {editing ? (
             <input
@@ -218,7 +219,6 @@ export function StepCard({
             </h2>
           )}
         </div>
-        {editing && <StepRail index={index} picked={picked} onPick={onPick} onDragStart={onDragStart} onDragEnd={onDragEnd} />}
       </div>
     )
   }
@@ -232,6 +232,7 @@ export function StepCard({
         onDragOver={editing ? onDragOver : undefined}
         onDrop={editing ? onDrop : undefined}
       >
+        {editing && <StepRail index={index} picked={picked} onPick={onPick} onDragStart={onDragStart} onDragEnd={onDragEnd} />}
         <div className={`card step-body block-card ${step.block}`}>
           {editing ? (
             <>
@@ -264,13 +265,16 @@ export function StepCard({
             </>
           )}
         </div>
-        {editing && <StepRail index={index} picked={picked} onPick={onPick} onDragStart={onDragStart} onDragEnd={onDragEnd} />}
       </div>
     )
   }
 
   return (
     <div className={`step-card-row${dragging ? ' dragging' : ''}`}>
+      {/*
+        مربّع التحديد ومقبض السحب على اليمين (أول عنصر في الصف في RTL)
+      */}
+      {editing && <StepRail index={index} picked={picked} onPick={onPick} onDragStart={onDragStart} onDragEnd={onDragEnd} />}
       <div
         className={`card step-card${drawing ? ' is-drawing' : ''}${picked ? ' picked' : ''}${dragging ? ' dragging' : ''}`}
         /* البطاقة كلها مَقصِد إفلات — هدف أوسع من المقبض وحده فلا يُفلت السحب في الفراغ */
@@ -518,11 +522,6 @@ export function StepCard({
         </details>
       )}
       </div>
-      {/*
-        طلب المالك 2026-09-01: مربّع التحديد ومقبض السحب **خارج** إطار البطاقة —
-        شريط جانبي بعد الجسم في DOM، فيقع على اليسار في RTL (آخر عنصر = طرف الصف).
-      */}
-      {editing && <StepRail index={index} picked={picked} onPick={onPick} onDragStart={onDragStart} onDragEnd={onDragEnd} />}
     </div>
   )
 }

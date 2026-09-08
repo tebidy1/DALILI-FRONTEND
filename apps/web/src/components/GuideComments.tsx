@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { threadComments } from '@dalili/core'
-import type { StepCommentDto } from '@dalili/shared'
+import type { CommentKind, StepCommentDto } from '@dalili/shared'
 import { IconComment } from '../ui/icons'
 import { t } from '../i18n'
 
@@ -9,15 +9,14 @@ const NAME_KEY = 'dalili.commenter'
 
 const fmt = new Intl.DateTimeFormat('ar', { dateStyle: 'medium', timeStyle: 'short' })
 
-export interface StepCommentsProps {
-  stepId: string
-  /** كل تعليقات الدليل (حالة الصفحة) — المكوّن يرشّح خطوته ويثبّت خيوطها */
+export interface GuideCommentsProps {
+  /** كل تعليقات الدليل (حالة الصفحة) — المكوّن يثبّت خيوطها بلا تصفية خطوة */
   comments: StepCommentDto[]
   /** المحرر (المالك) يرى أزرار التعديل والوسم والحذف؛ العارض العام للضيف بلاها */
   canModerate: boolean
   failed?: boolean
   onRetry?: () => void
-  onAdd: (body: string, opts: { parentId?: string; author?: string }) => Promise<void>
+  onAdd: (body: string, opts: { kind: CommentKind; parentId?: string; author?: string }) => Promise<void>
   onEdit?: (id: string, body: string) => Promise<void>
   onResolve?: (id: string, resolved: boolean) => Promise<void>
   onDelete?: (id: string) => Promise<void>
@@ -27,7 +26,7 @@ function who(c: StepCommentDto): string {
   return c.isOwner ? t('comments.ownerBadge') : c.author || t('comments.guest')
 }
 
-/** سطر تعليق واحد — بسيط ومقروء: الاسم، النص، التاريخ، وأزرار المالك عند اللزوم */
+/** سطر تعليق واحد — الاسم، النص، التاريخ، وأزرار المالك؛ الأصل من نوع مشكلة بمعلَم أحمر */
 function CommentRow({
   c,
   canModerate,
@@ -44,10 +43,12 @@ function CommentRow({
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(c.body)
   const edited = c.updatedAt > c.createdAt
+  const isIssue = c.kind === 'issue' && !c.parentId
 
   return (
-    <div className={`comment-item${c.parentId ? ' is-reply' : ''}${c.resolved ? ' resolved' : ''}`}>
+    <div className={`comment-item${c.parentId ? ' is-reply' : ''}${c.resolved ? ' resolved' : ''}${isIssue ? ' is-issue' : ''}`}>
       <div className="comment-meta">
+        {isIssue && <span className="chip issue-chip">{t('comments.issueBadge')}</span>}
         <bdi className={`comment-author${c.isOwner ? ' is-owner' : ''}`}>{who(c)}</bdi>
         <span className="muted">{fmt.format(new Date(c.createdAt))}</span>
         {edited && <span className="muted">· {t('comments.editedMark')}</span>}
@@ -110,12 +111,13 @@ function CommentRow({
 }
 
 /**
- * تعليقات خطوة واحدة: زر يفتح الخيوط — الضيف يعلّق ويردّ، والمالك يوسم
- * محلولًا ويعدّل ويحذف. الحالة كلها عند الأب؛ هذا المكوّن عرض وإدخال نقي.
+ * GM-05 تطوّر: تعليقات الدليل كله في لوحة واحدة أعلى الصفحة (لا تعليق لكل خطوة).
+ * نوعان: «تبليغ مشكلة» (معلَم أحمر يدخل عدّاد المشكلات) و«تعليق» عام. الحالة عند الأب.
  */
-export function StepComments(props: StepCommentsProps) {
-  const { stepId, comments, canModerate, failed, onRetry, onAdd, onEdit, onResolve, onDelete } = props
+export function GuideComments(props: GuideCommentsProps) {
+  const { comments, canModerate, failed, onRetry, onAdd, onEdit, onResolve, onDelete } = props
   const [open, setOpen] = useState(false)
+  const [kind, setKind] = useState<CommentKind>('note')
   const [draft, setDraft] = useState('')
   const [name, setName] = useState(() => {
     try {
@@ -128,15 +130,18 @@ export function StepComments(props: StepCommentsProps) {
   const [replyDraft, setReplyDraft] = useState('')
   const [err, setErr] = useState('')
 
-  const threads = useMemo(() => threadComments(comments.filter((c) => c.stepId === stepId)), [comments, stepId])
-  const count = comments.reduce((n, c) => (c.stepId === stepId ? n + 1 : n), 0)
+  const threads = useMemo(() => threadComments(comments), [comments])
+  const count = comments.length
+  const openIssues = comments.reduce((n, c) => (c.kind === 'issue' && !c.parentId && !c.resolved ? n + 1 : n), 0)
+  /** نوع خيط لتوريثه للردود — الرد يتبع نوع أصله (لا يُحسب مشكلةً على أي حال) */
+  const kindOfRoot = (rootId: string): CommentKind => (comments.find((c) => c.id === rootId)?.kind === 'issue' ? 'issue' : 'note')
 
   async function send() {
     const body = draft.trim()
     if (!body) return
     setErr('')
     try {
-      await onAdd(body, canModerate ? {} : { author: name.trim() || undefined })
+      await onAdd(body, { kind, ...(canModerate ? {} : { author: name.trim() || undefined }) })
       setDraft('')
       if (!canModerate && name.trim()) {
         try {
@@ -155,7 +160,7 @@ export function StepComments(props: StepCommentsProps) {
     if (!body) return
     setErr('')
     try {
-      await onAdd(body, { parentId, ...(canModerate ? {} : { author: name.trim() || undefined }) })
+      await onAdd(body, { kind: kindOfRoot(parentId), parentId, ...(canModerate ? {} : { author: name.trim() || undefined }) })
       setReplyDraft('')
       setReplyTo(null)
     } catch {
@@ -164,15 +169,17 @@ export function StepComments(props: StepCommentsProps) {
   }
 
   return (
-    <section className="step-comments no-print">
+    <section className="guide-comments no-print">
       <button
-        className={`icon-btn wide comment-toggle${count > 0 ? ' has-comments' : ''}`}
+        className={`icon-btn wide comment-toggle${count > 0 ? ' has-comments' : ''}${openIssues > 0 ? ' has-issues' : ''}`}
         aria-expanded={open}
         aria-label={t('comments.toggleA11y', { count })}
         onClick={() => setOpen((v) => !v)}
       >
         <IconComment size={16} />
-        <span>{count > 0 ? String(count) : t('comments.toggleShort')}</span>
+        <span>{t('comments.sectionTitle')}</span>
+        {count > 0 && <span className="comment-count">{count}</span>}
+        {openIssues > 0 && <span className="chip issue-chip">{openIssues}</span>}
       </button>
 
       {open && (
@@ -222,6 +229,25 @@ export function StepComments(props: StepCommentsProps) {
               ))}
 
               <div className="comment-composer">
+                {/* مبدّل النوع: تبليغ مشكلة أو تعليق عام */}
+                <div className="comment-kind-toggle" role="group" aria-label={t('comments.kindA11y')}>
+                  <button
+                    type="button"
+                    className={`btn sm${kind === 'issue' ? ' active issue' : ' ghost'}`}
+                    aria-pressed={kind === 'issue'}
+                    onClick={() => setKind('issue')}
+                  >
+                    {t('comments.kindIssue')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn sm${kind === 'note' ? ' active' : ' ghost'}`}
+                    aria-pressed={kind === 'note'}
+                    onClick={() => setKind('note')}
+                  >
+                    {t('comments.kindNote')}
+                  </button>
+                </div>
                 {!canModerate && (
                   <input
                     type="text"
@@ -237,7 +263,7 @@ export function StepComments(props: StepCommentsProps) {
                 <textarea
                   className="comment-box"
                   dir="auto"
-                  placeholder={t('comments.placeholder')}
+                  placeholder={kind === 'issue' ? t('comments.placeholderIssue') : t('comments.placeholder')}
                   value={draft}
                   rows={2}
                   maxLength={2000}

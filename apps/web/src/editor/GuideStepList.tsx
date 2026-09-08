@@ -1,0 +1,116 @@
+import { Fragment } from 'react'
+import type { GuideDto, StepDto } from '@dalili/shared'
+import { StepCard, type ZoomCommand } from '../components/StepCard'
+import { InsertStep, type InsertKind } from '../components/InsertStep'
+import { isPicked, type Selection } from '../lib/selection'
+import type { EditorTool } from './tools'
+import type { MarkColor, Rect } from '@dalili/core'
+import { t } from '../i18n'
+
+/**
+ * BLK-01/CAP-17: حلقة خطوات الدليل في المحرر — استُخرجت من `EditorPage`
+ * (قانون الحجم §5.7). السلوك منقول كما هو بلا تغيير.
+ */
+export function GuideStepList(p: {
+  guide: GuideDto
+  guideId?: string
+  nums: (number | null)[]
+  editMode: boolean
+  appending: boolean
+  tool: EditorTool
+  markColor: MarkColor
+  zoomCmd: ZoomCommand | null
+  sel: Selection
+  dragFrom: number | null
+  activeMark: string | null
+  onInsert: (kind: InsertKind, at: number) => void
+  onVoiceTranscribed: () => void
+  onBlurApplied: (i: number, rect: Rect, size: { w: number; h: number }) => void
+  onAttachShot: (i: number, file: File) => void
+  updateStep: (i: number, patch: Partial<StepDto>) => void
+  moveStep: (i: number, dir: -1 | 1) => void
+  removeStep: (i: number) => void
+  duplicateStep: (i: number) => void
+  setMark: (i: number, rect: Rect) => void
+  setActiveMark: (id: string | null) => void
+  pickStep: (id: string, range: boolean) => void
+  moveStepTo: (from: number, to: number) => void
+  setDragFrom: (i: number | null) => void
+}) {
+  const {
+    guide, guideId: id, nums, editMode, appending, tool, markColor, zoomCmd, sel, dragFrom, activeMark,
+    onInsert: insertBlock, onVoiceTranscribed, onBlurApplied, onAttachShot: attachShot,
+    updateStep, moveStep, removeStep, duplicateStep, setMark, setActiveMark, pickStep, moveStepTo, setDragFrom,
+  } = p
+  return (
+    <>
+        {guide.steps.map((s, i) => (
+          <Fragment key={s.id}>
+            {/* CAP-17: موضع إدراج فوق كل شريحة — في وضع التعديل فقط، يحمل موضعه الصريح */}
+            {editMode && (
+              <InsertStep
+                label={t('editor.insertBefore', { no: i + 1 })}
+                insertAt={i}
+                onInsert={insertBlock}
+                busy={appending}
+              />
+            )}
+            <div id={`step-${s.id}`} className="step-block">
+              <StepCard
+                index={i}
+                step={s}
+                guideId={id}
+                onVoiceTranscribed={onVoiceTranscribed}
+                onBlurApplied={onBlurApplied}
+                displayNo={nums[i] ?? null}
+                onAttachShot={(file) => void attachShot(i, file)}
+                canUp={i > 0}
+                canDown={i < guide.steps.length - 1}
+                editing={editMode}
+                tool={tool}
+                markColor={markColor}
+                zoomCmd={zoomCmd}
+                onChange={(patch) => updateStep(i, patch)}
+                onMove={(dir) => moveStep(i, dir)}
+                onRemove={() => removeStep(i)}
+                onDuplicate={() => duplicateStep(i)}
+                onMoveMark={(rect) => setMark(i, rect)}
+                markActive={activeMark === s.id}
+                onMarkActivate={(on) => setActiveMark(on ? s.id : null)}
+                picked={isPicked(sel, s.id)}
+                onPick={(e) => pickStep(s.id, e.shiftKey)}
+                dragging={dragFrom === i}
+                onDragStart={(e) => {
+                  setDragFrom(i)
+                  // فَيرفُكس لا يبدأ سحبًا أصلًا ما لم يحمل `dataTransfer` بيانات —
+                  // الفهرس نصًّا يكفي، ومصدر الحقيقة يبقى `dragFrom` في الحالة.
+                  e.dataTransfer.effectAllowed = 'move'
+                  e.dataTransfer.setData('text/plain', String(i))
+                }}
+                onDragOver={(e) => {
+                  // منع الافتراضي شرط قبول الإفلات في HTML5 — بدونه لا يقع إفلات أصلًا
+                  if (dragFrom === null) return
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = 'move'
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (dragFrom !== null && dragFrom !== i) moveStepTo(dragFrom, i)
+                  setDragFrom(null)
+                }}
+                onDragEnd={() => setDragFrom(null)}
+              />
+            </div>
+          </Fragment>
+        ))}
+        {editMode && (
+          <InsertStep
+            label={guide.steps.length ? t('editor.insertAtEnd') : t('editor.addStepsShort')}
+            insertAt={guide.steps.length}
+            onInsert={insertBlock}
+            busy={appending}
+          />
+        )}
+    </>
+  )
+}

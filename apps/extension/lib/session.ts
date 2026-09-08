@@ -77,6 +77,54 @@ export function shouldReplacePrev(prev: StoredStep | undefined, ev: CaptureEvent
 }
 
 /**
+ * نافذة طيّ التفاعل الواحد في الخلفية — حزام ثانٍ خلف نافذة الإيماءة في سكربت
+ * المحتوى. قِيست الفوارق الحية بين أحداث الإيماءة الواحدة بـ١-٦٣مث؛ ٧٠٠مث سقفٌ
+ * كريم يحتضن مهلة الاستقرار (١٦٠مث) وتأخّر الرسائل، ودونه بكثير أي نقرتين
+ * متعمّدتين من إنسان.
+ */
+export const GESTURE_FOLD_WINDOW_MS = 700
+
+/** أنواع أحداث القيمة التي تمثّل نفس تفاعل النقرة (لا الكتابة — انظر فخ 45) */
+const FOLDABLE_VALUE_KINDS = new Set<CaptureEvent['kind']>(['toggle', 'select'])
+
+/** قرار تخزين الحدث الوارد أمام الخطوة السابقة */
+export type FoldDecision = 'append' | 'replace' | 'drop'
+
+function sameAnchor(a: CaptureEvent, b: CaptureEvent): boolean {
+  const x = a.target.anchor
+  const y = b.target.anchor
+  if (!x || !y) return false
+  return JSON.stringify(x) === JSON.stringify(y)
+}
+
+function sameRect(a: CaptureEvent, b: CaptureEvent): boolean {
+  if (!a.rect || !b.rect) return false
+  return a.rect.x === b.rect.x && a.rect.y === b.rect.y && a.rect.w === b.rect.w && a.rect.h === b.rect.h
+}
+
+/**
+ * علة «الخطوة تُلتقط مرتين أو ثلاثًا» (بلاغ المالك 2026-09-06): المتصفح يرسل
+ * لنقرة تبديلٍ واحدة حتى ثلاثة أحداث خلال مليّثانيات (click على الـlabel، click
+ * مُوجَّهًا على الحقل، ثم change). العلاج الجذري في سكربت المحتوى؛ وهذه الشبكة
+ * تلتقط ما ينفلت منه (موت العامل بين حدثين، أو حدثان من إطارين).
+ *
+ * القاعدة ضيّقة عمدًا: **نقرة + حدث قيمة** على العنصر نفسه (مرساةً أو مستطيلًا)
+ * وعلى نفس الرابط وخلال النافذة. نقرتان متطابقتان لا تُدمجان أبدًا — تكرار النقر
+ * فعل مشروع لا يجوز ابتلاعه. والكتابة لا تُطوى في نقرة (فخ 45).
+ */
+export function foldWithPrev(prev: StoredStep | undefined, ev: CaptureEvent): FoldDecision {
+  if (!prev) return 'append'
+  const a = prev.ev
+  if (a.url !== ev.url) return 'append'
+  if (Math.abs(ev.ts - a.ts) > GESTURE_FOLD_WINDOW_MS) return 'append'
+  if (!sameAnchor(a, ev) && !sameRect(a, ev)) return 'append'
+  // النقرة الخام تُستبدل بحدث القيمة الأغنى معنًى، وتُهمل إن سبقها هو
+  if (a.kind === 'click' && FOLDABLE_VALUE_KINDS.has(ev.kind)) return 'replace'
+  if (FOLDABLE_VALUE_KINDS.has(a.kind) && ev.kind === 'click') return 'drop'
+  return 'append'
+}
+
+/**
  * بوابة خطوة التنقل: تُقبل فقط من تبويب مرئي وبرابط لم يُبَث من قبل.
  * بدء الالتقاط يبث الحالة إلى كل التبويبات المفتوحة — بلا البوابة يرسل كل
  * تبويب خفي خطوة تنقل لحظة البدء، فيقفز العداد بعدد التبويبات ويبدأ الدليل

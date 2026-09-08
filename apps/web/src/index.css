@@ -47,6 +47,10 @@ body {
   margin-inline: auto;
   padding: var(--sp-6) var(--sp-5) 72px;
 }
+/* الكرّاسة العارضة أوسع: الفهرس (٢٠٠) يجاور عمود قراءةٍ بعرض الدليل (٧٨٤) دون اقتطاع */
+.viewer-page.booklet-page {
+  max-width: 1048px;
+}
 
 /* — أدوات تخطيط (UX-01: لا نمط خام داخل مكوّن) — */
 .page-narrow {
@@ -137,54 +141,100 @@ body {
   justify-content: space-between;
   align-items: flex-start;
 }
-/* LIB-05: رقاقة تحديد البطاقة وشريط العمليات الجماعية */
+/* LIB-05: زر تحديد البطاقة — مربع حديث 18px بحواف ناعمة ومتناسق مع .step-pick لتجربة موحدة */
 .pick {
   flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--r-pill);
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
   border: 1.5px solid var(--line-strong);
   background: var(--card);
   color: transparent;
   cursor: pointer;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
   line-height: 1;
   padding: 0;
   transition: border-color var(--t-fast), background-color var(--t-fast), color var(--t-fast);
 }
 .pick:hover {
   border-color: var(--brand);
-  color: var(--brand);
 }
 .pick.on {
   border-color: var(--brand);
   background: var(--brand);
-  color: var(--brand-ink);
+  color: var(--brand-ink, #ffffff);
 }
 .guide-card.picked {
   outline: 2px solid var(--brand);
   outline-offset: 1px;
 }
+/* شريط العمليات الجماعية — Floating Action Dock عائم أسفل الشاشة */
 .bulk-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  flex-wrap: wrap;
-  background: var(--brand-soft);
-  border: 1px solid var(--brand);
-  border-radius: var(--r-md);
-  padding: var(--sp-2) var(--sp-3);
-  margin-bottom: var(--sp-4);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: min(94vw, 820px);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--r-pill, 9999px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), 0 4px 10px rgba(0, 0, 0, 0.06);
+  padding: 8px 16px;
+  margin: 0;
+  animation: bulkBarSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+.bulk-bar::-webkit-scrollbar {
+  display: none;
+}
+
+[data-theme="dark"] .bulk-bar {
+  background: rgba(28, 28, 30, 0.94);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
 .bulk-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-radius: var(--r-pill, 9999px);
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--brand-dark);
-  padding-inline-end: var(--sp-2);
+  white-space: nowrap;
 }
 .lib-move {
   width: auto;
-  padding: 3px 8px;
+  padding: 5px 12px;
   font-size: 0.85rem;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.15));
+  background: var(--surface, #ffffff);
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+}
+
+[data-theme="dark"] .lib-move {
+  background: rgba(44, 44, 46, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
 }
 .tag-chip {
   border-style: dashed;
@@ -201,62 +251,154 @@ body {
 /* CAP-17: مواضع إدراج «+» بين الشرائح — مرئية دائمًا (لا تُخفى حتى التحويم) */
 .insert-step {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 10px;
   position: relative;
 }
-/* BLK-01: منبثقة أنواع الكتل تحت زر «+» — متوسّطة، تعلو المحتوى */
+/* سطر الإدراج: خطّان رفيعان يكتنفان الزرّ فيبدو موضع إضافة مقصودًا لا زرًّا عائمًا */
+.insert-step::before,
+.insert-step::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  transition: background-color var(--t-fast);
+}
+.insert-step:hover::before,
+.insert-step:hover::after {
+  background: var(--brand-soft);
+}
+/* BLK-01: منبثقة أنواع الكتل تحت زر «+» — متوسّطة، تعلو المحتوى.
+   طلب المالك 2026-09-07: بطاقات مشبَّكة برمز فوق كل اسم بدل سطر أسماء متلاصقة. */
 .insert-menu {
   position: absolute;
   z-index: 20;
   top: 100%;
   inset-inline-start: 50%;
   transform: translateX(50%);
-  margin-top: 4px;
-  display: flex;
-  gap: 4px;
-  padding: 6px;
+  margin-top: 6px;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px -14px rgba(16, 32, 50, 0.24), 0 2px 6px -3px rgba(16, 32, 50, 0.12);
+}
+/* ثمانية كتل في صفّين متساويين، وخمسة في ٣+٢ — لا صفّ يتيم */
+.insert-menu-booklet {
+  grid-template-columns: repeat(3, 78px);
+}
+.insert-menu-guide {
+  grid-template-columns: repeat(3, 78px);
 }
 .insert-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
   font: inherit;
-  font-size: 0.85rem;
-  padding: 6px 10px;
-  border: 1px solid transparent;
+  font-size: 0.75rem;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
   border-radius: var(--r-btn);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
+  text-align: center;
+  transition: color var(--t-fast), border-color var(--t-fast), background-color var(--t-fast);
+}
+.insert-menu-glyph {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-btn);
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 1rem;
+  line-height: 1;
+}
+.insert-menu-label {
   white-space: nowrap;
 }
+/* شعار مرمَّز بلون نوع الكتلة — تمييز فوري دون تباعد (الأنواع الأخرى تبقى بلون العلامة) */
+.insert-menu-item.block-tip .insert-menu-glyph {
+  background: #dbeefb;
+  color: #075985;
+}
+.insert-menu-item.block-alert .insert-menu-glyph {
+  background: #f7e7d3;
+  color: #8a4d12;
+}
+.insert-menu-item.block-header .insert-menu-glyph {
+  background: var(--paper);
+  color: var(--ink);
+}
+.insert-menu-item.block-capture .insert-menu-glyph {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
 .insert-menu-item:hover {
-  background: var(--brand-soft);
-  border-color: var(--brand);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  border-color: var(--line-strong);
+}
+.insert-menu-item:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+@media (max-width: 560px) {
+  .insert-menu-booklet,
+  .insert-menu-guide {
+    grid-template-columns: repeat(3, 72px);
+  }
 }
 .insert-step-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-1) var(--sp-4);
-  border: 1px dashed var(--line-strong);
+  gap: var(--sp-2);
+  padding: 8px 16px;
+  min-height: 40px;
+  border: 1px solid var(--line);
   border-radius: var(--r-pill);
-  background: transparent;
+  background: var(--card);
   color: var(--muted);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: color var(--t-fast), border-color var(--t-fast), background-color var(--t-fast);
+  transition: color var(--t-fast), border-color var(--t-fast), background-color var(--t-fast), box-shadow var(--t-fast);
 }
-.insert-step-btn:hover:not(:disabled) {
+/* رمز + في قرص ملوّن يدور ربع دورة عند التحويم — إشارة «سيُفتح» واضحة */
+.insert-step-btn > span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform var(--t-base);
+}
+.insert-step:hover .insert-step-btn:not(:disabled),
+.insert-step-btn:focus-visible {
   color: var(--brand);
   border-color: var(--brand);
-  border-style: solid;
   background: var(--brand-soft);
+  box-shadow: 0 2px 10px -4px color-mix(in srgb, var(--brand) 40%, transparent);
+}
+.insert-step:hover .insert-step-btn:not(:disabled) > span,
+.insert-step-btn:focus-visible > span {
+  transform: rotate(90deg);
+}
+.insert-step-btn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
 .insert-step-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: default;
 }
 .push-end {
@@ -437,14 +579,32 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--sp-4);
+  padding-bottom: 96px;
+}
+/* صفّ يحمل شريط التحديد على اليمين (أول عنصر في RTL) + البطاقة تملأ الباقي — يعكس step-card-row لتجربة موحدة */
+.guide-card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+.guide-card-row > .guide-card {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* الشريط الجانبي: مربّع التحديد عموديًا، محاذٍ لرأس البطاقة */
+.guide-rail {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-top: var(--sp-3);
 }
 .guide-card {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
   transition: border-color var(--t-base);
-}
-.guide-card {
   position: relative;
 }
 .guide-card:hover {
@@ -647,16 +807,29 @@ a.chip {
   .editor-page {
     padding-inline-start: 84px;
   }
+  /* الكرّاسة مستند نصّي بلا لقطات — لا عمود أدوات، فلا فسحة غير متماثلة تزيح
+     المحتوى يسارًا؛ يعود المستند لعرض الصفحة الكامل فيتوسّط (طلب المالك 2026-09-08) */
+  .editor-page.is-booklet {
+    padding-inline-start: var(--sp-5);
+  }
+}
+/* الكرّاسة في المحرّر أوسع كالعارض — عمود قراءةٍ بعرض الدليل يجاوره الفهرس */
+.editor-page.is-booklet {
+  max-width: 1048px;
+}
+/* عمود الأدوات (قص/طمس/ريشة/منظار) لا معنى له في الكرّاسة — يُخفى فلا يزاحم */
+.editor-page.is-booklet .tool-rail {
+  display: none;
 }
 /* بطاقة مضغوطة: حشو أقل وفجوات أضيق كي تُرى البطاقة كاملة على الشاشة */
-/* طلب المالك 2026-09-01: صفّ يحمل البطاقة المؤطَّرة + شريطًا جانبيًا خارجها.
-   الشريط آخر عنصر في DOM فيقع على اليسار في RTL (طرف الصف)، والبطاقة تملأ الباقي. */
+/* صفّ يحمل شريط التحديد والمقبض على اليمين (أول عنصر في RTL) + البطاقة المؤطَّرة تملأ الباقي */
 .step-card-row {
   display: flex;
   align-items: flex-start;
   gap: var(--sp-2);
 }
-.step-card-row > .step-card {
+.step-card-row > .step-card,
+.step-card-row > .block-card {
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -683,13 +856,45 @@ a.chip {
   gap: var(--sp-1);
   padding: var(--sp-3) var(--sp-4);
 }
+/* BLK-01 منقّح: تنبيه/تحذير كـcallout — سطح ملوّن خفيف، حافّة بادئة، وشعار في قرص */
+.block-card.tip,
+.block-card.alert {
+  position: relative;
+  padding-inline-start: calc(var(--sp-4) + 34px);
+}
+.block-card.tip::before,
+.block-card.alert::before {
+  position: absolute;
+  inset-inline-start: var(--sp-4);
+  top: var(--sp-3);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+}
 .block-card.tip {
-  background: #e0f2fe;
-  border-color: #7dd3fc;
+  background: #f3fafd;
+  border-color: #d7ecf6;
+  border-inline-start: 3px solid #0284c7;
+}
+.block-card.tip::before {
+  content: '✦';
+  background: #dbeefb;
+  color: #075985;
 }
 .block-card.alert {
-  background: #ffedd5;
-  border-color: #fdba74;
+  background: #fdf7f0;
+  border-color: #f0e2d0;
+  border-inline-start: 3px solid #c97b2d;
+}
+.block-card.alert::before {
+  content: '!';
+  background: #f7e7d3;
+  color: #8a4d12;
 }
 .block-card.header {
   background: transparent;
@@ -732,12 +937,14 @@ a.chip {
   margin: var(--sp-1) 0 0;
 }
 .viewer-callout.tip {
-  background: #e0f2fe;
-  border-color: #7dd3fc;
+  background: #f3fafd;
+  border-color: #d7ecf6;
+  border-inline-start: 3px solid #0284c7;
 }
 .viewer-callout.alert {
-  background: #ffedd5;
-  border-color: #fdba74;
+  background: #fdf7f0;
+  border-color: #f0e2d0;
+  border-inline-start: 3px solid #c97b2d;
 }
 .viewer-section {
   margin: var(--sp-6) 0 0;
@@ -795,16 +1002,18 @@ input.step-title-input {
   margin-inline-start: auto;
 }
 input.step-title-input {
-  border-color: transparent;
-  background: transparent;
-  padding-inline: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  background: var(--card);
+  padding: 8px 12px;
 }
 input.step-title-input:hover {
-  border-color: var(--line);
+  border-color: var(--line-strong);
 }
 input.step-title-input:focus {
+  outline: none;
   border-color: var(--brand);
-  background: var(--card);
+  box-shadow: 0 0 0 3px var(--brand-soft);
 }
 /* S6: أدوات الخطوة ظاهرة دائمًا في وضع التعديل — الحذف لا يُخبَّأ خلف تحويم */
 .step-tools {
@@ -838,11 +1047,68 @@ input.step-title-input:focus {
 .step-card.dragging {
   opacity: 0.5;
 }
-/* الشريط الجماعي يلتصق أعلى الشاشة فلا يضيع في دليل طويل */
+/* الشريط الجماعي العائم أسفل الشاشة — Floating Action Dock يواكب موضع التمرير ويبقى دائماً في متناول اليد والرؤية */
 .steps-bulk-bar {
-  position: sticky;
-  top: var(--sp-2);
-  z-index: 5;
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: min(94vw, 820px);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--r-pill, 9999px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), 0 4px 10px rgba(0, 0, 0, 0.06);
+  padding: 8px 16px;
+  margin: 0;
+  animation: bulkBarSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.steps-bulk-bar::-webkit-scrollbar {
+  display: none;
+}
+
+[data-theme="dark"] .steps-bulk-bar {
+  background: rgba(28, 28, 30, 0.94);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes bulkBarSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.steps-bulk-bar .bulk-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-radius: var(--r-pill, 9999px);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* تباعد سفلي لقائمة الخطوات في وضع التعديل لمنع حجب الشريط العائم للبطاقة الأخيرة */
+.editor-step-stack {
+  padding-bottom: 96px;
 }
 /* الإجراء الثانوي (تكرار) وحده هو الذي ينتظر المرور أو التركيز */
 .icon-btn.on-hover {
@@ -1015,18 +1281,20 @@ input.step-title-input:focus {
 
 /* ملاحظة الخطوة — هادئة بلا إطار حتى التركيز */
 textarea.step-note {
-  border-color: transparent;
-  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  background: var(--card);
   resize: vertical;
   min-height: 40px;
-  transition: border-color var(--t-fast), background-color var(--t-fast);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 textarea.step-note:hover {
-  border-color: var(--line);
+  border-color: var(--line-strong);
 }
 textarea.step-note:focus {
+  outline: none;
   border-color: var(--brand);
-  background: var(--card);
+  box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
 /* تفاصيل الخطوة/الوسوم المطويّة — كتلة صامتة تُفتح عند الحاجة */
@@ -1081,7 +1349,8 @@ textarea.step-note:focus {
 .editor-page-wrapper,
 .viewer-layout {
   min-height: 100vh;
-  background: var(--paper);
+  /* قاعدة بيضاء نظيفة كإضافة كروم — الرمل همسة لا سطح قاتم (طلب المالك 2026-09-07) */
+  background: var(--paper-raised);
 }
 
 /* شريط تحكم كامل العرض يمتد لأركان الشاشة */
@@ -2114,13 +2383,30 @@ textarea.guide-desc-input:focus {
   }
 }
 
-/* — GM-05: تعليقات الخطوات — الضيف يسأل من العارض، والمالك يردّ من المحرر — */
-.step-comments {
-  margin-top: var(--sp-1);
+/* — GM-05 تطوّر: تعليقات الدليل — لوحة واحدة أعلى الشاشة، نوعان (مشكلة/تعليق) — */
+.step-comments,
+.guide-comments {
+  margin-top: var(--sp-2);
 }
 .comment-toggle.has-comments {
   color: var(--brand);
   border-color: var(--brand);
+}
+/* مشكلات مفتوحة على الدليل — إشارة حمراء بارزة تحرّك المُنشئ للمراجعة */
+.comment-toggle.has-issues {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.comment-toggle .comment-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4em;
+  padding: 0 0.4em;
+  border-radius: 999px;
+  background: var(--line);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 .comments-panel {
   display: flex;
@@ -2179,10 +2465,35 @@ textarea.guide-desc-input:focus {
   color: var(--ok);
   border-color: var(--ok);
 }
+/* معلَم «مشكلة» الأحمر — على أصل التبليغ وعلى عدّاد المشكلات المفتوحة */
+.issue-chip {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  font-weight: 700;
+}
+.comment-item.is-issue {
+  border-inline-start: 3px solid var(--danger);
+  padding-inline-start: var(--sp-3);
+}
 .comment-composer {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
+}
+/* مبدّل نوع المشاركة: مشكلة أو تعليق */
+.comment-kind-toggle {
+  display: flex;
+  gap: var(--sp-1);
+}
+.comment-kind-toggle .btn.active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+.comment-kind-toggle .btn.active.issue {
+  background: var(--danger);
+  border-color: var(--danger);
 }
 .comment-composer .comment-name {
   max-width: 260px;
@@ -2204,6 +2515,13 @@ textarea.guide-desc-input:focus {
   border-color: var(--warn-ink);
   background: var(--warn-bg);
   font-weight: 600;
+}
+/* مشكلات مفتوحة تتقدّم على النقاش العام — أحمر لا برتقالي */
+.chip.comment-chip.has-issues {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  font-weight: 700;
 }
 
 /* ——— المرحلة ب: قشرة المساحة — الشريط الجانبي RTL + الهوم (WS-06) ——— */
@@ -2235,6 +2553,16 @@ textarea.guide-desc-input:focus {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+/* هوية البراند: درج المسار بجانب الاسم — يرث لون الثيم من currentColor */
+.side-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.side-brand .brand-mark {
+  color: var(--brand);
+  flex-shrink: 0;
 }
 .side-brand .brand {
   font-weight: 700;
@@ -2586,6 +2914,42 @@ textarea.guide-desc-input:focus {
 .card-desc {
   font-size: 12.5px;
   line-height: 1.6;
+}
+/* خاصية الثيم (2026-09-06): خياران — المحدد بإطار حبري وسمة aria-pressed */
+.theme-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--t-fast);
+}
+.theme-option:hover {
+  border-color: var(--line-strong);
+}
+.theme-option.is-active {
+  border: 2px solid var(--brand);
+  padding: calc(var(--sp-3) - 1px) calc(var(--sp-4) - 1px);
+}
+.theme-option b {
+  font-size: 13.5px;
+}
+.theme-option small {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
 }
 .ws-card {
   background: var(--brand-soft);
@@ -2995,6 +3359,7 @@ textarea.guide-desc-input:focus {
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   overflow-x: auto;
+  margin-bottom: 96px;
 }
 .guide-table {
   width: 100%;
@@ -3165,4 +3530,749 @@ textarea.guide-desc-input:focus {
 .step-voice-err {
   color: var(--warn-ink);
   font-weight: 600;
+}
+
+/* ═══ BKL-01: الكرّاسة ═══ */
+
+/* كتلة النص المنسّق وشريطها */
+.rich-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  position: relative;
+}
+.rich-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--paper-raised);
+  width: fit-content;
+}
+.rich-toolbar button {
+  min-width: 30px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: background-color var(--t-fast), color var(--t-fast);
+}
+.rich-toolbar button:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.rich-toolbar button[aria-pressed='true'] {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+.rich-toolbar-sep {
+  width: 1px;
+  height: 16px;
+  margin-inline: 2px;
+  background: var(--line);
+}
+.rich-area {
+  min-height: 2.6rem;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--card);
+  line-height: 2;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.rich-area:hover {
+  border-color: var(--line-strong);
+}
+.rich-area:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+/* النصّ الإرشادي — يظهر ما دامت الكتلة فارغة ولا يُنسخ ولا يُقرأ كمحتوى */
+.rich-area.is-empty::before {
+  content: attr(data-ph);
+  color: var(--muted);
+  pointer-events: none;
+  position: absolute;
+  opacity: 0.85;
+}
+.rich-area p {
+  margin: 0 0 0.75em;
+}
+.rich-area p:last-child {
+  margin-bottom: 0;
+}
+.rich-area h2,
+.rich-area h3 {
+  margin: var(--sp-3) 0 var(--sp-1);
+  line-height: 1.5;
+}
+.rich-area ul,
+.rich-area ol {
+  margin: var(--sp-2) 0;
+  padding-inline-start: 1.4rem;
+}
+
+/* حقول الإدخال الحديثة — مشتركة بين كتل الكرّاسة (طلب المالك 2026-09-07) */
+.field {
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.field::placeholder {
+  color: var(--muted);
+  opacity: 0.75;
+}
+.field:hover {
+  border-color: var(--line-strong);
+}
+.field:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+/* ═══ BKL-07: التنبيه/التحذير جملةً بشعار ═══ */
+.callout {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--brand);
+  border-radius: var(--r-md);
+  background: var(--card);
+}
+.callout-glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 2px;
+  border-radius: var(--r-pill);
+  font-size: 0.95rem;
+  line-height: 1;
+  font-weight: 700;
+}
+.callout-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.callout-body .viewer-rich p:last-child {
+  margin-bottom: 0;
+}
+.callout-tip {
+  border-inline-start-color: #0284c7;
+  background: #f2f9fd;
+}
+.callout-tip .callout-glyph {
+  background: #dbeefb;
+  color: #075985;
+}
+.callout-alert {
+  border-inline-start-color: var(--amber);
+  background: #fdf6ee;
+}
+.callout-alert .callout-glyph {
+  background: #f7e7d3;
+  color: #8a4d12;
+}
+
+/* ═══ BKL-07: صورة داخل الكتل ═══ */
+.block-image {
+  margin: 0;
+  position: relative;
+}
+.block-image img {
+  border-radius: var(--r-md);
+}
+.block-image-remove {
+  position: absolute;
+  inset-block-start: var(--sp-2);
+  inset-inline-end: var(--sp-2);
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.block-image-remove:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.block-image-add {
+  display: inline-flex;
+  gap: var(--sp-2);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast), background-color var(--t-fast);
+}
+.block-image-add:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.block-image-add-sm {
+  align-self: flex-start;
+  padding: 6px var(--sp-3);
+  font-size: 0.82rem;
+}
+.block-image-add input[type='file'] {
+  display: none;
+}
+.text-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* ═══ BKL-06: الفيديو — واجهة أولًا ثم مشغّل ═══ */
+.video-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--card);
+}
+.video-card-bad {
+  border-style: dashed;
+  color: var(--muted);
+}
+.video-card-bad p {
+  margin: 0;
+}
+.video-play {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.video-play-glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: 1rem;
+  transition: transform var(--t-fast), background-color var(--t-fast);
+}
+.video-play:hover .video-play-glyph {
+  background: var(--brand-dark);
+  transform: scale(1.05);
+}
+.video-play-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.video-title {
+  font-weight: 600;
+}
+.video-hint {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.video-open {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: #000;
+}
+.video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.video-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* بطاقة الدليل المضمّن */
+.embed-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: var(--sp-3);
+}
+.embed-card-missing {
+  border-style: dashed;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.embed-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.embed-thumb {
+  width: 56px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  flex: none;
+}
+.embed-thumb-letter {
+  display: grid;
+  place-items: center;
+  background: var(--bg-soft, #f1f1ef);
+  font-weight: 700;
+}
+.embed-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.embed-title {
+  font-weight: 600;
+}
+.embed-count {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.embed-actions {
+  display: flex;
+  gap: var(--sp-1);
+  align-items: center;
+  flex: none;
+}
+.embed-body {
+  margin-top: var(--sp-3);
+  border-top: 1px solid var(--line);
+  padding-top: var(--sp-3);
+}
+
+/* منتقي الدليل */
+.embed-picker {
+  position: fixed;
+  inset-block-start: 12vh;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 92vw);
+  max-height: 70vh;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 18%);
+  padding: var(--sp-4);
+  z-index: 60;
+}
+.embed-picker-search {
+  width: 100%;
+  padding: var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-block: var(--sp-2);
+}
+.embed-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.embed-picker-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: start;
+}
+.embed-picker-item:hover {
+  background: var(--bg-soft, #f1f1ef);
+}
+.embed-picker-error {
+  color: var(--danger, #b42318);
+}
+
+/* ═══ BKL-08: الكرّاسة مستندًا — عمود قراءة وفهرس يتتبّع (طلب المالك 2026-09-07) ═══ */
+/* عمود القراءة يملأ (1fr) لا رقم ثابت يفيض الصندوق فينضغط — والمستند يتوسّط
+   بـ margin تلقائي لا بـ justify-content (طلب المالك 2026-09-08: كان يفيض 960px
+   في صندوق ≈940px فيتقلّص عمود القراءة ويبدو المحتوى مضغوطًا). */
+.booklet-doc {
+  display: grid;
+  /* عمود القراءة = ٧٨٤ عرض الدليل العادي نفسه (طلب المالك 2026-09-08: التجربة
+     تطابق تصفّح الدليل)؛ الفهرس ٢٠٠ يجاوره لا يقتطع منه، والصفحة تتّسع لهما.
+     ٢٠٠ + ٢٤ + ٧٨٤ = ١٠٠٨ */
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: var(--sp-6);
+  align-items: start;
+  max-width: 1008px;
+  margin-inline: auto;
+}
+/* في وضع التحرير لا فهرس — العمود وحده بعرض الدليل، متوسّطًا */
+.booklet-doc.is-editing {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 784px;
+}
+.booklet-outline {
+  position: sticky;
+  top: var(--sp-6);
+  padding-inline-end: var(--sp-4);
+  border-inline-end: 1px solid var(--line);
+}
+.booklet-outline-title {
+  margin: 0 0 var(--sp-2);
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+.booklet-outline ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.booklet-outline a {
+  display: block;
+  padding: 6px var(--sp-3);
+  border-radius: var(--r-btn);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  border-inline-start: 2px solid transparent;
+  transition: color var(--t-fast), background-color var(--t-fast), border-color var(--t-fast);
+}
+.booklet-outline a:hover {
+  color: var(--ink);
+  background: var(--brand-soft);
+}
+/* القسم الذي يقرأه القارئ الآن — يضيء فيعرف موضعه من الكرّاسة */
+.booklet-outline a.is-active {
+  color: var(--brand);
+  font-weight: 600;
+  border-inline-start-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+/* متن الكرّاسة — طباعة قراءة لا طباعة نموذج */
+.booklet-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  font-size: 1.05rem;
+  line-height: 2;
+}
+.booklet-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.booklet-block {
+  position: relative;
+}
+.booklet-header {
+  margin: var(--sp-6) 0 0;
+  font-size: 1.45rem;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+.booklet-body > :first-child .booklet-header {
+  margin-top: 0;
+}
+.booklet-divider {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin-block: var(--sp-5);
+}
+.booklet-header-input {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.booklet-link-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.booklet-link {
+  display: inline-block;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--card);
+  color: var(--brand);
+  text-decoration: none;
+}
+.booklet-link:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.booklet-empty {
+  color: var(--muted);
+  padding: var(--sp-12) var(--sp-5);
+  text-align: center;
+}
+.booklet-remove {
+  align-self: flex-start;
+  margin-top: var(--sp-1);
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.booklet-remove:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.viewer-rich {
+  line-height: 2;
+}
+.viewer-rich p {
+  margin: 0 0 0.8em;
+}
+.viewer-rich p:last-child {
+  margin-bottom: 0;
+}
+.viewer-rich h2 {
+  font-size: 1.25rem;
+  margin: var(--sp-4) 0 var(--sp-2);
+}
+.viewer-rich h3 {
+  font-size: 1.1rem;
+  margin: var(--sp-3) 0 var(--sp-1);
+}
+.viewer-rich ul,
+.viewer-rich ol {
+  margin: var(--sp-2) 0;
+  padding-inline-start: 1.5rem;
+}
+.viewer-rich li {
+  margin-bottom: 0.3em;
+}
+.booklet-embed-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--line);
+}
+.booklet-embed-step h3 {
+  font-size: 0.98rem;
+  margin: 0 0 var(--sp-2);
+}
+
+/* قائمة الفحص قبل المشاركة */
+.share-check-body {
+  color: var(--muted);
+  line-height: 1.8;
+}
+.share-check-list {
+  margin: var(--sp-2) 0;
+  padding-inline-start: 1.4rem;
+}
+
+/* شارة نوع المستند في المكتبة */
+.chip.kind-chip {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+/* دون اتّساع الفهرس جانبًا: عمود واحد بعرض الدليل (٧٨٤) والفهرس شريط علوي */
+@media (max-width: 1024px) {
+  .booklet-doc,
+  .booklet-doc.is-editing {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-4);
+    max-width: 784px;
+  }
+  .booklet-outline {
+    position: static;
+    padding-inline-end: 0;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: var(--sp-3);
+  }
+  .booklet-outline ul {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+/* — VER-02: قائمة «المزيد» في شريط المحرر — */
+.more-menu-wrap { position: relative; display: inline-flex; }
+.more-menu-root { position: relative; display: inline-flex; }
+.more-menu-btn { padding: var(--sp-2) var(--sp-3); }
+.more-menu-popover {
+  position: absolute;
+  top: calc(100% + var(--sp-1));
+  inset-inline-end: 0;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-1);
+  min-width: 220px;
+  z-index: 40;
+}
+.more-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  background: transparent;
+  border: 0;
+  text-align: start;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background var(--t-fast);
+}
+.more-menu-item:hover { background: var(--brand-soft); }
+.more-menu-item.is-disabled { color: var(--muted); cursor: not-allowed; }
+.more-menu-item.is-disabled:hover { background: transparent; }
+.more-menu-item.danger { color: var(--danger); }
+.more-menu-item.danger:hover { background: var(--danger-bg); }
+.more-menu-item-icon { display: inline-flex; align-items: center; }
+
+/* — VER-02: حوار تأكيد داخل الصفحة — */
+.confirm-scrim {
+  position: fixed; inset: 0;
+  background: rgba(28, 43, 51, 0.35);
+  display: grid; place-items: center;
+  z-index: 60;
+}
+.confirm-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--sp-6);
+  max-width: 460px;
+  width: calc(100% - var(--sp-8));
+}
+.confirm-title { margin: 0 0 var(--sp-2); font-size: 1.05rem; }
+.confirm-body { margin: 0 0 var(--sp-4); color: var(--muted); }
+.confirm-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  margin-bottom: var(--sp-3);
+  font-size: .9rem;
+}
+.confirm-actions {
+  display: flex; gap: var(--sp-2);
+  justify-content: flex-end;
+}
+
+/* — VER-01: لوحة سجل الإصدارات — */
+.version-drawer {
+  position: absolute;
+  top: 100%;
+  inset-inline-end: 0;
+  margin-top: var(--sp-1);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  z-index: 40;
+  max-width: 340px;
+}
+.version-panel { padding: var(--sp-3); min-width: 280px; }
+.version-panel-title { font-size: .95rem; margin: 0 0 var(--sp-2); }
+.version-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-1); }
+.version-row {
+  display: block; width: 100%;
+  text-align: start;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: pointer;
+  font: inherit; color: inherit;
+  transition: background var(--t-fast);
+}
+.version-row:hover { background: var(--brand-soft); }
+.version-row:disabled { cursor: default; background: var(--brand-soft); }
+.version-row-main {
+  display: flex; align-items: center; gap: var(--sp-2);
+}
+.version-row-badge {
+  background: var(--brand-soft);
+  color: var(--brand);
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  font-size: .75rem;
+}
+.version-row-sub {
+  display: flex; gap: var(--sp-1);
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: .8rem;
+}
+.version-skel {
+  height: 90px;
+  background: linear-gradient(90deg, var(--skeleton), var(--skeleton-shine), var(--skeleton));
+  border-radius: var(--r-sm);
+}
+
+/* — VER-01: شريط عرض النسخة القديمة — */
+.version-view .editor-bar-center.version-banner {
+  color: var(--muted);
+  font-size: .9rem;
+  text-align: center;
+  flex: 1;
 }

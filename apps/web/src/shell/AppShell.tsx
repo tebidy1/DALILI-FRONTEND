@@ -13,6 +13,7 @@ import {
 } from '../ui/icons'
 import { t } from '../i18n'
 import { roleLabelAr } from '../lib/format'
+import { PathMark } from '../brand/PathMark'
 import { useOverview, OverviewProvider } from './OverviewContext'
 import { FoldersSection } from './FoldersSection'
 
@@ -64,7 +65,11 @@ function Sidebar() {
   return (
     <aside className="sidebar" aria-label={t('app.name')}>
       <div className="side-brand">
-        <span className="brand">{t('app.name')}</span>
+        {/* هوية البراند: درج المسار بجانب الاسم — يرث لون الثيم من currentColor */}
+        <div className="side-brand-row">
+          <PathMark size={22} />
+          <span className="brand">{t('app.name')}</span>
+        </div>
         {overview && <span className="ws-name">{overview.workspaceName || t('home.workspaceFallback')}</span>}
       </div>
 

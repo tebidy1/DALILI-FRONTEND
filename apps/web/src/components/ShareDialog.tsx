@@ -21,13 +21,18 @@ interface Props {
   onCopyRich: () => void
   copiedHtml: boolean
   onPrint: () => void
+  /**
+   * BKL-01: عناوين الأدلة المضمّنة في الكرّاسة. وجودها يوقف توليد الرابط
+   * تلقائيًا ويعرض قائمة فحص أولًا — لا تسريب صامت ولا حجب مفاجئ.
+   */
+  embedTitles?: string[]
 }
 
 /** كود التضمين من رمز المشاركة — مسار /embed/s/:token القائم */
 function embedCode(shareUrl: string, title: string): string {
   const token = shareUrl.split('/s/')[1] ?? ''
   const src = `${window.location.origin}/embed/s/${token}`
-  return `<iframe src="${src}" title="${title}" width="100%" height="640" style="border:1px solid #e7e3da;border-radius:12px" loading="lazy"></iframe>`
+  return `<iframe src="${src}" title="${title}" width="100%" height="640" style="border:1px solid #e3ddd2;border-radius:12px" loading="lazy"></iframe>`
 }
 
 /**
@@ -44,12 +49,16 @@ export function ShareDialog({
   onCopyRich,
   copiedHtml,
   onPrint,
+  embedTitles,
 }: Props) {
   const [tab, setTab] = useState<Tab>('link')
   const [copied, setCopied] = useState(false)
   const [copiedEmbed, setCopiedEmbed] = useState(false)
   const [showQr, setShowQr] = useState(false)
   const [creating, setCreating] = useState(false)
+  // القائمة تظهر مرة واحدة قبل أول توليد؛ الموافقة ترفعها للأبد في هذه الجلسة
+  const [checkPassed, setCheckPassed] = useState(false)
+  const needsCheck = !!embedTitles?.length && !share && !checkPassed
   const closeRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
@@ -58,7 +67,7 @@ export function ShareDialog({
 
   // إنشاء الرابط تلقائيًا عند الفتح إن لم يوجد — الخيارات جاهزة فورًا بلا نقرة ثانية
   useEffect(() => {
-    if (share) return
+    if (share || needsCheck) return
     let alive = true
     setCreating(true)
     Promise.resolve(onEnsureShare()).finally(() => {
@@ -67,8 +76,8 @@ export function ShareDialog({
     return () => {
       alive = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- مرة واحدة عند الفتح
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- مرة واحدة بعد اجتياز الفحص
+  }, [needsCheck])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -95,6 +104,41 @@ export function ShareDialog({
   }
 
   const url = share ? webShareUrl(share.shareUrl) : ''
+
+  // BKL-01: قائمة الفحص تسبق كل شيء — لا رابط يُولَّد قبل قرار واعٍ من المؤلف
+  if (needsCheck) {
+    return (
+      <div className="palette-backdrop" onClick={onClose}>
+        <div
+          className="palette share-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('booklet.shareCheckTitle')}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="dialog-head">
+            <h2>{t('booklet.shareCheckTitle')}</h2>
+          </div>
+          <p className="share-check-body">{t('booklet.shareCheckBody')}</p>
+          <ul className="share-check-list">
+            {embedTitles?.map((titleText, i) => (
+              <li key={`${titleText}-${i}`} dir="rtl">
+                <bdi>{titleText}</bdi>
+              </li>
+            ))}
+          </ul>
+          <div className="dialog-actions">
+            <button type="button" className="btn primary" onClick={() => setCheckPassed(true)}>
+              {t('booklet.shareCheckGo')}
+            </button>
+            <button type="button" className="btn" ref={closeRef} onClick={onClose}>
+              {t('booklet.shareCheckCancel')}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="palette-backdrop" onClick={onClose}>

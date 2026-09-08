@@ -21,6 +21,7 @@ const OVERVIEW: LibraryOverviewDto = {
   workspaceName: 'مساحة',
   myRole: 'admin',
   myEmail: 'owner@dalili.sa',
+  myTheme: 'brand',
   counts: { all: 1, mine: 1, published: 0, saved: 0 },
   sites: [],
 }
@@ -30,6 +31,7 @@ function guide(partial: Partial<GuideSummaryDto>): GuideSummaryDto {
     id: 'g1',
     title: 'دليل',
     stepCount: 3,
+    kind: 'guide' as const,
     starred: false,
     folderId: null,
     tags: [],
@@ -38,6 +40,7 @@ function guide(partial: Partial<GuideSummaryDto>): GuideSummaryDto {
     updatedAt: '2026-01-01T00:00:00Z',
     commentCount: 0,
     openCommentCount: 0,
+    openIssueCount: 0,
     visibility: 'private',
     site: '',
     bookmarked: false,
@@ -85,6 +88,15 @@ describe('شارة التعليقات على بطاقة الهوم', () => {
     const chip = screen.getByText(t('library.commentCount', { count: 2 })).closest('.comment-chip')
     expect(chip?.classList.contains('has-open')).toBe(true)
     expect(chip?.getAttribute('title')).toBe(t('library.commentOpenHint', { count: 1 }))
+  })
+
+  it('مشكلات مفتوحة: الشارة حمراء (has-issues) وتلميح المشكلة يتقدّم على النقاش', async () => {
+    await loadWith([guide({ id: 'g4', title: 'دليل به مشكلة', commentCount: 3, openCommentCount: 2, openIssueCount: 1 })])
+    await screen.findByText('دليل به مشكلة')
+    fireEvent.click(screen.getByLabelText(t('library.moreActions')))
+    const chip = screen.getByText(t('library.commentCount', { count: 3 })).closest('.comment-chip')
+    expect(chip?.classList.contains('has-issues')).toBe(true)
+    expect(chip?.getAttribute('title')).toBe(t('library.issueOpenHint', { count: 1 }))
   })
 
   it('دليل بلا تعليقات: لا شارة أصلًا — لا ضجيج أصفار', async () => {

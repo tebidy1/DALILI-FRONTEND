@@ -1,5 +1,6 @@
 import type { StoredPreShot, SessionMeta, StoredStep } from './protocol'
-import { CaptureThrottle, captureFailReason, guardUrl, MAX_STEPS, preShotShareable, preShotUsable, shouldDropConsequentNav, shouldMarkStep, shouldReplacePrev, CAPTURE_DEBOUNCE_MS } from './session'
+import { CaptureThrottle, captureFailReason, foldWithPrev, guardUrl, MAX_STEPS, preShotShareable, preShotUsable, shouldDropConsequentNav, shouldMarkStep, shouldReplacePrev, CAPTURE_DEBOUNCE_MS } from './session'
+import { usableRect } from './gesture'
 import { blurRegions, scaleRect } from './blurl'
 import { BLUR_FAIL_NOTICE } from './blurpick'
 import { renumberAfterDelete } from './steps-read'
@@ -42,7 +43,11 @@ export function createCaptureFlow(deps: CaptureFlowDeps) {
     // تنقّل تبع لتفاعل خلال نافذة الكبت → ليس خطوة: النقرة الموثّقة أعلاه كافية،
     // ولقطتها لا تحمل تحديدًا فتشوّه الدليل بشاشاتٍ لم يخترها المالك.
     if (shouldDropConsequentNav(prev, ev)) return
-    const replace = shouldReplacePrev(prev, ev)
+    // شبكة أمان «تفاعل واحد = خطوة واحدة» (بلاغ المالك 2026-09-06): نقرة التبديل
+    // الخام تُهمل إن سبقها حدث قيمتها، وتُستبدل به إن تلاها — فلا خطوتان لنقرة.
+    const fold = foldWithPrev(prev, ev)
+    if (fold === 'drop') return
+    const replace = fold === 'replace' || shouldReplacePrev(prev, ev)
     if (!replace && meta.stepCount >= MAX_STEPS) {
       if (!meta.limited) await deps.saveMeta({ limited: true })
       return
@@ -195,6 +200,10 @@ export function createCaptureFlow(deps: CaptureFlowDeps) {
       else if (sharePre) markSrc = ev.rect ? { rect: ev.rect, dpr: ev.dpr } : undefined
       else if (freshMark) markSrc = freshMark
       else if (ev.rect && !(await tabNavigatedAway(tab, ev.url))) markSrc = { rect: ev.rect, dpr: ev.dpr }
+      // (٤) وأيًّا كان المصدر: مستطيل ضامر ليس إطارًا. الحقل المخفيّ يقاس {-2,-2,2,2}
+      //     فكان يُخزَّن إطارًا ٢×٢ خارج اللقطة (١٢ حالة في قاعدة المالك) — والصدق
+      //     بلا إطار خير من إطارٍ على العدم.
+      if (markSrc && !usableRect(markSrc.rect)) markSrc = undefined
 
       if (ev.sensitive && markSrc) {
         try {

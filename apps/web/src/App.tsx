@@ -6,11 +6,13 @@ import { HomePage } from './home/HomePage'
 import { AppShell } from './shell/AppShell'
 import { SettingsPage } from './settings/SettingsPage'
 import { EditorPage } from './editor/EditorPage'
+import { VersionView } from './editor/VersionView'
 import { ViewerPage } from './viewer/ViewerPage'
 import { SearchPage } from './search/SearchPage'
 import { SearchPalette } from './search/SearchPalette'
 import { ShortcutsDialog } from './ui/ShortcutsDialog'
 import { TeamPage } from './team/TeamPage'
+import { BrandPage } from './brand/BrandPage'
 
 export function App() {
   const [showShortcuts, setShowShortcuts] = useState(false)
@@ -35,6 +37,8 @@ export function App() {
       {showShortcuts && <ShortcutsDialog onClose={() => setShowShortcuts(false)} />}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        {/* صفحة عرض الهوية البصرية — عامة كي يراها المالك بلا تسجيل */}
+        <Route path="/brand" element={<BrandPage />} />
         {/* قشرة المساحة: شريط سكرايب للشاشات الرئيسية — المحرر والعارض والبحث مركّزة */}
         <Route element={<AuthGate><AppShell /></AuthGate>}>
           <Route path="/" element={<HomePage screen="home" />} />
@@ -45,6 +49,8 @@ export function App() {
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
         <Route path="/search" element={<AuthGate><SearchPage /></AuthGate>} />
+        {/* VER-01: عرض نسخة قديمة قراءةً فقط — لا استعادة في هذه المرحلة */}
+        <Route path="/g/:id/v/:vid" element={<AuthGate><VersionView /></AuthGate>} />
         <Route path="/g/:id" element={<AuthGate><EditorPage /></AuthGate>} />
         <Route path="/s/:token" element={<ViewerPage />} />
         <Route path="/embed/s/:token" element={<ViewerPage embed />} />

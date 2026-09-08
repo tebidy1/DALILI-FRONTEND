@@ -13,11 +13,8 @@ body {
 /* ——— الترويسة ——— */
 .head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--dl-line); }
 .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; }
-.badge {
-  width: 26px; height: 26px; border-radius: 8px;
-  background: var(--dl-ink); color: var(--dl-surface);
-  display: grid; place-items: center; font-weight: 700; font-size: .82rem; flex: none;
-}
+/* هوية البراند: درج المسار بدل شارة الحرف — يرث لون الثيم من currentColor */
+.brand .brand-mark { color: var(--dl-ink); flex: none; display: block; }
 .chip { font-size: .72rem; font-weight: 500; border: 1px solid var(--dl-line); background: var(--dl-surface2); border-radius: 999px; padding: 4px 11px; color: var(--dl-muted); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .chip.rec { color: var(--dl-danger); border-color: color-mix(in srgb, var(--dl-danger) 28%, transparent); background: color-mix(in srgb, var(--dl-danger) 7%, transparent); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dl-danger); animation: pulse 1.3s infinite; }

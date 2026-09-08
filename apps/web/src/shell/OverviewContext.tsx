@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { LibraryOverviewDto } from '@dalili/shared'
 import { client } from '../api'
+import { applyServerTheme } from '../lib/theme'
 
 /**
  * المرحلة ب: نظرة المساحة المشتركة — نداء واحد /api/library/overview يغذي
@@ -23,7 +24,11 @@ export function OverviewProvider({ children }: { children: ReactNode }) {
     const ac = new AbortController()
     client
       .libraryOverview(ac.signal)
-      .then((ov) => setOverview(ov))
+      .then((ov) => {
+        setOverview(ov)
+        // مزامنة الثيم: قيمة الخادم هي الحقيقة — إن اختلفت عن المحلي طُبِّقت فورًا
+        if (ov.myTheme) applyServerTheme(ov.myTheme)
+      })
       .catch(() => {})
     return () => ac.abort()
   }, [seq])

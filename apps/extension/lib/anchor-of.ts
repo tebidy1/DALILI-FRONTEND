@@ -1,4 +1,4 @@
-import { buildAnchorChain, anchorNormText, type AnchorChain, type AnchorElInfo } from '@dalili/core'
+import { buildAnchorChain, anchorNormText, isEphemeralId, type AnchorChain, type AnchorElInfo } from '@dalili/core'
 
 /** استخراج بطاقة تعريف العنصر من DOM الحقيقي — الاستخراج هنا والحل النقي في core.
  *  سكربت المحتوى يستعمل الدالتين نفسهما وقت الالتقاط ووقت التدريب فلا انزياح. */
@@ -36,8 +36,10 @@ function cssPath(el: Element, maxDepth = 8): string {
       parts.unshift('body')
       return parts.join(' > ')
     }
+    // سلف بمعرّف مستقرّ = مرساة مسار قصيرة صادقة؛ المعرّف المتطاير (React useId) يُتجاوز
+    // فيواصل المسار بنيويًا (nth-of-type) بدل تثبيتٍ على معرّفٍ يتغيّر كل تحميل.
     const id = cur.getAttribute('id')
-    if (id && id.trim()) {
+    if (id && id.trim() && !isEphemeralId(id)) {
       parts.unshift(`[id="${id.trim()}"]`)
       return parts.join(' > ')
     }

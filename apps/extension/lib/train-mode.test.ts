@@ -54,7 +54,8 @@ describe('train-mode — التدريب داخل الصفحة الهدف (GM-01.
     vi.useFakeTimers()
     document.body.innerHTML = '<div>صفحة فارغة الآن</div>'
     const send = vi.fn()
-    const mode = createTrainMode(send)
+    // على الشاشة الهدف نفسها — عنصر SPA متأخر لا انتظار دخول
+    const mode = createTrainMode(send, undefined, () => 'https://x.test/a')
     mode.handle({ t: 'train-step', step: trainStep(), idx: 0, total: 2, guideTitle: 'د' })
     // قبل ظهوره: بطاقة بحث صادقة، لا رسالة فشل متسرعة
     expect(document.querySelector('dalili-train')!.shadowRoot!.textContent).toContain('أبحث عن الزر')
@@ -74,11 +75,12 @@ describe('train-mode — التدريب داخل الصفحة الهدف (GM-01.
     mode.dispose()
   })
 
-  it('RC1 — عنصر لا يظهر أبدًا: بعد المهلة القصوى رسالة عدم وجود صادقة، لا انتظارًا أبديًا', () => {
+  it('RC1 — عنصر لا يظهر أبدًا ونحن على الشاشة الصحيحة: بعد المهلة رسالة عدم وجود صادقة', () => {
     vi.useFakeTimers()
     document.body.innerHTML = '<div>صفحة تغيّرت</div>'
     const send = vi.fn()
-    const mode = createTrainMode(send)
+    // على الشاشة الهدف نفسها (نفس رابط الخطوة) → غياب الزر عطبٌ حقيقي لا انتظار دخول
+    const mode = createTrainMode(send, undefined, () => 'https://x.test/a')
     mode.handle({ t: 'train-step', step: trainStep(), idx: 0, total: 1, guideTitle: 'د' })
     vi.advanceTimersByTime(9000)
     const host = document.querySelector('dalili-train')!
@@ -89,16 +91,59 @@ describe('train-mode — التدريب داخل الصفحة الهدف (GM-01.
     mode.dispose()
   })
 
-  it('RC2 — عنصر موجود لكنه مخفي (rect صفري): يُعامل كغير موجود بعد الآن، لا دائرة على الفراغ', () => {
+  it('RC2 — عنصر موجود لكنه مخفي (rect صفري) ونحن على الشاشة الصحيحة: يُعامل كغير موجود', () => {
     vi.useFakeTimers()
     document.body.innerHTML = '<button id="save-btn" style="display:none">حفظ</button>'
     const send = vi.fn()
-    const mode = createTrainMode(send)
+    const mode = createTrainMode(send, undefined, () => 'https://x.test/a')
     mode.handle({ t: 'train-step', step: trainStep(), idx: 0, total: 1, guideTitle: 'د' })
     expect((document.querySelector('dalili-train')!.shadowRoot!.querySelector('svg.ring') as HTMLElement).style.display).toBe('none')
     vi.advanceTimersByTime(9000)
     expect(document.querySelector('dalili-train')!.shadowRoot!.textContent).toContain('لم أجد هذا الزر')
     mode.dispose()
+  })
+
+  it('LX-01 — الخطوة الأولى ولسنا على الشاشة الهدف (تحويل لتسجيل الدخول): بطاقة «استعد» لا رسالة فقدان', () => {
+    vi.useFakeTimers()
+    document.body.innerHTML = '<form id="login"><input type="password"></form>'
+    const send = vi.fn()
+    // صفحة الدخول: نفس النطاق لكن شاشة مختلفة عن رابط الخطوة → لسنا على الهدف
+    const mode = createTrainMode(send, undefined, () => 'https://x.test/web/login')
+    mode.handle({ t: 'train-step', step: trainStep(), idx: 0, total: 3, guideTitle: 'دليل الفاتورة' })
+    vi.advanceTimersByTime(9000)
+    const host = document.querySelector('dalili-train')!
+    const text = host.shadowRoot!.textContent ?? ''
+    expect(text).toContain('سجّل الدخول')
+    expect(text).toContain('تلقائيًا')
+    expect(text).not.toContain('لم أجد هذا الزر')
+    // لا حلقة أبدية: مؤقتات البحث انقضت والانتظار مدفوع بالأحداث لا بالدوران
+    mode.dispose()
+  })
+
+  it('LX-01 — بعد الدخول وظهور الشاشة الهدف: الخطوة تبدأ تلقائيًا وتُحتسب النقرة (مراقب أحداث)', () => {
+    vi.useFakeTimers()
+    document.body.innerHTML = '<form id="login"><input type="password"></form>'
+    const send = vi.fn()
+    let here = 'https://x.test/web/login'
+    const mode = createTrainMode(send, undefined, () => here)
+    mode.handle({ t: 'train-step', step: trainStep(), idx: 0, total: 2, guideTitle: 'د' })
+    vi.advanceTimersByTime(9000)
+    expect(document.querySelector('dalili-train')!.shadowRoot!.textContent).toContain('سجّل الدخول')
+    // المستخدم سجّل ووصل الشاشة: الزر يُركّب في DOM (طفرة) والرابط صار الهدف
+    here = 'https://x.test/a'
+    const btn = withRect(document.createElement('button'))
+    btn.id = 'save-btn'
+    btn.textContent = 'حفظ'
+    document.body.appendChild(btn)
+    // المراقب يلتقط الطفرة ويعرض الخطوة بلا إعادة تحميل
+    return Promise.resolve().then(() => {
+      const host = document.querySelector('dalili-train')!
+      expect(host.shadowRoot!.querySelector('svg.ring')).toBeTruthy()
+      expect(host.shadowRoot!.textContent).toContain('انقر الزر')
+      fireClick(btn)
+      expect(send).toHaveBeenCalledWith('done')
+      mode.dispose()
+    })
   })
 
   it('خطوة جديدة تلغي بحث سابقتها — لا دائرة ولا رسالة متأخرة من خطوة قديمة', () => {

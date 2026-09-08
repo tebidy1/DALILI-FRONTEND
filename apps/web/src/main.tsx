@@ -3,9 +3,14 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import '@fontsource/ibm-plex-sans-arabic/400.css'
 import '@fontsource/ibm-plex-sans-arabic/500.css'
+import '@fontsource/ibm-plex-sans-arabic/600.css'
 import '@fontsource/ibm-plex-sans-arabic/700.css'
 import './index.css'
 import { App } from './App'
+import { applyTheme, readTheme } from './lib/theme'
+
+// الثيم المحفوظ (الهوية الجديدة أو الجرافيت القديم) يُطبَّق قبل أول رسم كي لا يومض
+applyTheme(readTheme())
 
 // كنس التطوير: service worker عالق من تجربة قديمة على نفس المنفذ يتحكم في
 // الصفحة، يغرق الكونسول، ويخزّن استجابات /api في Cache Storage — يُلغى

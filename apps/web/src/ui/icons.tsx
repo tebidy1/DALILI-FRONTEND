@@ -252,6 +252,15 @@ export function IconGrip({ size, ...rest }: IconProps) {
   )
 }
 
+/** VER-02: ثلاث نقاط عمودية — زر «المزيد» في شريط المحرر */
+export function IconMoreVertical({ size, ...rest }: IconProps) {
+  return (
+    <Svg size={size} {...rest}>
+      <path d="M12 5h.01M12 12h.01M12 19h.01" />
+    </Svg>
+  )
+}
+
 export function IconGlobe({ size, ...rest }: IconProps) {
   return (
     <Svg size={size} {...rest}>

@@ -832,12 +832,12 @@ describe('ترتيب رأس البطاقة والشريط الجانبي — ا�
     expect(head.querySelector('.drag-handle')).toBeNull()
   })
 
-  it('الشريط الجانبي: التحديد ثم المقبض، وهو آخر عنصر في الصف (الطرف الأيسر في RTL)', async () => {
+  it('الشريط الجانبي: التحديد ثم المقبض، وهو أول عنصر في الصف (الطرف الأيمن في RTL)', async () => {
     await load()
     const row = document.querySelector('.step-card-row') as HTMLElement
     const rail = row.querySelector('.step-rail') as HTMLElement
-    // الشريط آخر عنصر في الصف كي يقع على اليسار في RTL
-    expect(row.lastElementChild).toBe(rail)
+    // الشريط أول عنصر في الصف كي يقع على اليمين في RTL
+    expect(row.firstElementChild).toBe(rail)
     const railKids = Array.from(rail.children)
     expect(railKids.findIndex((c) => c.matches('.step-pick'))).toBe(0)
     expect(railKids.findIndex((c) => c.matches('.drag-handle'))).toBe(1)

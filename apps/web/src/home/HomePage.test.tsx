@@ -19,7 +19,7 @@ vi.mock('../api', () => ({
     listGuides: vi.fn(),
     listFolders: vi.fn().mockResolvedValue([]),
     libraryOverview: vi.fn(),
-    myReport: vi.fn().mockResolvedValue({ total: 0, published: 0, views: 0, openComments: 0 }),
+    myReport: vi.fn().mockResolvedValue({ total: 0, published: 0, views: 0, openComments: 0, openIssues: 0 }),
     toggleBookmark: vi.fn().mockResolvedValue({ bookmarked: true }),
     createGuide: vi.fn().mockResolvedValue({ id: 'g-new' }),
     updateGuideMeta: vi.fn().mockResolvedValue({}),
@@ -34,6 +34,7 @@ const MINE: GuideSummaryDto = {
   id: 'g1',
   title: 'دليلي الخاص',
   stepCount: 3,
+  kind: 'guide' as const,
   starred: false,
   folderId: null,
   tags: [],
@@ -42,6 +43,7 @@ const MINE: GuideSummaryDto = {
   updatedAt: RECENT,
   commentCount: 0,
   openCommentCount: 0,
+  openIssueCount: 0,
   visibility: 'private',
   site: 'sap.example',
   bookmarked: false,
@@ -54,6 +56,7 @@ const OTHERS: GuideSummaryDto = {
   id: 'g2',
   title: 'دليل زميلي المنشور',
   stepCount: 5,
+  kind: 'guide' as const,
   starred: false,
   folderId: null,
   tags: [],
@@ -62,6 +65,7 @@ const OTHERS: GuideSummaryDto = {
   updatedAt: RECENT,
   commentCount: 2,
   openCommentCount: 0,
+  openIssueCount: 0,
   visibility: 'workspace',
   site: 'crm.example',
   bookmarked: false,
@@ -74,6 +78,7 @@ const ADMIN_VIEW: LibraryOverviewDto = {
   workspaceName: 'مساحة الفواتير',
   myRole: 'admin',
   myEmail: 'owner@dalili.sa',
+  myTheme: 'brand',
   counts: { all: 12, mine: 7, published: 3, saved: 2 },
   sites: [
     { site: 'sap.example', count: 6 },
@@ -274,7 +279,7 @@ describe('البطاقة المدمجة (طلب المالك 2026-09-03)', () =>
     expect(within(mineCard).getByLabelText(t('home.share'))).toBeTruthy()
     expect(within(mineCard).getByLabelText(t('home.bookmark'))).toBeTruthy()
     expect(within(mineCard).getByLabelText(t('library.moreActions'))).toBeTruthy()
-    expect(within(mineCard).getByText(t('common.steps', { count: 3 }))).toBeTruthy()
+    expect(within(mineCard).getByText(t('common.steps', { count: '٣' }))).toBeTruthy()
     expect(within(mineCard).queryByLabelText(t('library.star'))).toBeNull()
     expect(within(mineCard).queryByLabelText(t('library.unstar'))).toBeNull()
   })

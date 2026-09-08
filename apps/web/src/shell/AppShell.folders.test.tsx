@@ -28,6 +28,7 @@ const OVERVIEW: LibraryOverviewDto = {
   workspaceName: 'مساحة الفواتير',
   myRole: 'admin',
   myEmail: 'owner@dalili.sa',
+  myTheme: 'brand',
   counts: { all: 1, mine: 1, published: 0, saved: 0 },
   sites: [],
 }

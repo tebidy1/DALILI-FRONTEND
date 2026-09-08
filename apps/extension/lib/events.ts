@@ -1,13 +1,16 @@
 import { isSensitiveField } from '@dalili/core'
 import type { CaptureEvent } from './protocol'
 import { anchorOf } from './anchor-of'
+import { visibleRepresentative } from './gesture'
 
 /** استخراج الأحداث من DOM — أفضل جهد، لا selectors هشة */
 
 export function extractLabel(el: Element): string | undefined {
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
     if (el.labels && el.labels.length > 0) {
-      const t = el.labels[0]!.innerText.replace(/\s+/g, ' ').trim()
+      // innerText غائب في بعض البيئات (jsdom) — textContent بديل يذوب فرقه في التطبيع
+      const raw = el.labels[0]!.innerText ?? el.labels[0]!.textContent ?? ''
+      const t = raw.replace(/\s+/g, ' ').trim()
       if (t) return t
     }
     const aria = el.getAttribute('aria-label')
@@ -15,7 +18,7 @@ export function extractLabel(el: Element): string | undefined {
     const labelledBy = el.getAttribute('aria-labelledby')
     if (labelledBy) {
       const ref = document.getElementById(labelledBy)
-      const t = ref instanceof HTMLElement ? ref.innerText.replace(/\s+/g, ' ').trim() : ''
+      const t = ref instanceof HTMLElement ? (ref.innerText ?? ref.textContent ?? '').replace(/\s+/g, ' ').trim() : ''
       if (t) return t
     }
     const ph = el.getAttribute('placeholder')
@@ -34,7 +37,8 @@ export function extractText(el: Element): string | undefined {
     if (el.type === 'submit' || el.type === 'button') return el.value || undefined
     return undefined
   }
-  const own = (el instanceof HTMLElement ? el.innerText : '').replace(/\s+/g, ' ').trim()
+  // innerText غائب في بعض البيئات (jsdom) — textContent بديل يذوب فرقه في التطبيع
+  const own = (el instanceof HTMLElement ? (el.innerText ?? el.textContent ?? '') : '').replace(/\s+/g, ' ').trim()
   if (!own) return undefined
   return own.length > 80 ? own.slice(0, 79) + '…' : own
 }
@@ -61,6 +65,40 @@ function hintsOf(el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)
 export function viewportRect(el: Element): { x: number; y: number; w: number; h: number } {
   const r = el.getBoundingClientRect()
   return { x: r.x, y: r.y, w: r.width, h: r.height }
+}
+
+/**
+ * الحقل الأصلي (checkbox/radio) كثيرًا ما يكون مخفيًّا بصريًا بمستطيل ضامر مثل
+ * {-2,-2,2,2} وعليه معرّف متطاير، بينما المفتاح المرئي شيء آخر يراه المستخدم.
+ * علة «الالتقاط في مكان خاطئ» (بلاغ المالك): الإطار كان يُرسم على الحقل المخفيّ
+ * فيظهر في زاوية الشاشة.
+ *
+ * كان البحث هنا **صعودًا في الأسلاف فقط**، فسقط نمط claude.ai حيث المفتاح المرئي
+ * **شقيق** لا سلف (بلاغ 2026-09-06). المنطق كله انتقل إلى `gesture.ts` ليخدم
+ * الالتقاط والتدريب بقانونٍ واحد؛ وهذا اسمٌ قديم يبقى للمناداة المباشرة (حدث قيمة
+ * خارج أي إيماءة) — عناصر الإيماءة تُمرَّر حين تتوفّر فتكون الإشارة الأوثق.
+ */
+export function visualControl(el: Element, seen: readonly Element[] = []): Element {
+  return visibleRepresentative(el, seen)
+}
+
+/**
+ * يُعيد بناء وجهة الحدث على المفتاح المرئي بعد طيّ الإيماءة: المرساة والمستطيل
+ * والدور من العنصر الذي يراه المستخدم ويستطيع المتدرّب نقره، مع الحفاظ على تسمية
+ * الحقل الأصلية (وهي مصدر عنوان «فعّل «code»») وقيمته.
+ */
+export function retargetEvent(ev: CaptureEvent, el: Element): CaptureEvent {
+  return {
+    ...ev,
+    target: {
+      ...ev.target,
+      text: extractText(el) ?? ev.target.text,
+      label: ev.target.label ?? extractLabel(el),
+      role: roleOf(el),
+      anchor: anchorOf(el),
+    },
+    rect: viewportRect(el),
+  }
 }
 
 export function buildClickEvent(el: Element, url: string, pageTitle: string, dpr: number): CaptureEvent {
@@ -101,6 +139,8 @@ export function buildValueEvent(
   url: string,
   pageTitle: string,
   dpr: number,
+  /** عناصر الإيماءة الجارية — ما ضغطه المستخدم فعلًا، أوثق دليل على المفتاح المرئي */
+  seen: readonly Element[] = [],
 ): CaptureEvent | null {
   const ts = Date.now()
   const label = extractLabel(el)
@@ -112,16 +152,18 @@ export function buildValueEvent(
     return { kind: 'select', target: { label, anchor: anchorOf(el) }, value, sensitive: false, url, pageTitle, ts, dpr, rect }
   }
   if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio')) {
+    // الحقل مخفيّ غالبًا — نؤشّر ونرسي على المفتاح المرئي (سلفًا كان أو شقيقًا) لا على الحقل الضامر
+    const vis = visualControl(el, seen)
     return {
       kind: 'toggle',
-      target: { label, text: el.value || undefined, anchor: anchorOf(el) },
+      target: { label, text: el.value || undefined, anchor: anchorOf(vis) },
       value: el.checked ? 'on' : 'off',
       sensitive: false,
       url,
       pageTitle,
       ts,
       dpr,
-      rect,
+      rect: viewportRect(vis),
     }
   }
   const sensitive = isSensitiveField(hintsOf(el))

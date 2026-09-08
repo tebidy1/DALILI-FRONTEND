@@ -34,7 +34,8 @@ function fixture(): PublicGuideDto {
 function guestComment(body: string): StepCommentDto {
   return {
     id: `c-${body}`,
-    stepId: 's1',
+    stepId: '',
+    kind: 'note',
     parentId: null,
     author: 'سعد',
     isOwner: false,
@@ -55,9 +56,9 @@ function renderViewer() {
   )
 }
 
-/** GM-05: التعليق من العارض العام — الضيف يفتح خيط الخطوة ويعلّق بلا حساب */
+/** GM-05 تطوّر: التعليق من العارض العام — لوحة واحدة على مستوى الدليل، الضيف يعلّق بلا حساب */
 describe('تعليقات العارض العام (GM-05)', () => {
-  it('زر التعليق يحمل عدّ خطوته، وفتحه يعرض خيوطها، والإرسال يظهر تعليق الضيف فورًا', async () => {
+  it('لوحة واحدة للدليل: فتحها يعرض تعليقاته، والإرسال يظهر تعليق الضيف فورًا', async () => {
     const { client } = await import('../api')
     vi.mocked(client.publicGuide).mockResolvedValue(fixture())
     vi.mocked(client.shareComments).mockResolvedValue({ comments: [guestComment('الزر لا يظهر عندي')] })
@@ -66,9 +67,9 @@ describe('تعليقات العارض العام (GM-05)', () => {
     }))
     renderViewer()
 
+    // لوحة واحدة للدليل كله بعدّ ١ — لا زر لكل خطوة بعد اليوم
     const btn = await screen.findByRole('button', { name: t('comments.toggleA11y', { count: 1 }) })
-    // خطوة ثانية بلا تعليقات — عدّها صفر، والزر موجود لكل خطوة
-    expect(screen.getByRole('button', { name: t('comments.toggleA11y', { count: 0 }) })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: t('comments.toggleA11y', { count: 0 }) })).toBeNull()
 
     fireEvent.click(btn)
     expect(screen.getByText('الزر لا يظهر عندي')).toBeTruthy()
@@ -79,7 +80,7 @@ describe('تعليقات العارض العام (GM-05)', () => {
 
     await waitFor(() =>
       expect(client.addShareComment).toHaveBeenCalledWith('tok-c', {
-        stepId: 's1',
+        kind: 'note',
         body: 'عندي نفس المشكلة',
         author: 'خالد',
         parentId: undefined,
@@ -98,9 +99,9 @@ describe('تعليقات العارض العام (GM-05)', () => {
     renderViewer()
 
     expect(await screen.findByText('الخطوة الأولى')).toBeTruthy()
-    // خطوتان بلا تعليقات — زران بالتسمية نفسها؛ نفتح الأول
-    const toggles = await screen.findAllByRole('button', { name: t('comments.toggleA11y', { count: 0 }) })
-    fireEvent.click(toggles[0]!)
+    // لوحة واحدة بعدّ صفر (فشل التحميل) — نفتحها
+    const toggle = await screen.findByRole('button', { name: t('comments.toggleA11y', { count: 0 }) })
+    fireEvent.click(toggle)
     expect(screen.getByText(t('comments.loadError'))).toBeTruthy()
 
     // عدّاد المحاكي تراكمي عبر الملف — نصفره قبل قياس إعادة المحاولة وحدها

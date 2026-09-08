@@ -7,8 +7,11 @@ import {
   extractLabel,
   pathIncludesController,
   rectAfterSettle,
+  retargetEvent,
   viewportRect,
+  visualControl,
 } from '@/lib/events'
+import { createGestureCollector, type FoldedGesture } from '@/lib/gesture'
 import { pickInteractive } from '@/lib/pick'
 import { anchorOf } from '@/lib/anchor-of'
 import { createTrainMode, type TrainMode } from '@/lib/train-mode'
@@ -80,6 +83,35 @@ export default defineContentScript({
     let lastPreShotTs: number | null = null
 
     /**
+     * **الإيماءة المفتوحة** — علاج علة «الخطوة تُلتقط مرتين أو ثلاثًا» من جذرها
+     * (بلاغ المالك 2026-09-06 على الدليل MtKW5SLkbdRs).
+     *
+     * كان `click` و`change` مستمعَين مستقلَّين، فكل حدث DOM يصير خطوة. لكن المتصفح
+     * يرسل لضغطة إنسان **واحدة** على زر تبديل حتى ثلاثة أحداث خلال مليّثانيات
+     * (قياس حيّ في كروم على ستة أنماط — التفصيل في `lib/gesture.ts`). الشاهد في
+     * قاعدة المالك: الخطوتان ١ و٢ بمرساةٍ واحدة، والخطوات ٩ و١٠ و١١ من نقرة واحدة.
+     *
+     * الآن: كل أحداث الضغطة تُجمع هنا ثم تُطوى **خطوة واحدة** على المفتاح المرئي.
+     * وهذا يغلق أيضًا انقلاب الترتيب: كانت النقرة تتأخّر ١٦٠مث بينما `change`
+     * يُرسل فورًا، فتُخزَّن خطوة التبديل **قبل** نقرتها رغم أن ختمها أحدث.
+     */
+    const gesture = createGestureCollector(emitGestureStep)
+
+    /**
+     * خطوة الإيماءة الواحدة بعد طيّها. **قانون الاستقرار محفوظ:** المستطيل يُقاس بعد
+     * مهلة الاستقرار على العنصر الناجي، لا لحظة الحدث. ومسار الالتقاط القديم يبقى
+     * حرفيًا حين لا انزياح (`el === source`): المرساة المبنيّة لحظة الحدث كما هي،
+     * ولا يُعاد بناؤها إلا إذا كان الحدث على حقلٍ مخفيّ ومفتاحه المرئي غيره.
+     */
+    function emitGestureStep(folded: FoldedGesture) {
+      rememberMark(folded.el, folded.ev.ts)
+      rectAfterSettle(folded.el, CLICK_SETTLE_MS, (settled) => {
+        if (!settled) return send(folded.ev) // العنصر استُبدل (React أعاد بناءه) — مستطيل لحظة الحدث احتياطًا
+        send(folded.el === folded.source ? { ...folded.ev, rect: settled } : retargetEvent(folded.ev, folded.el))
+      })
+    }
+
+    /**
      * CAP-STABLE: يطلب لقطة مسبقة لعنصر ما زال حيًّا على الصفحة الحالية المرسومة.
      * تُرسل لحظة الضغط (قبل أي تنقّل) فتلتقط الخلفية البكسل الصحيح، ويُخزَّن مستطيله
      * ودقّته معه — فخطوة النقرة ترسم إطارها على الصفحة الصحيحة لا على ما تلاها.
@@ -118,6 +150,7 @@ export default defineContentScript({
     function onPointerDown(e: Event) {
       lastPreShotTs = null
       if (pathIncludesController(e)) return
+      gesture.open() // ضغطة = بداية إيماءة جديدة، مهما كان ما تحتها
       const el = composedTarget(e)
       if (!el) return
       const interactive = pickInteractive(el)
@@ -169,10 +202,9 @@ export default defineContentScript({
       const base = buildClickEvent(interactive, location.href, document.title, dpr())
       // CAP-STABLE: اربط لقطة ضغط هذه النقرة (ضغطها سبق نقرها مباشرة) بختمها
       const ev = lastPreShotTs != null ? { ...base, preTs: lastPreShotTs } : base
-      rememberMark(interactive, ev.ts)
-      rectAfterSettle(interactive, CLICK_SETTLE_MS, (settled) => {
-        send(settled ? { ...ev, rect: settled } : ev)
-      })
+      // النقرة لا تُرسل وحدها بعد اليوم: تنضم لإيماءتها. الضغطةُ الواحدة قد تولّد
+      // نقرتين (label ثم الحقل المُوجَّه إليه) — وهما فعلٌ واحد لا خطوتان.
+      gesture.addClick(ev, interactive)
     }
 
     // حلقة التأشير: تتبع العنصر التفاعلي تحت المؤشر — مرتبطة بالأحداث فقط
@@ -194,21 +226,28 @@ export default defineContentScript({
     function onChange(e: Event) {
       const el = e.target
       if (
-        el instanceof HTMLInputElement ||
-        el instanceof HTMLTextAreaElement ||
-        el instanceof HTMLSelectElement
+        !(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)
       ) {
-        const ev = buildValueEvent(el, location.href, document.title, dpr())
-        if (ev) {
-          rememberMark(el, ev.ts) // خطوات الكتابة تُعلَّم أيضًا — إطار على الحقل نفسه
-          overlay.suppressRing()
-          send(ev)
-        }
+        return
       }
+      // عناصر الإيماءة تُمرَّر للبناء: المفتاح المرئي قد يكون **شقيقًا** للحقل المخفيّ
+      // (نمط claude.ai) فلا يُدرَك بالصعود في الأسلاف وحده
+      const ev = buildValueEvent(el, location.href, document.title, dpr(), gesture.seen())
+      if (!ev) return
+      overlay.suppressRing()
+      // تبديل/اختيار داخل ضغطةٍ جارية = نفس الفعل الذي بدأته النقرة، لا خطوة ثانية.
+      // والكتابة لا تنطوي أبدًا: تفريغ حقلٍ سابق (blur) يقع داخل نافذة نقرة المغادرة
+      // (فخ 45: pointerdown@158 → change@160 → click@163) وطيّه يزوّر الخطوتين معًا.
+      if (gesture.addValue(ev, el)) return
+      // نتذكّر المفتاح المرئي (لا الحقل المخفيّ) فتُعاد قياساته لحظة اللقطة على موضعه الصحيح
+      rememberMark(visualControl(el), ev.ts) // خطوات الكتابة/التبديل تُعلَّم — إطار على العنصر المرئي
+      send(ev)
     }
 
     function onKeydown(e: KeyboardEvent) {
       if (e.key !== 'Enter') return
+      // Enter فعلٌ مستقلّ بذاته — لا يُبتلع في إيماءة نقرةٍ مفتوحة ولا يبتلعها
+      gesture.flush()
       const el = e.target
       if (el instanceof HTMLTextAreaElement && !e.ctrlKey) return // سطر جديد داخل نص طويل ليس تأكيدًا
       if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
@@ -258,6 +297,8 @@ export default defineContentScript({
       window.addEventListener('scroll', onScrollOrResize, true)
       window.addEventListener('resize', onScrollOrResize)
       window.addEventListener('popstate', onSpaNav)
+      // مغادرة الصفحة تقتل مؤقّت الإيماءة — نرسل خطوتها الآن بدل أن تضيع
+      window.addEventListener('pagehide', gesture.flush)
       wrapHistory()
       emitNavIfNew() // خطوة التنقل الافتتاحية — من التبويب المرئي فقط
     }
@@ -274,6 +315,8 @@ export default defineContentScript({
       window.removeEventListener('scroll', onScrollOrResize, true)
       window.removeEventListener('resize', onScrollOrResize)
       window.removeEventListener('popstate', onSpaNav)
+      window.removeEventListener('pagehide', gesture.flush)
+      gesture.flush() // إيقاف التسجيل لا يبتلع خطوةً مكتملة بانتظار مؤقّتها
       overlay.hideRing()
     }
 

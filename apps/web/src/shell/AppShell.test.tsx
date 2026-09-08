@@ -29,6 +29,7 @@ const ADMIN: LibraryOverviewDto = {
   workspaceName: 'مساحة الفواتير',
   myRole: 'admin',
   myEmail: 'owner@dalili.sa',
+  myTheme: 'brand',
   counts: { all: 12, mine: 7, published: 3, saved: 5 },
   sites: [{ site: 'sap.example', count: 3 }],
 }
@@ -66,6 +67,13 @@ beforeEach(() => {
 })
 
 describe('الشريط الجانبي بنمط المرجع (WS-06)', () => {
+  it('هوية البراند: رمز درج المسار svg يجاور اسم «دليلي» في رأس الشريط الجانبي', async () => {
+    renderShell()
+    await screen.findAllByText('مساحة الفواتير')
+    const sideBrand = screen.getByText(t('app.name')).closest('.side-brand') as HTMLElement
+    expect(sideBrand.querySelector('svg.brand-mark')).toBeTruthy()
+  })
+
   it('يعرض اسم المساحة وبنود التنقل الخمسة وقسم المساحة و«دعوة زميل» وبريد المستخدم — والبحث انتقل لمتن الشاشات (طلب المالك)', async () => {
     renderShell()
     expect(await screen.findAllByText('مساحة الفواتير')).toBeTruthy()

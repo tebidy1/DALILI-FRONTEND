@@ -1,8 +1,10 @@
 import { resolveAnchor, type AnchorDom } from '@dalili/core'
 import type { ToTabMsg, TrainResult, TrainStep } from './protocol'
 import { createTrainCard } from './train-card'
+import { onTargetScreen } from './train'
 import { pickInteractive } from './pick'
 import { anchorTextOf } from './anchor-of'
+import { isVisibleControl, visibleRepresentative } from './gesture'
 
 /** وضع التدريب داخل الصفحة الهدف — سكربت المحتوى يستقبل الخطوة الجارية من الخلفية:
  *  يحلّ المرساة، يحتاط الزر بدائرة مرسومة (GM-01)، يكشف النقر الخاطئ بلطف (GM-02)،
@@ -32,6 +34,7 @@ export interface TrainMode {
 export function createTrainMode(
   send: (result: TrainResult) => void,
   dom: AnchorDom<Element> = realDom,
+  here: () => string = () => location.href,
 ): TrainMode {
   const card = createTrainCard()
   let step: TrainStep | null = null
@@ -40,6 +43,7 @@ export function createTrainMode(
   let done = false // الخطوة الحالية بلّغت نتيجتها — لا تكرار قبل وصول التالية
   let gen = 0 // جيل الخطوة الحالي — يُبطل مؤقتات الخطوات السابقة فورًا
   let retryTimer: ReturnType<typeof setTimeout> | null = null
+  let waitObserver: MutationObserver | null = null // LX-01: مراقب أحداث ينتظر وصول الشاشة الهدف
   let ctx: { idx: number; guideTitle: string } | null = null
 
   function cancelRetry() {
@@ -47,6 +51,10 @@ export function createTrainMode(
     if (retryTimer) {
       clearTimeout(retryTimer)
       retryTimer = null
+    }
+    if (waitObserver) {
+      waitObserver.disconnect()
+      waitObserver = null
     }
   }
 
@@ -72,6 +80,20 @@ export function createTrainMode(
     return false
   }
 
+  /**
+   * هل ما نقره المتدرّب هو هدف الخطوة نفسه؟
+   *
+   * كانت المطابقة **بالاحتواء فقط**، وهي كافية ما دام الهدف مرئيًا. لكن أدلة
+   * التبديل الملتقَطة قبل 2026-09-06 مرساتها على حقلٍ **مخفيّ** ومفتاحه المرئي
+   * **شقيق** لا سلف ولا ابن — فلا يطابق أبدًا، فتُقابَل نقرة المتدرّب الصحيحة
+   * بـ«ليس هذا الزر» إلى الأبد. التشديد: نقارن المفتاحين المرئيَّين للطرفين،
+   * فيلتقيان عند الشقيق. ونقرة زرٍّ آخر تبقى خاطئة — العنصر المرئي يمثّل نفسه.
+   */
+  function sameControl(picked: Element, tgt: Element): boolean {
+    if (picked === tgt || tgt.contains(picked) || picked.contains(tgt)) return true
+    return visibleRepresentative(tgt, [picked]) === picked
+  }
+
   function onClick(e: Event) {
     if (!step || done || fromOurCard(e)) return
     // أثناء البحث لا هدف بعد — النقر ليس صحيحًا ولا خاطئًا؛ صمت حتى يعرف التدريب هدفه
@@ -79,7 +101,7 @@ export function createTrainMode(
     const el = composedEl(e)
     if (!el) return
     const picked = pickInteractive(el) ?? el
-    if (picked === target || target.contains(picked) || picked.contains(target)) {
+    if (sameControl(picked, target)) {
       report('done')
       return
     }
@@ -106,18 +128,54 @@ export function createTrainMode(
     document.removeEventListener('change', onValue, true)
   }
 
-  /** حلّ مرساة الخطوة الحالية — العنصر المخفي (rect صفري) لا يُعتدّ به: RC2 */
+  /**
+   * حلّ مرساة الخطوة الحالية — العنصر المخفيّ لا يُعتدّ به: RC2.
+   *
+   * كان الشرط `> 0` فحسب، فيمرّ الحقل المخفيّ الذي يقاس {-2,-2,2,2} (وهو ما تحمله
+   * مراسي أدلة التبديل الملتقَطة قبل 2026-09-06). النتيجة: حلقة حول ٢×٢ في زاوية
+   * الشاشة و`scrollIntoView` يقفز لموضعٍ عشوائي — «الأزرار في غير مكانها». الحكم
+   * الآن بالحجم والموضع المعقول (`usableRect`): ما تحت الطيّة يبقى هدفًا مشروعًا
+   * (التدريب يمرّر إليه)، والضامر أو المدفوع خارج الشاشة ليس هدفًا.
+   *
+   * وإن كان المحلول ضامرًا فله مفتاحٌ مرئي غالبًا (سلفٌ أو شقيق) — نأخذه بدل أن
+   * نعلن الفقد، فتصحّ الأدلة القديمة أيضًا لا الجديدة وحدها.
+   */
   function visibleTarget(): Element | null {
     if (!step) return null
     const el = resolveAnchor(step.anchor, dom)?.el ?? null
     if (!el) return null
-    const r = el.getBoundingClientRect()
-    return r.width > 0 && r.height > 0 ? el : null
+    if (isVisibleControl(el)) return el
+    const rep = visibleRepresentative(el)
+    return rep !== el && isVisibleControl(rep) ? rep : null
   }
 
   function show(el: Element | null) {
     if (!step || !ctx) return
     card.showStep({ step, idx: ctx.idx, total, guideTitle: ctx.guideTitle, target: el })
+  }
+
+  /** LX-01: أول خطوة ولسنا على الشاشة الهدف = تحويل لتسجيل الدخول/شاشة أخرى، لا زر مفقود */
+  function offTargetFirstStep(): boolean {
+    return !!step && !!ctx && ctx.idx === 0 && !onTargetScreen(here(), step.url)
+  }
+
+  /** بطاقة «استعد» + مراقب أحداث: حين يُركّب الزر (بعد الدخول/التنقّل) نعرض الخطوة تلقائيًا.
+   *  مدفوع بالطفرات لا بالدوران — لا حلقة أبدية؛ يُفكّ عند تغيّر الخطوة أو الإيقاف. */
+  function enterWaiting() {
+    card.markWaiting()
+    target = null
+    if (waitObserver) return
+    waitObserver = new MutationObserver(() => {
+      const el = visibleTarget()
+      if (!el) return
+      target = el
+      show(el)
+      if (waitObserver) {
+        waitObserver.disconnect()
+        waitObserver = null
+      }
+    })
+    waitObserver.observe(document.documentElement, { childList: true, subtree: true, attributes: true })
   }
 
   /** RC1: البحث الصبور — محاولة فورية ثم محاولات محدودة حتى المهلة ثم رسالة صادقة */
@@ -130,7 +188,9 @@ export function createTrainMode(
       return
     }
     if (attemptsLeft <= 0) {
-      card.markMissing()
+      // على الشاشة الصحيحة وغاب الزر = عطب حقيقي؛ خارجها في أول خطوة = انتظار دخول
+      if (offTargetFirstStep()) enterWaiting()
+      else card.markMissing()
       return
     }
     const myGen = gen
@@ -149,7 +209,10 @@ export function createTrainMode(
     const el = visibleTarget()
     target = el
     show(el)
-    if (!el) resolvePatiently(RESOLVE_ATTEMPTS)
+    if (el) return
+    // خارج الشاشة الهدف في أول خطوة → «استعد» فورًا بلا ٨ث بحث عبثي على صفحة الدخول
+    if (offTargetFirstStep()) enterWaiting()
+    else resolvePatiently(RESOLVE_ATTEMPTS)
   }
 
   return {

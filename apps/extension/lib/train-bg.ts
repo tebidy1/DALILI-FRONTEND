@@ -1,6 +1,6 @@
 import { DaliliClient, type GuideDto } from '@dalili/shared'
 import { TRAIN_KEY, TRAIN_STATS_KEY, type TrainAck, type TrainResult, type TrainSession, type TrainStats } from './protocol'
-import { advanceTrain, buildTrainPlan, bumpTrainStats, retryUntil } from './train'
+import { advanceTrain, buildTrainPlan, bumpTrainStats, pickTrainTab, retryUntil } from './train'
 import { API_BASE } from './config'
 
 /** جلسة «دربني» في الخلفية — الخلفية مصدر الحقيقة للفهرس الجاري:
@@ -44,18 +44,47 @@ export async function startTraining(source: { token?: string; guide?: GuideDto }
   if (steps.length === 0) {
     return { ok: false, errorAr: 'هذا الدليل أُنشئ قبل خاصية التدريب — أعد التقاطه بالإصدار الجديد ليعمل «دربني»' }
   }
-  const tab = await chrome.tabs.create({ url: steps[0]!.url, active: true })
+  // LX-01: التدريب فوق الصفحة المفتوحة — نبحث كل التبويبات (لا النشط وحده، فالإطلاق من صفحة
+  // دليلي لا من التطبيق الهدف). الجهوزية الفعلية والدخول يُدارَان ببوّابة المرساة داخل الصفحة.
+  const firstUrl = steps[0]!.url
+  const tabs = await chrome.tabs.query({}).catch(() => [] as chrome.tabs.Tab[])
+  const choice = pickTrainTab(tabs.map((t) => ({ id: t.id, url: t.url })), firstUrl)
+  let tabId: number | null
+  if (choice.mode === 'open-new' || choice.tabId == null) {
+    const tab = await chrome.tabs.create({ url: firstUrl, active: true })
+    tabId = tab.id ?? null
+  } else {
+    tabId = choice.tabId
+    if (choice.mode === 'reuse-navigate') {
+      // نفس الجلسة الحيّة — ننقّل نفس التبويب للهدف؛ onTabUpdated يسلّم عند اكتمال التحميل
+      pendingNavigate = true
+      await chrome.tabs.update(tabId, { url: firstUrl, active: true }).catch(() => {})
+    } else {
+      // reuse-here: التبويب محمّل أصلًا على الشاشة — نفعّله فقط ونسلّم الخطوة بأنفسنا لاحقًا
+      await chrome.tabs.update(tabId, { active: true }).catch(() => {})
+    }
+    // التبويب الهدف قد يكون في نافذة أخرى — نُبرزها بلطف (أفضل جهد)
+    await focusTabWindow(tabId)
+  }
   session = {
     token: source.token,
     guideId: guide.id,
     guideTitle: guide.title,
     steps,
     idx: 0,
-    tabId: tab.id ?? null,
+    tabId,
     startedAt: Date.now(),
   }
   await persist()
+  // reuse-here لا ينتظر onTabUpdated — سلّم الخطوة الأولى فورًا (سكربت المحتوى مُحقَن أصلًا)
+  if (choice.mode === 'reuse-here' && tabId != null) await sendStep()
   return { ok: true }
+}
+
+/** إبراز نافذة تبويب معاد استخدامه — أفضل جهد، لا يرمي إن غاب التبويب/النافذة */
+async function focusTabWindow(tabId: number): Promise<void> {
+  const tab = await chrome.tabs.get(tabId).catch(() => null)
+  if (tab?.windowId != null) await chrome.windows.update(tab.windowId, { focused: true }).catch(() => {})
 }
 
 /** تقدّم من تبويب التدريب فقط — رسائل التبويبات الأخرى لا تمس الجلسة */

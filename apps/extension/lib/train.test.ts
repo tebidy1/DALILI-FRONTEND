@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { advanceTrain, buildTrainPlan, bumpTrainStats, retryUntil } from './train'
+import { advanceTrain, buildTrainPlan, bumpTrainStats, onTargetScreen, pickTrainTab, retryUntil } from './train'
 import type { AnchorCandidate } from '@dalili/core'
 import type { GuideDto, StepDto } from '@dalili/shared'
 
@@ -53,6 +53,52 @@ describe('buildTrainPlan — خطة التدريب من الدليل (GM-01)', (
 
   it('دليل كله بلا مراساة (أدلة ما قبل AUTO-01) = خطة فارغة — تُعلَب بصدق لا تدريب وهمي', () => {
     expect(buildTrainPlan(guide([step({ kind: 'click' })]))).toEqual([])
+  })
+})
+
+describe('onTargetScreen — هل الرابط على الشاشة الهدف (مصدر المطابقة الواحد)', () => {
+  const partners = 'https://app.odoo.test/web#action=42&model=res.partner&view_type=list'
+
+  it('نفس النطاق وكل رموز الهدف حاضرة (أشمل أو مساوية) = على الهدف', () => {
+    expect(onTargetScreen(partners, partners)).toBe(true)
+    expect(onTargetScreen(`${partners}&search_default_customer=1`, partners)).toBe(true)
+  })
+
+  it('نطاق مختلف أو شاشة تنقص رموز الهدف أو رابط فارغ/داخلي = ليس على الهدف', () => {
+    expect(onTargetScreen('https://app.odoo.test/web#action=99&model=sale.order', partners)).toBe(false)
+    expect(onTargetScreen('https://mail.google.test/mail/u/0', partners)).toBe(false)
+    expect(onTargetScreen(undefined, partners)).toBe(false)
+    expect(onTargetScreen('chrome://newtab/', partners)).toBe(false)
+  })
+})
+
+describe('pickTrainTab — اختيار تبويب التدريب من كل التبويبات (LX-01: تدريب فوق الصفحة المفتوحة)', () => {
+  const odoo = 'https://app.odoo.test/web'
+  const partners = `${odoo}#action=42&model=res.partner&view_type=list`
+  const sales = `${odoo}#action=99&model=sale.order&view_type=form`
+  const viewer = 'https://app.dalili.test/g/abc' // شاشة العارض التي انطلق منها «دربني»
+
+  it('يوجد تبويب على الشاشة الهدف نفسها (ولو لم يكن النشط) = تدرّب فوقه', () => {
+    const choice = pickTrainTab(
+      [{ id: 1, url: viewer }, { id: 2, url: sales }, { id: 3, url: partners }],
+      partners,
+    )
+    expect(choice).toEqual({ mode: 'reuse-here', tabId: 3 })
+  })
+
+  it('لا تبويب على الشاشة لكن الموقع مفتوح ومسجّل دخول = أعد استخدام تبويب الموقع وانتقل', () => {
+    const choice = pickTrainTab([{ id: 1, url: viewer }, { id: 2, url: sales }], partners)
+    expect(choice).toEqual({ mode: 'reuse-navigate', tabId: 2 })
+  })
+
+  it('الموقع غير مفتوح إطلاقًا = افتح تبويبًا جديدًا', () => {
+    const choice = pickTrainTab([{ id: 1, url: viewer }, { id: 2, url: 'https://mail.google.test/u/0' }], partners)
+    expect(choice).toEqual({ mode: 'open-new', tabId: null })
+  })
+
+  it('يتجاهل التبويبات بلا مُعرّف أو بلا رابط (صفحات داخلية) — لا اختيار وهمي', () => {
+    const choice = pickTrainTab([{ url: partners }, { id: 9 }, { id: 5, url: 'chrome://newtab/' }], partners)
+    expect(choice).toEqual({ mode: 'open-new', tabId: null })
   })
 })
 

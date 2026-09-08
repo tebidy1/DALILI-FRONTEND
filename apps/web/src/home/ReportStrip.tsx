@@ -9,7 +9,7 @@ export function ReportStrip({ report }: { report: MineReportDto }) {
       <StatCard num={report.total} label={t('home.reportTotal')} />
       <StatCard num={report.published} label={t('home.reportPublished')} />
       <StatCard num={report.views} label={t('home.reportViews')} />
-      <StatCard num={report.openComments} label={t('home.reportWaiting')} />
+      <StatCard num={report.openIssues} label={t('home.reportWaiting')} />
     </div>
   )
 }

@@ -64,6 +64,20 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
     setReloadSeq((s) => s + 1)
   }, [])
 
+  // VER-02: لافتة معلّقة من فعل سابق (مثلاً حذف الدليل من المحرر) —
+  // تُقرأ مرة واحدة وتُمسح فورًا، فلا تتكرر عبر التنقلات.
+  useEffect(() => {
+    try {
+      const pending = sessionStorage.getItem('dalili:pendingNotice')
+      if (pending) {
+        setNotice(pending)
+        sessionStorage.removeItem('dalili:pendingNotice')
+      }
+    } catch {
+      /* sessionStorage معطّل في بعض المتصفحات — نمرّ بلا لافتة */
+    }
+  }, [])
+
   useEffect(() => {
     const ac = new AbortController()
     const [sField, sOrder] = sort.split('-')
@@ -236,9 +250,15 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
             )}
           </div>
           {!isViewer && (
-            <Button icon={<IconPlus size={16} />} onClick={actions.newGuide} busy={actions.creating}>
-              {t('library.newGuide')}
-            </Button>
+            <>
+              <Button icon={<IconPlus size={16} />} onClick={actions.newGuide} busy={actions.creating}>
+                {t('library.newGuide')}
+              </Button>
+              {/* BKL-01: الكرّاسة خيار إنشاء ثانٍ بجانب الدليل */}
+              <Button variant="ghost" onClick={actions.newBooklet} busy={actions.creating}>
+                {t('library.newBooklet')}
+              </Button>
+            </>
           )}
         </div>
       </div>

@@ -54,7 +54,8 @@ function details(): GuideDetailsDto {
 function guestAsk(body: string): StepCommentDto {
   return {
     id: `c-${body}`,
-    stepId: 's1',
+    stepId: '',
+    kind: 'note',
     parentId: null,
     author: 'سعد',
     isOwner: false,
@@ -77,7 +78,7 @@ function renderEditor() {
 
 /** GM-05: المالك في المحرر يرى سؤال الضيف، يردّ بعلامة صاحب الدليل، ويسمّي محلولًا */
 describe('تعليقات المحرر (GM-05)', () => {
-  it('سؤال الضيف يظهر تحت بطاقة الخطوة، وردّ المالك يستدعي الخادم بلا اسم', async () => {
+  it('سؤال الضيف يظهر في لوحة الدليل، وردّ المالك يستدعي الخادم بلا اسم', async () => {
     const { client } = await import('../api')
     vi.mocked(client.getGuide).mockResolvedValue(details())
     vi.mocked(client.guideComments).mockResolvedValue({ comments: [guestAsk('هل يلزم دور المدير؟')] })
@@ -94,7 +95,7 @@ describe('تعليقات المحرر (GM-05)', () => {
     fireEvent.change(screen.getByPlaceholderText(t('comments.placeholder')), { target: { value: 'لا، يكفي دور المحرر' } })
     fireEvent.click(screen.getByRole('button', { name: t('comments.send') }))
     await waitFor(() =>
-      expect(client.addGuideComment).toHaveBeenCalledWith('g1', { stepId: 's1', body: 'لا، يكفي دور المحرر' }),
+      expect(client.addGuideComment).toHaveBeenCalledWith('g1', { kind: 'note', body: 'لا، يكفي دور المحرر' }),
     )
     expect(await screen.findByText('لا، يكفي دور المحرر')).toBeTruthy()
     expect(screen.getByText(t('comments.ownerBadge'))).toBeTruthy()

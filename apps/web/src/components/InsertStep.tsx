@@ -1,15 +1,46 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n'
 
-/** BLK-01: أنواع ما يُدرجه زر «+» — الالتقاط يذهب لتدفّق الامتداد، والبقية كتل عميل */
-export type InsertKind = 'step' | 'tip' | 'alert' | 'header' | 'capture'
+/** BLK-01 + BKL-01: أنواع ما يُدرجه زر «+» — الالتقاط يذهب لتدفّق الامتداد، والبقية كتل عميل */
+export type InsertKind =
+  | 'step'
+  | 'tip'
+  | 'alert'
+  | 'header'
+  | 'capture'
+  | 'text'
+  | 'embed'
+  | 'divider'
+  | 'link'
+  | 'image'
+  | 'video'
 
-const ITEMS: { kind: InsertKind; key: Parameters<typeof t>[0] }[] = [
-  { kind: 'step', key: 'editor.addStepManual' },
-  { kind: 'tip', key: 'editor.addTip' },
-  { kind: 'alert', key: 'editor.addAlert' },
-  { kind: 'header', key: 'editor.addHeader' },
-  { kind: 'capture', key: 'editor.addCaptureItem' },
+interface MenuItem {
+  kind: InsertKind
+  key: Parameters<typeof t>[0]
+  /** رمز البطاقة — محارف بسيطة لا صور: تُرسم بأي خط ولا تحتاج تحميلًا */
+  glyph: string
+}
+
+const GUIDE_ITEMS: MenuItem[] = [
+  { kind: 'step', key: 'editor.addStepManual', glyph: '١' },
+  { kind: 'tip', key: 'editor.addTip', glyph: '✦' },
+  { kind: 'alert', key: 'editor.addAlert', glyph: '!' },
+  { kind: 'header', key: 'editor.addHeader', glyph: 'ع' },
+  { kind: 'capture', key: 'editor.addCaptureItem', glyph: '◉' },
+]
+
+/** BKL-01: لا «التقاط» في الكرّاسة بقصد — الكرّاسة تجمع الأدلة ولا تلتقطها */
+const BOOKLET_ITEMS: MenuItem[] = [
+  { kind: 'text', key: 'editor.addText', glyph: '¶' },
+  { kind: 'header', key: 'editor.addHeader', glyph: 'ع' },
+  { kind: 'tip', key: 'editor.addTip', glyph: '✦' },
+  { kind: 'alert', key: 'editor.addAlert', glyph: '!' },
+  { kind: 'embed', key: 'editor.addEmbed', glyph: '⧉' },
+  { kind: 'image', key: 'editor.addImage', glyph: '▣' },
+  { kind: 'video', key: 'editor.addVideo', glyph: '▶' },
+  { kind: 'link', key: 'editor.addLink', glyph: '↗' },
+  { kind: 'divider', key: 'editor.addDivider', glyph: '—' },
 ]
 
 /**
@@ -17,12 +48,15 @@ const ITEMS: { kind: InsertKind; key: Parameters<typeof t>[0] }[] = [
  * الاسم المتاح للزر «أضف كتلة»، والعنوان الكامل يوضح موضع الإدراج.
  * تُغلق المنبثقة بـEsc أو بالنقر خارجها (وصولية شرط قبول).
  */
-export function InsertStep({ label, insertAt, onInsert, busy }: {
+export function InsertStep({ label, insertAt, onInsert, busy, docKind = 'guide' }: {
   label: string
   insertAt: number
   onInsert: (kind: InsertKind, insertAt: number) => void
   busy?: boolean
+  /** BKL-01: نوع المستند يحدد القائمة — غيابه دليل (المسار القائم بلا تغيير) */
+  docKind?: 'guide' | 'booklet'
 }) {
+  const ITEMS = docKind === 'booklet' ? BOOKLET_ITEMS : GUIDE_ITEMS
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -55,8 +89,8 @@ export function InsertStep({ label, insertAt, onInsert, busy }: {
         <span aria-hidden>+</span> {t('editor.addStepsShort')}
       </button>
       {open && (
-        <div className="insert-menu" role="menu">
-          {ITEMS.map(({ kind, key }) => (
+        <div className={`insert-menu insert-menu-${docKind}`} role="menu">
+          {ITEMS.map(({ kind, key, glyph }) => (
             <button
               key={kind}
               type="button"
@@ -67,7 +101,10 @@ export function InsertStep({ label, insertAt, onInsert, busy }: {
                 onInsert(kind, insertAt)
               }}
             >
-              {t(key)}
+              <span className="insert-menu-glyph" aria-hidden="true">
+                {glyph}
+              </span>
+              <span className="insert-menu-label">{t(key)}</span>
             </button>
           ))}
         </div>

@@ -58,22 +58,43 @@ export function IdleScreen({
             />
           </div>
 
-          {/* SRCH-04: شارة الاكتشاف — أدلتك على موقع التبويب الحالي */}
+          {/* SRCH-04 تطوّر: مجموعتان — أدلة هذه الشاشة أولًا ثم بقية الموقع (الأكثر مشاهدة أولًا) */}
           {discover && (
             <div className="discover">
-              <div className="discover-head">
-                <span className="discover-badge">{guidesCountAr(discover.count)}</span>
-                <span>على هذا الموقع</span>
-              </div>
-              {discover.guides.map((g) => (
-                <a key={g.id} className="doc" href={`${WEB_BASE}/g/${g.id}`} target="_blank" rel="noreferrer">
-                  <span className="doc-ic"><DocIcon /></span>
-                  <span className="doc-tx">
-                    <bdi>{g.title}</bdi>
-                    <small>{relativeTimeAr(g.updatedAt)}</small>
-                  </span>
-                </a>
-              ))}
+              {discover.onScreen.length > 0 && (
+                <>
+                  <div className="discover-head">
+                    <span className="discover-badge">{guidesCountAr(discover.onScreen.length)}</span>
+                    <span>على هذه الشاشة</span>
+                  </div>
+                  {discover.onScreen.map((g) => (
+                    <a key={g.id} className="doc" href={`${WEB_BASE}/g/${g.id}`} target="_blank" rel="noreferrer">
+                      <span className="doc-ic"><DocIcon /></span>
+                      <span className="doc-tx">
+                        <bdi>{g.title}</bdi>
+                        <small>{relativeTimeAr(g.updatedAt)}</small>
+                      </span>
+                    </a>
+                  ))}
+                </>
+              )}
+              {discover.onSite.length > 0 && (
+                <>
+                  <div className="discover-head">
+                    <span className="discover-badge">{guidesCountAr(discover.count)}</span>
+                    <span>على هذا الموقع</span>
+                  </div>
+                  {discover.onSite.map((g) => (
+                    <a key={g.id} className="doc" href={`${WEB_BASE}/g/${g.id}`} target="_blank" rel="noreferrer">
+                      <span className="doc-ic"><DocIcon /></span>
+                      <span className="doc-tx">
+                        <bdi>{g.title}</bdi>
+                        <small>{relativeTimeAr(g.updatedAt)}</small>
+                      </span>
+                    </a>
+                  ))}
+                </>
+              )}
             </div>
           )}
 

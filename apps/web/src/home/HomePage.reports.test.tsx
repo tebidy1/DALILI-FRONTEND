@@ -35,6 +35,7 @@ const MINE: GuideSummaryDto = {
   id: 'g1',
   title: 'دليلي الخاص',
   stepCount: 3,
+  kind: 'guide' as const,
   starred: false,
   folderId: null,
   tags: [],
@@ -43,6 +44,7 @@ const MINE: GuideSummaryDto = {
   updatedAt: RECENT,
   commentCount: 2,
   openCommentCount: 2,
+  openIssueCount: 2,
   visibility: 'private',
   site: 'sap.example',
   bookmarked: false,
@@ -55,11 +57,12 @@ const OVERVIEW: LibraryOverviewDto = {
   workspaceName: 'مساحة الفواتير',
   myRole: 'admin',
   myEmail: 'owner@dalili.sa',
+  myTheme: 'brand',
   counts: { all: 12, mine: 12, published: 3, saved: 2 },
   sites: [{ site: 'sap.example', count: 6 }],
 }
 
-const REPORT: MineReportDto = { total: 12, published: 3, views: 148, openComments: 2 }
+const REPORT: MineReportDto = { total: 12, published: 3, views: 148, openComments: 2, openIssues: 2 }
 
 function list(items: GuideSummaryDto[]): ListGuidesDto {
   return { items, total: items.length, page: 1, limit: 24 }

@@ -10,7 +10,9 @@ import { autoTranscribeSteps } from '@/lib/voice-memo-upload'
 import { API_BASE, WEB_BASE } from '@/lib/config'
 import { filterByTitle, searchHref, type RecentGuide } from '@/lib/recent'
 import { hostOf } from '@/lib/discover'
+import { urlTokens } from '@dalili/core'
 import { CANCEL_ARM_WINDOW_MS, CancelArm } from '@/lib/cancel-arm'
+import { PathMark } from '@/lib/path-mark'
 import type { DiscoverResponseDto } from '@dalili/shared'
 import { CaptureBar } from './parts'
 import { IdleScreen } from './IdleScreen'
@@ -109,12 +111,14 @@ export function App() {
     const ac = new AbortController()
     async function refresh(tab: chrome.tabs.Tab | undefined) {
       const host = tab?.url ? hostOf(tab.url) : null
-      if (!host) {
+      if (!host || !tab?.url) {
         if (live) setDiscover(null)
         return
       }
       try {
-        const res = await client.discover(host, ac.signal)
+        // SRCH-04 تطوّر: نرسل رموز الشاشة الحالية (مُجزّئ core نفسه المستعمل في الفهرس)
+        const screen = urlTokens(tab.url).screen.join(' ')
+        const res = await client.discover(host, screen, ac.signal)
         if (live) setDiscover(res.count > 0 ? res : null)
       } catch {
         if (live) setDiscover(null)
@@ -295,7 +299,7 @@ export function App() {
     <div className="wrap">
       <div className="head">
         <span className="brand">
-          <span className="badge">د</span> دليلي
+          <PathMark size={18} /> دليلي
         </span>
         <span className={`chip ${capturing ? 'rec' : ''}`}>
           {state === 'idle' && '● جاهز'}

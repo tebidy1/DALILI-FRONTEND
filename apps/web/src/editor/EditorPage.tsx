@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
-import { DEFAULT_MARK_COLOR, extractCapturedSites, markShapeOf, mergeSteps, stepNumbers, suggestSimilarBlur, scaleRelativeRect, toMarkdown, type MarkColor, type MarkShape, type Rect, type RelativeRect, type TargetMark } from '@dalili/core'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { canAddBlock, canAddEmbed, embedIdsOf, DEFAULT_MARK_COLOR, extractCapturedSites, markShapeOf, mergeSteps, stepNumbers, suggestSimilarBlur, scaleRelativeRect, toMarkdown, type MarkColor, type MarkShape, type Rect, type RelativeRect, type TargetMark } from '@dalili/core'
 import { buildRichHtml } from '../lib/rich-copy'
 import type { ShareInfoDto, StepDto, GuideDto, StepCommentDto } from '@dalili/shared'
 import { client } from '../api'
@@ -20,9 +20,12 @@ import {
   toggleSelect,
   type Selection,
 } from '../lib/selection'
-import { StepComments } from '../components/StepComments'
+import { GuideComments } from '../components/GuideComments'
 import { InsertStep, type InsertKind } from '../components/InsertStep'
 import { ShareDialog } from '../components/ShareDialog'
+import { MoreMenu, type MoreMenuItem } from '../components/MoreMenu'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+import { VersionHistoryPanel } from './VersionHistoryPanel'
 import { Button } from '../ui/Button'
 import { StateView } from '../ui/StateView'
 import { SkeletonScreen } from '../ui/Skeleton'
@@ -32,17 +35,25 @@ import {
   IconCheck,
   IconCloudOff,
   IconClock,
+  IconCopy,
   IconExternalLink,
   IconEye,
+  IconFolder,
   IconGlobe,
   IconList,
   IconPencil,
   IconPlus,
   IconShare,
   IconTarget,
+  IconTrash,
+  IconWand,
 } from '../ui/icons'
 import { durationAr, guideDurationMs, hostOf, ownerNameFromEmail, relativeTimeAr } from '../lib/format'
 import { t } from '../i18n'
+import { GuideStepList } from './GuideStepList'
+import { BookletBlockList } from './BookletBlockList'
+import { EmbedPicker } from './EmbedPicker'
+import { newBlockStep, type BlockInsertKind } from './booklet-insert'
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error'
 
@@ -73,6 +84,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
    * لا فهرسها: الحذف وإعادة الترتيب لا ينقلان التنشيط إلى شكلٍ آخر بالخطأ.
    */
   const [activeMark, setActiveMark] = useState<string | null>(null)
+  // BKL-01: موضع انتظار اختيار الدليل المضمّن — null يعني لا منتقي مفتوحًا
+  const [pickEmbedAt, setPickEmbedAt] = useState<number | null>(null)
   /** أمر المنظار الأخير — البطاقات تنفّذه عند تغيّر `seq` لا عند كل رسم */
   const [zoomCmd, setZoomCmd] = useState<ZoomCommand | null>(null)
   /**
@@ -97,6 +110,14 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   const [trainMsg, setTrainMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
   const [transcribeMsg, setTranscribeMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
   const [sttFailed, setSttFailed] = useState(false)
+  // VER-01/02: قائمة «المزيد» + حذف داخل الصفحة + سجل الإصدارات
+  const [askDelete, setAskDelete] = useState(false)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [versionsOpen, setVersionsOpen] = useState(false)
+  const [versionMsg, setVersionMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
+  const [snapshotting, setSnapshotting] = useState(false)
+  const navigate = useNavigate()
   // GM-05: تعليقات الخطوات — المالك يرى أسئلة الضيوف ويردّ ويسمّي محلولًا من هنا
   const [comments, setComments] = useState<StepCommentDto[]>([])
   const [commentsFailed, setCommentsFailed] = useState(false)
@@ -188,9 +209,9 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   }, [id, commentsSeq])
 
   /** GM-05: إضافة/رد/تعديل/وسم/حذف — كلها تحدّث القائمة موضعيًا بعد نجاح الخادم */
-  async function addComment(stepId: string, body: string, opts: { parentId?: string }) {
+  async function addComment(body: string, opts: { kind: 'issue' | 'note'; parentId?: string }) {
     if (!id) return
-    const { comment } = await client.addGuideComment(id, { stepId, body, parentId: opts.parentId })
+    const { comment } = await client.addGuideComment(id, { kind: opts.kind, body, parentId: opts.parentId })
     setComments((cs) => [...cs, comment])
   }
 
@@ -502,12 +523,72 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
    * التصفير خارج مُحدِّث الحالة عمدًا: مُحدِّثات React تُستدعى مرتين في
    * StrictMode، وأثرٌ جانبي داخلها يتكرّر بلا داعٍ.
    */
+  /**
+   * VER-01: عند الخروج من التحرير («تم» → عرض) نُفرّغ الحفظ المؤجّل ثم نطلب لقطة.
+   * الخادم يُسقط التكرار المتجاور إن لم يتغيّر شيء (204). فشل اللقطة **لا يمنع**
+   * الخروج من التحرير — لافتة صامتة فقط في `versionMsg`.
+   */
+  const snapshotOnDone = useCallback(async () => {
+    if (!id || !guide) return
+    setSnapshotting(true)
+    try {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current)
+        saveTimer.current = null
+        try {
+          setSave('saving')
+          await client.updateGuide(id, guide)
+          setSave('saved')
+        } catch {
+          setSave('error')
+          return
+        }
+      }
+      try {
+        await client.createVersion(id)
+      } catch {
+        setVersionMsg({ kind: 'err', text: t('editor.versionSaveError') })
+      }
+    } finally {
+      setSnapshotting(false)
+    }
+  }, [id, guide])
+
   const toggleEdit = useCallback(() => {
     if (editMode) setTool(DEFAULT_TOOL)
     setSel(emptySelection())
     setActiveMark(null) // ولا شكل نشط ناجٍ من الوضع — الشريط يعود أدوات لا خصائص
+    const wasEditing = editMode
     setEditMode(!editMode)
-  }, [editMode])
+    if (wasEditing) void snapshotOnDone()
+  }, [editMode, snapshotOnDone])
+
+  /** VER-02: حذف الدليل من قائمة «المزيد» — نقل ناعم للسلة، ثم عودة للهوم بلافتة معلّقة */
+  const confirmDelete = useCallback(async () => {
+    if (!id) return
+    setDeleteBusy(true)
+    setDeleteError('')
+    try {
+      await client.deleteGuide(id, {})
+      sessionStorage.setItem('dalili:pendingNotice', t('editor.delete.done'))
+      navigate('/')
+    } catch {
+      setDeleteError(t('editor.delete.error'))
+      setDeleteBusy(false)
+    }
+  }, [id, navigate])
+
+  /** إلغاء التحديد السريع بالضغط على مفتاح Escape */
+  useEffect(() => {
+    if (!editMode || sel.ids.length === 0) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setSel(emptySelection())
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [editMode, sel.ids.length])
 
   /** أمر منظار جديد: `seq` يتقدّم فتنفّذه كل بطاقة مرة واحدة */
   const pushZoom = useCallback((kind: ZoomCommand['kind']) => {
@@ -581,23 +662,22 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
    */
   function insertBlock(kind: InsertKind, at: number) {
     if (kind === 'capture') return void startAppendCapture(at)
-    const base = {
-      id: newStepId(),
-      kind: 'navigate' as const,
-      target: {},
-      sensitive: false,
-      url: '',
-      pageTitle: '',
-      ts: Date.now(),
+    // BKL-01: سقوف الكرّاسة — رفض صادق برسالة محددة لا انهيار ولا صمت
+    if (guide?.kind === 'booklet') {
+      const room = canAddBlock(guide.steps.length)
+      if (!room.ok) return setLoadError(room.reason)
+      if (kind === 'embed') {
+        const slots = canAddEmbed(embedIdsOf(guide.steps).length)
+        if (!slots.ok) return setLoadError(slots.reason)
+        // التضمين يحتاج اختيار دليل أولًا — المنتقي يكمل الإدراج
+        return setPickEmbedAt(at)
+      }
     }
-    const blk: StepDto =
-      kind === 'tip'
-        ? { ...base, block: 'tip', title: t('block.tipLabel') }
-        : kind === 'alert'
-          ? { ...base, block: 'alert', title: t('block.alertLabel') }
-          : kind === 'header'
-            ? { ...base, block: 'header', title: t('block.headerText') }
-            : { ...base, title: '' } // خطوة يدوية
+    insertStepAt(newBlockStep(kind as BlockInsertKind), at)
+  }
+
+  /** BKL-01: إدراج كتلة جاهزة في موضعها بدفعة تراجع واحدة */
+  function insertStepAt(blk: StepDto, at: number) {
     commit((g) => {
       const steps = [...g.steps]
       steps.splice(at, 0, blk)
@@ -759,10 +839,39 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
             variant={editMode ? 'solid' : 'ghost'}
             onClick={toggleEdit}
             aria-pressed={editMode}
+            disabled={snapshotting}
             icon={editMode ? <IconCheck size={16} /> : <IconPencil size={16} />}
           >
             {editMode ? t('editor.done') : t('editor.edit')}
           </Button>
+          {/* VER-02: قائمة «المزيد» — الإصدارات والحذف فعّالان، البقية تصميم فقط بتلميح «قريبًا» */}
+          <div className="more-menu-wrap">
+            <MoreMenu
+              ariaLabel={t('editor.more.aria')}
+              items={
+                [
+                  { key: 'sendToBooklet', label: t('editor.more.sendToBooklet'), icon: <IconBookOpen size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
+                  { key: 'duplicate', label: t('editor.more.duplicate'), icon: <IconCopy size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
+                  { key: 'translate', label: t('editor.more.translate'), icon: <IconWand size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
+                  { key: 'versions', label: t('editor.more.versions'), icon: <IconClock size={16} />, onSelect: () => setVersionsOpen((v) => !v) },
+                  { key: 'moveTo', label: t('editor.more.moveTo'), icon: <IconFolder size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
+                  { key: 'delete', label: t('editor.more.delete'), icon: <IconTrash size={16} />, onSelect: () => setAskDelete(true), danger: true },
+                ] satisfies MoreMenuItem[]
+              }
+            />
+            {versionsOpen && id && (
+              <div className="version-drawer">
+                <VersionHistoryPanel
+                  guideId={id}
+                  onClose={() => setVersionsOpen(false)}
+                  onPick={(vid) => {
+                    setVersionsOpen(false)
+                    navigate(`/g/${id}/v/${vid}`)
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
         {/* الباقي هنا: دربني ← (أضف خطوات) ← مشاركة في ركن النهاية */}
         <div className="editor-bar-end">
@@ -788,7 +897,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
         </div>
       </div>
 
-      <div className={`page editor-page${editMode ? ' editing' : ''}`}>
+      <div className={`page editor-page${editMode ? ' editing' : ''}${guide.kind === 'booklet' ? ' is-booklet' : ''}`}>
         {/* S1/S2/S4: منضدة الأدوات — عمود ثابت يمين الشاشة، أداته سارية على كل اللقطات */}
         <ToolRail
           editing={editMode}
@@ -845,9 +954,13 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
               <bdi>{ownerNameFromEmail(ownerEmail) || t('editor.you')}</bdi>
             </span>
             <span className="meta-item">
-              <IconList size={14} /> {t('common.steps', { count: guide.steps.length.toLocaleString('ar-EG') })}
+              {/* الكرّاسة كتلٌ لا خطوات — والعدّ يسمّي ما يعدّه (بلاغ المالك 2026-09-07) */}
+              <IconList size={14} />{' '}
+              {t(guide.kind === 'booklet' ? 'common.blocks' : 'common.steps', {
+                count: guide.steps.length.toLocaleString('ar-EG'),
+              })}
             </span>
-            {durationMs > 0 && (
+            {guide.kind !== 'booklet' && durationMs > 0 && (
               <span className="meta-item">
                 <IconClock size={14} /> {durationAr(durationMs)}
               </span>
@@ -868,8 +981,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
             </span>
           </div>
 
-          {/* شارات المواقع والتطبيقات الملتقطة */}
-          {capturedSites.length > 0 && (
+          {/* شارات المواقع والتطبيقات الملتقطة — للدليل وحده: الكرّاسة تُؤلَّف ولا تُلتقط */}
+          {guide.kind !== 'booklet' && capturedSites.length > 0 && (
             <div className="site-badges-row" aria-label={t('editor.capturedSites')}>
               {capturedSites.map((site) => (
                 <span key={site.host} className="site-badge" title={site.host}>
@@ -881,12 +994,30 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
               ))}
             </div>
           )}
+
+          {/* GM-05 تطوّر: التعليقات والمشكلات على مستوى الدليل مع معلومات الرأس */}
+          <GuideComments
+            comments={comments}
+            canModerate
+            failed={commentsFailed}
+            onRetry={() => setCommentsSeq((s2) => s2 + 1)}
+            onAdd={addComment}
+            onEdit={editComment}
+            onResolve={resolveComment}
+            onDelete={deleteComment}
+          />
         </header>
 
       {shareOpen && (
         <ShareDialog
           title={guide.title}
           share={share}
+          // BKL-01: قائمة الفحص قبل المشاركة — عناوين الأدلة التي سيمنحها التوكن
+          embedTitles={
+            guide.kind === 'booklet'
+              ? guide.steps.filter((s) => s.block === 'embed').map((s) => s.title)
+              : undefined
+          }
           onClose={() => setShareOpen(false)}
           onEnsureShare={ensureShare}
           onToggleShare={toggleShare}
@@ -1017,7 +1148,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
         </div>
       )}
 
-      <div className="col-stack">
+      <div className="col-stack editor-step-stack">
         {guide.steps.length === 0 && (
           <StateView
             kind="empty"
@@ -1026,86 +1157,81 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
             desc={t('editor.emptyDesc')}
           />
         )}
-        {guide.steps.map((s, i) => (
-          <Fragment key={s.id}>
-            {/* CAP-17: موضع إدراج فوق كل شريحة — في وضع التعديل فقط، يحمل موضعه الصريح */}
-            {editMode && (
-              <InsertStep
-                label={t('editor.insertBefore', { no: i + 1 })}
-                insertAt={i}
-                onInsert={insertBlock}
-                busy={appending}
-              />
-            )}
-            <div id={`step-${s.id}`} className="step-block">
-              <StepCard
-                index={i}
-                step={s}
-                guideId={id}
-                onVoiceTranscribed={() => setReloadSeq((v) => v + 1)}
-                onBlurApplied={onBlurApplied}
-                displayNo={nums[i] ?? null}
-                onAttachShot={(file) => void attachShot(i, file)}
-                canUp={i > 0}
-                canDown={i < guide.steps.length - 1}
-                editing={editMode}
-                tool={tool}
-                markColor={markColor}
-                zoomCmd={zoomCmd}
-                onChange={(patch) => updateStep(i, patch)}
-                onMove={(dir) => moveStep(i, dir)}
-                onRemove={() => removeStep(i)}
-                onDuplicate={() => duplicateStep(i)}
-                onMoveMark={(rect) => setMark(i, rect)}
-                markActive={activeMark === s.id}
-                onMarkActivate={(on) => setActiveMark(on ? s.id : null)}
-                picked={isPicked(sel, s.id)}
-                onPick={(e) => pickStep(s.id, e.shiftKey)}
-                dragging={dragFrom === i}
-                onDragStart={(e) => {
-                  setDragFrom(i)
-                  // فَيرفُكس لا يبدأ سحبًا أصلًا ما لم يحمل `dataTransfer` بيانات —
-                  // الفهرس نصًّا يكفي، ومصدر الحقيقة يبقى `dragFrom` في الحالة.
-                  e.dataTransfer.effectAllowed = 'move'
-                  e.dataTransfer.setData('text/plain', String(i))
-                }}
-                onDragOver={(e) => {
-                  // منع الافتراضي شرط قبول الإفلات في HTML5 — بدونه لا يقع إفلات أصلًا
-                  if (dragFrom === null) return
-                  e.preventDefault()
-                  e.dataTransfer.dropEffect = 'move'
-                }}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  if (dragFrom !== null && dragFrom !== i) moveStepTo(dragFrom, i)
-                  setDragFrom(null)
-                }}
-                onDragEnd={() => setDragFrom(null)}
-              />
-              <StepComments
-                stepId={s.id}
-                comments={comments}
-                canModerate
-                failed={commentsFailed}
-                onRetry={() => setCommentsSeq((s2) => s2 + 1)}
-                onAdd={(body, opts) => addComment(s.id, body, opts)}
-                onEdit={editComment}
-                onResolve={resolveComment}
-                onDelete={deleteComment}
-              />
-            </div>
-          </Fragment>
-        ))}
-        {editMode && (
-          <InsertStep
-            label={guide.steps.length ? t('editor.insertAtEnd') : t('editor.addStepsShort')}
-            insertAt={guide.steps.length}
-            onInsert={insertBlock}
+        {/* BKL-01: الكرّاسة لقائمة كتلها، والدليل لحلقته الحالية بلا مساس */}
+        {guide.kind === 'booklet' ? (
+          <BookletBlockList
+            steps={guide.steps}
+            editing={editMode}
             busy={appending}
+            onPatch={(i, patch) => updateStep(i, patch)}
+            onRemove={(i) => removeStep(i)}
+            onInsert={insertBlock}
+            onAttachShot={(i, file) => void attachShot(i, file)}
+          />
+        ) : (
+          <GuideStepList
+            guide={guide}
+            guideId={id}
+            nums={nums}
+            editMode={editMode}
+            appending={appending}
+            tool={tool}
+            markColor={markColor}
+            zoomCmd={zoomCmd}
+            sel={sel}
+            dragFrom={dragFrom}
+            activeMark={activeMark}
+            onInsert={insertBlock}
+            onVoiceTranscribed={() => setReloadSeq((v) => v + 1)}
+            onBlurApplied={onBlurApplied}
+            onAttachShot={(i, file) => void attachShot(i, file)}
+            updateStep={updateStep}
+            moveStep={moveStep}
+            removeStep={removeStep}
+            duplicateStep={duplicateStep}
+            setMark={setMark}
+            setActiveMark={setActiveMark}
+            pickStep={pickStep}
+            moveStepTo={moveStepTo}
+            setDragFrom={setDragFrom}
+          />
+        )}
+        {pickEmbedAt !== null && (
+          <EmbedPicker
+            onClose={() => setPickEmbedAt(null)}
+            onPick={(guideId, title) => {
+              insertStepAt(newBlockStep('embed', { guideId, title }), pickEmbedAt)
+              setPickEmbedAt(null)
+            }}
           />
         )}
       </div>
       </div>
+      {/* VER-01: لافتة صامتة إن فشل حفظ نسخة السجل — لا تُبقي المستخدم في التحرير */}
+      {versionMsg && (
+        <p className={`save-state ${versionMsg.kind === 'ok' ? 'saved' : 'error'}`} role="alert">
+          {versionMsg.text}
+        </p>
+      )}
+      {/* VER-02: حوار تأكيد الحذف — نقل ناعم للسلة */}
+      <ConfirmDialog
+        open={askDelete}
+        danger
+        busy={deleteBusy}
+        errorAr={deleteError || undefined}
+        title={t('editor.delete.title')}
+        body={t('editor.delete.body', { title: guide?.title ?? '' })}
+        confirmLabel={t('editor.delete.confirm')}
+        cancelLabel={t('editor.delete.cancel')}
+        onCancel={() => {
+          if (deleteBusy) return
+          setAskDelete(false)
+          setDeleteError('')
+        }}
+        onConfirm={() => {
+          void confirmDelete()
+        }}
+      />
     </div>
   )
 }

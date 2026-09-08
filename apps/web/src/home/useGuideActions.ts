@@ -47,6 +47,20 @@ export function useGuideActions(d: GuideActionsDeps) {
     }
   }
 
+  /** BKL-01: «كرّاسة» — نفس مسار الإنشاء والنوع وحده يفرّق */
+  async function newBooklet() {
+    setCreating(true)
+    try {
+      const { createAndOpenBooklet } = await import('../lib/newGuide')
+      const id = await createAndOpenBooklet()
+      d.reloadOverview()
+      d.navigate(`/g/${id}`)
+    } catch {
+      d.setError(t('library.createError'))
+      setCreating(false)
+    }
+  }
+
   async function remove(g: GuideSummaryDto) {
     if (!d.inTrash && confirming !== g.id) {
       setConfirming(g.id)
@@ -214,6 +228,7 @@ export function useGuideActions(d: GuideActionsDeps) {
     bulkBusy,
     creating,
     newGuide,
+    newBooklet,
     remove,
     restore,
     toggleBookmark,

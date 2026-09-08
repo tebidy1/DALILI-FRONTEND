@@ -7,6 +7,31 @@ import { t } from '../i18n'
 import { ownerNameFromEmail, arDigits, relativeTimeAr, dualDateAr } from '../lib/format'
 
 /**
+ * LIB-05: الشريط الجانبي لبطاقة الدليل — مربّع التحديد خارج البطاقة، محاذٍ لرأسها.
+ * يعكس StepRail في المحرر لضمان تجربة موحدة. أول عنصر في الصف = يمين RTL.
+ */
+function GuideRail({
+  picked,
+  onPick,
+}: {
+  picked: boolean
+  onPick: (shiftKey: boolean) => void
+}) {
+  return (
+    <div className="guide-rail no-print">
+      <button
+        className={`pick${picked ? ' on' : ''}`}
+        aria-pressed={picked}
+        aria-label={t('library.selectGuide', { title: '' })}
+        onClick={(e) => onPick(e.shiftKey)}
+      >
+        ✓
+      </button>
+    </div>
+  )
+}
+
+/**
  * بطاقة مدمجة بطلب المالك 2026-09-03: بلا صورة، والعنوان سطر واحد يُكمله التحويم
  * (title)، والظاهر منها المشاركة والبوكمارك و«⋯» في الركن العلوي الأيسر مع عدد
  * الخطوات — وبقية المعلومات والإجراءات مرتّبة داخل قائمة «⋯». النجمة أُزيلت
@@ -49,20 +74,16 @@ export function GuideCard(p: GuideCardProps) {
   const folderName = p.folders.find((f) => f.id === g.folderId)?.name
   const author = ownerNameFromEmail(g.ownerEmail)
   return (
-    <div className={`card guide-card${p.picked ? ' picked' : ''}`}>
+    <div className="guide-card-row">
+      {/* LIB-05: مربّع التحديد خارج البطاقة على اليمين (أول عنصر في RTL) — مثل StepRail */}
+      {p.showPick && (
+        <GuideRail
+          picked={p.picked}
+          onPick={(shift) => p.onPick(shift)}
+        />
+      )}
+      <div className={`card guide-card${p.picked ? ' picked' : ''}`}>
       <div className="row guide-card-head">
-        {p.showPick && (
-          /* LIB-05: تحديد البطاقة — نقر عادي يبدّل، Shift+Click يمدد المدى */
-          <button
-            className={`pick${p.picked ? ' on' : ''}`}
-            aria-pressed={p.picked}
-            aria-label={t('library.selectGuide', { title: g.title })}
-            title={t('library.selectGuide', { title: g.title })}
-            onClick={(e) => p.onPick(e.shiftKey)}
-          >
-            ✓
-          </button>
-        )}
         {/* سطر عنوان واحد — البقية تظهر بتحويم المؤشر فوقه */}
         <div className="title" title={g.title}>
           <bdi>{g.title}</bdi>
@@ -100,7 +121,10 @@ export function GuideCard(p: GuideCardProps) {
       </div>
 
       <div className="row card-meta">
-        <span className="chip">{t('common.steps', { count: g.stepCount })}</span>
+        {/* الكرّاسة كتلٌ لا خطوات، وأرقامها هندية شرقية كبقية الواجهة */}
+        <span className="chip">
+          {t(g.kind === 'booklet' ? 'common.blocks' : 'common.steps', { count: arDigits(g.stepCount) })}
+        </span>
       </div>
 
       {menuOpen && (
@@ -129,6 +153,8 @@ export function GuideCard(p: GuideCardProps) {
                 <span className={`chip status-chip${g.visibility === 'private' ? ' priv' : ''}`}>
                   {g.visibility === 'private' ? t('home.badgePrivate') : t('home.badgePublished')}
                 </span>
+                {/* BKL-01: الكرّاسة تعيش مع الأدلة في نفس القوائم — الشارة وحدها تميّزها */}
+                {g.kind === 'booklet' && <span className="chip kind-chip">{t('library.kindBooklet')}</span>}
                 {folderName && (
                   <span className="chip">
                     <bdi>{folderName}</bdi>
@@ -138,11 +164,13 @@ export function GuideCard(p: GuideCardProps) {
               <div className="row">
                 {g.commentCount > 0 && (
                   <span
-                    className={`chip comment-chip${g.openCommentCount > 0 ? ' has-open' : ''}`}
+                    className={`chip comment-chip${g.openCommentCount > 0 ? ' has-open' : ''}${g.openIssueCount > 0 ? ' has-issues' : ''}`}
                     title={
-                      g.openCommentCount > 0
-                        ? t('library.commentOpenHint', { count: g.openCommentCount })
-                        : t('library.commentCountA11y', { count: g.commentCount })
+                      g.openIssueCount > 0
+                        ? t('library.issueOpenHint', { count: g.openIssueCount })
+                        : g.openCommentCount > 0
+                          ? t('library.commentOpenHint', { count: g.openCommentCount })
+                          : t('library.commentCountA11y', { count: g.commentCount })
                     }
                   >
                     {t('library.commentCount', { count: g.commentCount })}
@@ -224,6 +252,7 @@ export function GuideCard(p: GuideCardProps) {
           </div>
         </>
       )}
+      </div>
     </div>
   )
 }

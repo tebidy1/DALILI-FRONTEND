@@ -25,6 +25,7 @@ const OVERVIEW: LibraryOverviewDto = {
   workspaceName: 'مساحة',
   myRole: 'admin',
   myEmail: 'owner@dalili.sa',
+  myTheme: 'brand',
   counts: { all: 3, mine: 3, published: 0, saved: 0 },
   sites: [],
 }
@@ -35,6 +36,7 @@ function guides(n: number): ListGuidesDto {
     id: `g${i + 1}`,
     title: `دليل ${i + 1}`,
     stepCount: 3,
+    kind: 'guide' as const,
     starred: false,
     folderId: null,
     tags: [] as string[],
@@ -43,6 +45,7 @@ function guides(n: number): ListGuidesDto {
     updatedAt: '2026-01-01T00:00:00Z',
     commentCount: 0,
     openCommentCount: 0,
+    openIssueCount: 0,
     visibility: 'private' as const,
     site: '',
     bookmarked: false,

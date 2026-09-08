@@ -116,4 +116,49 @@ describe('train-card — بطاقة خط اليد بلا خلفية + دائرة
     expect(stop).toHaveBeenCalledTimes(1)
     card.unmount()
   })
+
+  it('تمرير فوري لمرة واحدة عند العرض ثم تُحسب البطاقة من مستطيلٍ مستقرّ — علة الخطوات البعيدة', () => {
+    // علة «الخطوات ٥/٦/٩ في غير مكانها»: مع التمرير الناعم كان الموضع يُحسب أثناء حركة
+    // التمرير فتستقرّ الخطوة على مستطيلٍ لم يصل وجهته. الحل: تمرير فوري ثم placeNear من مستطيل نهائي.
+    const target = withRect(place('<button id="b">حفظ</button>'), 10, 900, 120, 44) // بعيد أسفل الصفحة
+    let scrolls = 0
+    ;(target as HTMLElement).scrollIntoView = ((opts?: ScrollIntoViewOptions) => {
+      scrolls++
+      expect(opts?.behavior).toBe('auto') // تمرير فوري لا ناعم — لا سباق حركة
+      withRect(target, 10, 380, 120, 44) // الفوري يُثبّت الهدف قرب الوسط تزامنيًا
+    }) as Element['scrollIntoView']
+    const card = createTrainCard()
+    card.showStep({ step, idx: 0, total: 2, guideTitle: 'د', target })
+    const cardEl = document.querySelector('dalili-train')!.shadowRoot!.querySelector<HTMLElement>('.card')!
+    expect(scrolls).toBe(1) // تمرير واحد عند العرض
+    // البطاقة فوق الهدف المستقرّ (y=380) لا فوق موضعه البائت البعيد (y=900)
+    const top1 = parseFloat(cardEl.style.top)
+    expect(top1).toBeLessThan(380)
+    expect(top1).toBeGreaterThan(150)
+
+    // تمرير المستخدم لاحقًا يُعيد التموضع من مستطيل طازج بلا إعادة إطلاق تمرير
+    withRect(target, 10, 120, 120, 44)
+    window.dispatchEvent(new Event('scroll'))
+    expect(scrolls).toBe(1) // لم يُعد إطلاق scrollIntoView على حدث تمرير المستخدم
+    expect(parseFloat(cardEl.style.top)).not.toBe(top1) // تتبّعت الموضع الجديد
+    card.unmount()
+  })
+
+  it('نصوص البطاقة خط أبيض على «ريشة» جرافيت (عكس الآية) — لا ألوان خارج النظام', () => {
+    const target = place('<button id="b">حفظ</button>')
+    const card = createTrainCard()
+    card.showStep({ step, idx: 0, total: 3, guideTitle: 'دليل الفاتورة', target })
+    const root = document.querySelector('dalili-train')!.shadowRoot!
+    const styleTxt = root.querySelector('style')!.textContent ?? ''
+    // كل جملة داخل span.brush يحمل خلفية الريشة
+    expect(root.querySelectorAll('.brush').length).toBeGreaterThan(0)
+    expect(root.querySelector('.title .brush')).toBeTruthy()
+    // العكس: الخط أبيض والفرشاة جرافيت «درجة الأسود» (jsdom لا يورّث أنماط الظل فنقرأ المصدر)
+    expect(styleTxt).toMatch(/\.card\s*\{[^}]*color:\s*#FFFFFF/) // خط البطاقة أبيض
+    expect(styleTxt).toContain('%232B2A26') // fill الفرشاة = الجرافيت
+    // النظام اللوني: لا برتقالي/أخضر تزييني
+    expect(styleTxt).not.toContain('#FDBA74')
+    expect(styleTxt).not.toContain('#6EE7A0')
+    card.unmount()
+  })
 })

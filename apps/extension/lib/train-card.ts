@@ -13,6 +13,8 @@ export interface TrainCard {
   showStep(p: { step: TrainStep; idx: number; total: number; guideTitle: string; target: Element | null }): void
   /** انقضت مهلة البحث ولم يظهر الزر — رسالة صادقة بدل انتظار أبدي */
   markMissing(): void
+  /** LX-01: لسنا على الشاشة الهدف بعد (تسجيل دخول/تنقّل) — بطاقة «استعد» وننتظر بالأحداث */
+  markWaiting(): void
   /** GM-02: تلميح لطيف بلا تقديم */
   wrongHint(title: string): void
   /** بطاقة الإنجاز النهائية — تُفكك ذاتيًا بعد مهلة قصيرة */
@@ -23,16 +25,32 @@ export interface TrainCard {
 }
 
 const HOST_TAG = 'dalili-train'
-const ACCENT = '#EA580C'
-const OK = '#3BBD6A'
+/**
+ * ألوان البطاقة موحّدة مع نظام التطبيق (packages/core theme.ts + رموز الويب):
+ * جرافيت + أبيض فقط، بلا لون تزييني. بلاغ المالك: النص كان بألوان غير احترافية
+ * (برتقالي/أخضر/أبيض بهالة داكنة) — الآن حبر «درجة الأسود» على «ريشة» بيضاء.
+ */
+const INK = '#2B2A26' // حبر التطبيق الأساسي — «درجة الأسود» الجرافيتية (الآن خلفية الفرشاة)
+const WHITE = '#FFFFFF' // «نفس درجة الأبيض المستخدم في التطبيق» — لون الخط بعد عكس الآية
+const LINE = '#E7E3DA' // نص ثانوي فاتح على الجرافيت (اسم الدليل) — من رموز التطبيق
+const DANGER = '#C4453D' // أحمر وظيفي فقط (تصحيح لطيف) — من نظام اللونين
+const ACCENT = '#EA580C' // لون الحلقة حول الزر — مؤشّر انتباه فقط (لم يُطلب تغييره)
 /** خط اليد: الرقعة العربية مضمّنة في الامتداد — والبدائل المحلية احتياط */
 const HAND = `'Aref Ruqaa','Segoe Print','Comic Sans MS',cursive`
 const FONT_URL =
   typeof chrome !== 'undefined' && chrome.runtime?.getURL ? chrome.runtime.getURL('fonts/ArefRuqaa-Regular.ttf') : ''
 const FONT_FACE = FONT_URL ? `@font-face { font-family:'Aref Ruqaa'; src:url('${FONT_URL}'); font-display:swap; }` : ''
-/** حبر مقروء فوق أي خلفية: حد داكن خلف الحروف (paint-order) + هالة — ليست خلفية صندوق */
-const HALO = `0 1px 2px rgba(10,14,18,1), 0 0 8px rgba(10,14,18,1), 0 0 18px rgba(10,14,18,.85)`
-const INK = `-webkit-text-stroke: 3px rgba(12,16,20,.85); paint-order: stroke fill;`
+/**
+ * خلفية «الريشة» خلف الجملة (طلب المالك، معكوسة الآن): مسحة فرشاة SVG بحوافّ متموّجة
+ * تُمطّ لعرض النص (preserveAspectRatio=none)، وتُنسخ لكل سطر عبر box-decoration-break.
+ * المالك عكس الآية: الخلفية جرافيت «درجة الأسود» والخط أبيض — نفس المسار يتغيّر لونه فقط.
+ */
+const brushUrl = (fillEnc: string) =>
+  `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 90' preserveAspectRatio='none'><path fill='${fillEnc}' d='M4 47 C2 33 14 25 34 24 C96 20 150 30 214 24 C252 21 292 26 308 31 C318 34 318 41 316 47 C318 56 310 64 296 66 C244 71 156 60 96 66 C58 69 22 68 12 60 C4 54 4 53 4 47 Z'/></svg>")`
+const BRUSH = brushUrl('%232B2A26') // فرشاة جرافيت خلف كل جملة — «درجة الأسود» من نظام التطبيق
+const BRUSH_DANGER = brushUrl(`%23${DANGER.slice(1)}`) // فرشاة حمراء وظيفية لتنبيه النقر الخاطئ فقط
+/** هالة داكنة رقيقة تُبقي الحرف الأبيض مقروءًا على حافة الفرشاة المتموّجة */
+const DARK_HALO = `0 0 2px ${INK}, 0 1px 1px ${INK}`
 
 const STYLE = `
 ${FONT_FACE}
@@ -46,28 +64,36 @@ svg.ring path { fill: none; stroke: ${ACCENT}; stroke-linecap: round; stroke-lin
 svg.ring path.pass2 { opacity: .5; }
 @keyframes dalili-pulse { 0%,100% { opacity: 1 } 50% { opacity: .72 } }
 .card { position: fixed; pointer-events: auto; width: min(360px, calc(100vw - 24px));
-  color: #FFF; font-family: ${HAND}; text-shadow: ${HALO}; ${INK} }
-.brand { font-size: 15px; color: #FDBA74; }
-.guide { font-size: 13.5px; color: #E8E3D8; opacity: .92; margin-top: 2px; }
-.title { font-size: 19px; line-height: 1.75; margin: 6px 0 2px; }
-.note { font-size: 15.5px; line-height: 1.8; white-space: pre-wrap; margin: 4px 0; }
-.hint { font-size: 15px; margin: 6px 0 2px; }
-.miss { font-size: 15px; line-height: 1.8; color: #FDBA74; margin: 6px 0; }
-.row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-.row .count { font-size: 14.5px; opacity: 1; margin-inline-start: auto; }
-button.act { pointer-events: auto; cursor: pointer; background: transparent; color: #FFF;
-  text-shadow: ${HALO}; ${INK} border: 1.6px solid rgba(255,255,255,.8); border-radius: 999px;
-  padding: 5px 14px; font-family: ${HAND}; font-size: 14px; }
-button.act:hover { border-color: ${ACCENT}; color: #FDBA74; }
+  color: ${WHITE}; font-family: ${HAND}; }
+/* خلفية الريشة الجرافيتية خلف كل جملة والخط أبيض — span سطري يُنسخ لكل سطر عند الالتفاف */
+.card .brush { -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background-image: ${BRUSH}; background-repeat: no-repeat; background-size: 100% 100%;
+  padding: 0.1em 0.42em; text-shadow: ${DARK_HALO}; }
+.brand { font-size: 15px; font-weight: 700; }
+.guide { font-size: 13.5px; margin-top: 4px; }
+.guide .brush { color: ${LINE}; }
+.title { font-size: 19px; line-height: 1.95; margin: 8px 0 2px; }
+.note { font-size: 15.5px; line-height: 1.95; white-space: pre-wrap; margin: 6px 0; }
+.hint { font-size: 15px; line-height: 1.95; margin: 8px 0 2px; }
+.miss { font-size: 15px; line-height: 1.95; margin: 8px 0; }
+.row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.row .count { font-size: 14.5px; margin-inline-start: auto; }
+button.act { pointer-events: auto; cursor: pointer; background: ${WHITE}; color: ${INK};
+  border: 1.5px solid ${INK}; border-radius: 999px; padding: 5px 15px;
+  font-family: ${HAND}; font-size: 14px; font-weight: 700;
+  box-shadow: 0 1px 3px rgba(43,42,38,.18); transition: background .15s ease, color .15s ease; }
+button.act:hover { background: ${INK}; color: ${WHITE}; }
 .wrong { position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-  color: #FED7AA; font-family: ${HAND}; font-size: 16px; text-shadow: ${HALO};
+  font-family: ${HAND}; font-size: 16px;
   opacity: 0; transition: opacity .15s ease; white-space: nowrap;
   max-width: calc(100vw - 24px); overflow: hidden; text-overflow: ellipsis; }
+.wrong .brush { background-image: ${BRUSH_DANGER}; color: ${WHITE}; }
 .wrong.on { opacity: 1; }
 .done-card { text-align: center; }
-.done-card .big { font-size: 40px; }
-.done-card .t { font-size: 24px; color: #6EE7A0; margin: 10px 0 4px; }
-.done-card .s { font-size: 15.5px; color: #FFF; opacity: .95; }
+.done-card .big { font-size: 40px; filter: drop-shadow(0 1px 2px rgba(43,42,38,.25)); }
+.done-card .t { font-size: 24px; margin: 12px 0 6px; }
+.done-card .t .brush { font-weight: 700; }
+.done-card .s { font-size: 15.5px; }
 @media (prefers-reduced-motion: reduce) { svg.ring { animation: none } svg.ring path { transition: none } }
 `
 
@@ -199,12 +225,21 @@ export function createTrainCard(): TrainCard {
     return true
   }
 
+  /**
+   * يلصق البطاقة والحلقة بموضع العنصر **الحالي** — يستدعيه `follow` على كل حدث
+   * تمرير، فيقرأ المستطيل طازجًا كل مرة (لا إحداثيات بائتة).
+   *
+   * علة «الأزرار في غير مكانها» (بلاغ المالك، بعد LX-01): كان التمرير
+   * `scrollIntoView({behavior:'smooth'})` بداخل هذه الدالة نفسها — فيُعاد إطلاقه
+   * على كل نبضة تمرير يطلقها `follow`، فتقاتل الحركةُ نفسها ولا تستقر، وتُحسب
+   * البطاقة من مستطيلٍ التُقط قبل ذلك التمرير. تفاقم مع `reuse-here` لأن الصفحة
+   * تبدأ مُمرَّرة لموضع عشوائي فيلزم تمرير كبير. الحل: التمرير مرة واحدة عند عرض
+   * الخطوة (`scrollTargetIntoView`) وهذه الدالة تُموضِع فقط من مستطيلٍ طازج.
+   */
   function placeNear(el: Element) {
     if (!card || !ring) return
     drawRing(el)
     const r = el.getBoundingClientRect()
-    // jsdom وبعض البيئات بلا scrollIntoView — التموضع لا يعتمد عليه
-    if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'center', behavior: 'smooth' })
     const cardH = card.offsetHeight || 150
     let y = r.y - cardH - 14
     if (y < 10) y = r.bottom + 14
@@ -213,6 +248,20 @@ export function createTrainCard(): TrainCard {
     let x = r.x + r.width / 2 - w / 2
     x = Math.min(Math.max(12, x), Math.max(12, window.innerWidth - w - 12))
     card.style.left = `${x}px`
+  }
+
+  /**
+   * تمرير **فوري** (auto) يجلب الهدف لوسط الشاشة قبل حساب الموضع. الفوري يحدّث موضع
+   * التمرير تزامنيًا، فيقرأ `placeNear` بعده مستطيلًا **مستقرًّا** ويضع البطاقة والحلقة
+   * صحيحًا من أول رسمة — لا سباق مع حركة ناعمة.
+   *
+   * علة «الخطوات البعيدة في غير مكانها» (بلاغ المالك): مع `behavior:'smooth'` كان
+   * الموضع يُحسب أثناء حركة التمرير المتحرّكة، فالخطوات التي تحتاج تمريرًا كبيرًا
+   * (٥، ٦، ٩…) تستقرّ على مستطيلٍ لم يصل بعدُ لوجهته، بينما الخطوات الظاهرة أصلًا تصحّ.
+   * الحل: تمرير فوري ثم حساب من مستطيلٍ نهائي. (jsdom بلا scrollIntoView — يمرّ صامتًا.)
+   */
+  function scrollTargetIntoView(el: Element) {
+    if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'center', behavior: 'auto' })
   }
 
   function follow() {
@@ -229,6 +278,22 @@ export function createTrainCard(): TrainCard {
 
   function clearTransform() {
     if (card) card.style.transform = ''
+  }
+
+  /** span سطري يحمل خلفية الريشة البيضاء ويحضن الجملة — أساس كل نصوص البطاقة */
+  function brushSpan(text: string): HTMLElement {
+    const s = document.createElement('span')
+    s.className = 'brush'
+    s.textContent = text
+    return s
+  }
+
+  /** سطر نصّي: حاوية كتلية بالصنف المطلوب (تتراص عموديًا) + جملة بخلفية ريشة داخلها */
+  function inkLine(cls: string, text: string): HTMLElement {
+    const el = document.createElement('div')
+    el.className = cls
+    el.appendChild(brushSpan(text))
+    return el
   }
 
   function rowButtons(total: number, idx: number): HTMLElement {
@@ -248,7 +313,7 @@ export function createTrainCard(): TrainCard {
     stop.addEventListener('click', () => stopCb?.())
     const count = document.createElement('span')
     count.className = 'count'
-    count.textContent = `خطوة ${toArabicDigits(idx + 1)} من ${toArabicDigits(total)}`
+    count.appendChild(brushSpan(`خطوة ${toArabicDigits(idx + 1)} من ${toArabicDigits(total)}`))
     row.append(skip, stop, count)
     return row
   }
@@ -258,37 +323,24 @@ export function createTrainCard(): TrainCard {
     seed = hashStr(last.step.id) || 1
     clearTransform()
     card.innerHTML = ''
-    const brand = document.createElement('div')
-    brand.className = 'brand'
-    brand.textContent = 'دربني'
-    const guide = document.createElement('div')
-    guide.className = 'guide'
-    guide.textContent = last.guideTitle
-    const title = document.createElement('div')
-    title.className = 'title'
-    title.textContent = last.step.title
-    card.append(brand, guide, title)
+    card.append(inkLine('brand', 'دربني'), inkLine('guide', last.guideTitle), inkLine('title', last.step.title))
 
     if (found) {
       ring.style.display = ''
-      if (last.step.note) {
-        const note = document.createElement('p')
-        note.className = 'note'
-        note.textContent = last.step.note
-        card.appendChild(note)
-      }
-      const hint = document.createElement('p')
-      hint.className = 'hint'
-      hint.textContent = last.step.kind === 'click' ? 'انقر الزر الذي أحطته بالدائرة' : 'أكمل الإجراء على ما أحاطت به الدائرة'
-      card.appendChild(hint)
+      if (last.step.note) card.appendChild(inkLine('note', last.step.note))
+      card.appendChild(
+        inkLine('hint', last.step.kind === 'click' ? 'انقر الزر الذي أحطته بالدائرة' : 'أكمل الإجراء على ما أحاطت به الدائرة'),
+      )
     } else {
       ring.style.display = 'none'
-      const miss = document.createElement('p')
-      miss.className = 'miss'
-      miss.textContent = missing
-        ? 'لم أجد هذا الزر في الصفحة — ربما تغيّرت الواجهة منذ إنشاء الدليل. تخطَّ الخطوة أو أوقف التدريب.'
-        : 'أبحث عن الزر في الصفحة… قد تتأخر عناصرها في الظهور'
-      card.appendChild(miss)
+      card.appendChild(
+        inkLine(
+          'miss',
+          missing
+            ? 'لم أجد هذا الزر في الصفحة — ربما تغيّرت الواجهة منذ إنشاء الدليل. تخطَّ الخطوة أو أوقف التدريب.'
+            : 'أبحث عن الزر في الصفحة… قد تتأخر عناصرها في الظهور',
+        ),
+      )
     }
     card.appendChild(rowButtons(last.total, last.idx))
   }
@@ -300,8 +352,10 @@ export function createTrainCard(): TrainCard {
     last = { step: p.step, idx: p.idx, total: p.total, guideTitle: p.guideTitle }
     render(p.target, false)
     onReposition = p.target ? () => placeNear(p.target!) : null
-    if (p.target) placeNear(p.target)
-    else centerCard()
+    if (p.target) {
+      scrollTargetIntoView(p.target) // أولًا تمرير فوري يُثبّت موضع الهدف تزامنيًا
+      placeNear(p.target) // ثم نضع من مستطيلٍ مستقرّ — صحيح من أول رسمة؛ follow يتابع تمرير المستخدم لاحقًا
+    } else centerCard()
   }
 
   function markMissing() {
@@ -312,12 +366,35 @@ export function createTrainCard(): TrainCard {
     centerCard()
   }
 
+  /** LX-01: بطاقة «استعد» — لسنا على الشاشة الهدف بعد؛ نرشد للدخول/التنقّل وننتظر بالأحداث */
+  function markWaiting() {
+    if (!last || !card) return
+    clearTransform()
+    if (ring) ring.style.display = 'none'
+    onReposition = null
+    card.innerHTML = ''
+    const wait = inkLine('miss', 'لم نصل إلى الشاشة المطلوبة بعد — سجّل الدخول وانتقل إليها وسيبدأ التدريب تلقائيًا.')
+    // في الانتظار «إيقاف» فقط — لا تخطٍّ لخطوة لم تبدأ
+    const row = document.createElement('div')
+    row.className = 'row'
+    const stop = document.createElement('button')
+    stop.className = 'act'
+    stop.type = 'button'
+    stop.textContent = 'إيقاف'
+    stop.setAttribute('aria-label', 'إيقاف التدريب')
+    stop.addEventListener('click', () => stopCb?.())
+    row.append(stop)
+    card.append(inkLine('brand', 'دربني'), inkLine('guide', last.guideTitle), inkLine('title', last.step.title), wait, row)
+    centerCard()
+  }
+
   window.addEventListener('scroll', follow, { passive: true, capture: true })
   window.addEventListener('resize', follow)
 
   function wrongHint(title: string) {
     if (!wrong) return
-    wrong.textContent = `ليس هذا الزر — المطلوب: ${title}`
+    wrong.innerHTML = ''
+    wrong.appendChild(brushSpan(`ليس هذا الزر — المطلوب: ${title}`))
     wrong.classList.add('on')
     if (wrongTimer) clearTimeout(wrongTimer)
     wrongTimer = setTimeout(() => wrong?.classList.remove('on'), 2600)
@@ -337,12 +414,8 @@ export function createTrainCard(): TrainCard {
     const big = document.createElement('div')
     big.className = 'big'
     big.textContent = '🎉'
-    const t = document.createElement('div')
-    t.className = 't'
-    t.textContent = 'أكملت التدريب'
-    const s = document.createElement('div')
-    s.className = 's'
-    s.textContent = `أنجزت ${toArabicDigits(total)} ${total === 1 ? 'خطوة' : 'خطوات'} بنجاح — عساك على القوة`
+    const t = inkLine('t', 'أكملت التدريب')
+    const s = inkLine('s', `أنجزت ${toArabicDigits(total)} ${total === 1 ? 'خطوة' : 'خطوات'} بنجاح — عساك على القوة`)
     card.append(big, t, s)
     if (finishTimer) clearTimeout(finishTimer)
     finishTimer = setTimeout(hide, 4500)
@@ -367,6 +440,7 @@ export function createTrainCard(): TrainCard {
     unmount,
     showStep,
     markMissing,
+    markWaiting,
     wrongHint,
     finish,
     hide,

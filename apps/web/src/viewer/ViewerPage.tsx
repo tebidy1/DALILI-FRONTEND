@@ -4,8 +4,9 @@ import { extractCapturedSites, nearestStepIndexAt, stepAudioMs, stepAudioRanges,
 import type { PublicGuideDto, StepCommentDto, StepDto } from '@dalili/shared'
 import { client } from '../api'
 import { StepImage } from '../components/StepImage'
-import { StepComments } from '../components/StepComments'
+import { GuideComments } from '../components/GuideComments'
 import { StepVoiceBadge } from '../components/StepVoiceBadge'
+import { ViewerBooklet } from './ViewerBooklet'
 import { SkeletonScreen } from '../ui/Skeleton'
 import { StateView } from '../ui/StateView'
 import { IconCloudOff, IconExternalLink, IconPause, IconPlay } from '../ui/icons'
@@ -107,28 +108,15 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
     return () => ac.abort()
   }, [token, reloadSeq])
 
-  async function addComment(stepId: string, body: string, opts: { parentId?: string; author?: string }) {
+  async function addComment(body: string, opts: { kind: 'issue' | 'note'; parentId?: string; author?: string }) {
     if (!token) return
     const { comment } = await client.addShareComment(token, {
-      stepId,
+      kind: opts.kind,
       body,
       parentId: opts.parentId,
       author: opts.author,
     })
     setComments((cs) => [...cs, comment])
-  }
-
-  function commentsFor(stepId: string) {
-    return (
-      <StepComments
-        stepId={stepId}
-        comments={comments}
-        canModerate={false}
-        failed={commentsFailed}
-        onRetry={() => setReloadSeq((s) => s + 1)}
-        onAdd={(body, opts) => addComment(stepId, body, opts)}
-      />
-    )
   }
 
   // VIEW-13: روابط المشاركة ليست عامة للعالم — لا فهرسة (تتكامل مع ترويسة SEC-02 الخادمية)
@@ -226,7 +214,9 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
         <h1 className="embed-title">
           <bdi>{guide.title}</bdi>
         </h1>
-        {guide.steps.map((s, i) => {
+        {/* BKL-01: توجيه الكرّاسة */}
+        {guide.kind === 'booklet' && <ViewerBooklet guide={guide} embeds={data.embeds ?? {}} />}
+        {guide.kind !== 'booklet' && guide.steps.map((s, i) => {
           if (s.block) return <ViewerBlock key={s.id} step={s} />
           return (
             <div className="viewer-step" key={s.id}>
@@ -267,7 +257,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
         </div>
       </div>
 
-      <div className={`page viewer-page${virtual ? ' cv-steps' : ''}`}>
+      <div className={`page viewer-page${guide.kind === 'booklet' ? ' booklet-page' : ''}${virtual ? ' cv-steps' : ''}`}>
         {/* هوية الدليل: العنوان + الوصف + شارات المواقع */}
         <header className="guide-head viewer-guide-head">
           <h1 className="guide-title-read" dir="rtl">
@@ -290,6 +280,14 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
               ))}
             </div>
           )}
+          {/* GM-05 تطوّر: التعليقات والمشكلات على مستوى الدليل أعلى الشاشة مع المعلومات */}
+          <GuideComments
+            comments={comments}
+            canModerate={false}
+            failed={commentsFailed}
+            onRetry={() => setReloadSeq((s) => s + 1)}
+            onAdd={addComment}
+          />
         </header>
 
         {/* VOX-03 موزّعًا (قرار المالك): عنصر الصوت مشترك خفي — أزرار الاستماع داخل الخطوات */}
@@ -303,7 +301,9 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
           />
         )}
 
-        {guide.steps.map((s, i) => {
+        {/* BKL-01: توجيه الكرّاسة */}
+        {guide.kind === 'booklet' && <ViewerBooklet guide={guide} embeds={data.embeds ?? {}} />}
+        {guide.kind !== 'booklet' && guide.steps.map((s, i) => {
           if (s.block) return <ViewerBlock key={s.id} step={s} />
           return (
             <div
@@ -345,7 +345,6 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
                 </button>
               )}
               <StepShot s={s} />
-              {commentsFor(s.id)}
             </div>
           )
         })}

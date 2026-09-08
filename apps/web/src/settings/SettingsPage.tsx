@@ -6,6 +6,7 @@ import { Button } from '../ui/Button'
 import { IconFolder, IconUsers } from '../ui/icons'
 import { t } from '../i18n'
 import { arDigits, roleLabelAr } from '../lib/format'
+import { readTheme, setTheme, type ThemeChoice } from '../lib/theme'
 import { useOverview } from '../shell/OverviewContext'
 
 /**
@@ -24,6 +25,14 @@ export function SettingsPage() {
   const [newFolder, setNewFolder] = useState('')
   const [error, setError] = useState('')
   const [reloadSeq, setReloadSeq] = useState(0)
+  const [theme, setThemeState] = useState<ThemeChoice>(() => readTheme())
+
+  // مزامنة الثيم: المحلي فوري، والخادم هو الحقيقة — فشله لا يمنع التطبيق المحلي (صدق)
+  function chooseTheme(choice: ThemeChoice) {
+    setTheme(choice)
+    setThemeState(choice)
+    client.setMyTheme(choice).catch(() => setError(t('settings.themeSyncError')))
+  }
 
   const reload = useCallback(() => setReloadSeq((s) => s + 1), [])
 
@@ -121,6 +130,32 @@ export function SettingsPage() {
               </Button>
             </form>
           )}
+        </section>
+
+        {/* — المظهر: الهوية الجديدة أو الجرافيت القديم — */}
+        <section className="settings-card" aria-label={t('settings.theme')}>
+          <h2>{t('settings.theme')}</h2>
+          <p className="muted card-desc">{t('settings.themeDesc')}</p>
+          <div className="theme-options">
+            <button
+              type="button"
+              className={'theme-option' + (theme === 'brand' ? ' is-active' : '')}
+              aria-pressed={theme === 'brand'}
+              onClick={() => chooseTheme('brand')}
+            >
+              <b>{t('settings.themeBrand')}</b>
+              <small>{t('settings.themeBrandDesc')}</small>
+            </button>
+            <button
+              type="button"
+              className={'theme-option' + (theme === 'classic' ? ' is-active' : '')}
+              aria-pressed={theme === 'classic'}
+              onClick={() => chooseTheme('classic')}
+            >
+              <b>{t('settings.themeClassic')}</b>
+              <small>{t('settings.themeClassicDesc')}</small>
+            </button>
+          </div>
         </section>
 
         {/* — بطاقات المداخل — */}
