@@ -6,6 +6,7 @@ import { searchHref, relativeTimeAr, filterByTitle } from '@/lib/recent'
 import { guidesCountAr } from '@/lib/discover'
 import { capabilities, CAPS_PANEL } from '@/lib/capabilities'
 import { WEB_BASE } from '@/lib/config'
+import type { PreferredStart } from '@/lib/settings-store'
 import { RecordIcon, MicIcon, SearchIcon, DocIcon } from './icons'
 
 /** شاشة الخمول في اللوحة الجانبية — الاقتطاع من App.tsx لقانون الحجم (المكوّن ≤250) */
@@ -20,6 +21,7 @@ export function IdleScreen({
   discover,
   recent,
   recentErr,
+  preferredStart = 'plain',
 }: {
   send: (t: SendMsg) => void
   me: MeDto | null
@@ -28,17 +30,26 @@ export function IdleScreen({
   discover: DiscoverResponseDto | null
   recent: RecentGuide[]
   recentErr: string
+  /** الإعدادات: طريقة البدء المفضّلة — تقود أيّ الزرّين يكون الأساسي (النصوص والترتيب ثابتان) */
+  preferredStart?: PreferredStart
 }) {
+  const audioFirst = preferredStart === 'audio'
   return (
     <div className="body">
-      <button className="cta" onClick={() => send('start')}>
+      <button className={audioFirst ? 'cta cta-2' : 'cta'} onClick={() => send('start')}>
         <RecordIcon /> ابدأ الالتقاط
       </button>
-      {/* VOX-01: يفتح صفحة إذن قصيرة ثم يبدأ الالتقاط مع تعليقك الصوتي */}
-      <button className="cta cta-2" onClick={() => send('start-with-audio')}>
+      {/* VOX-AUTO: يفتح صفحة إذن قصيرة ثم يبدأ الالتقاط — كل بطاقة جديدة يبدأ عليها
+          تسجيل تعليقك تلقائيًا حتى البطاقة التالية، ويُحوَّل إلى نص مرفق بالبطاقة */}
+      <button
+        className={audioFirst ? 'cta' : 'cta cta-2'}
+        title="صوتك يُسجَّل مع كل بطاقة تلقائيًا ويُحوَّل نصًا — قل ما تريد ثم التقط التالية"
+        onClick={() => send('start-with-audio')}
+      >
         <MicIcon /> ابدأ مع تعليق صوتي
       </button>
-      <div className="kbd">اختصار <b>Ctrl</b>+<b>Shift</b>+<b>U</b> لبدء/إنهاء الالتقاط</div>
+      {/* فراغ ثابت مكان سطر اختصار لوحة المفاتيح — الثلث الأول يتنفس (طلب المالك 2026-09-09) */}
+      <div className="kbd-gap" aria-hidden="true" />
 
       {me ? (
         <>

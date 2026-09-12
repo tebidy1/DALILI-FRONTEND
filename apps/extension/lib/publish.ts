@@ -1,4 +1,4 @@
-import { assembleGuide, DEFAULT_MARK_COLOR, type AudioMeta, type RawStep } from '@dalili/core'
+import { assembleGuide, DEFAULT_MARK_COLOR, type RawStep } from '@dalili/core'
 import type { DaliliClient, StepDto } from '@dalili/shared'
 import { stepKey, shotKey, type StoredStep } from './protocol'
 import { voiceMemoKey, type StoredVoiceMemo } from './voice-memo'
@@ -38,8 +38,6 @@ export function screenshotFromStored(up: UploadedShot, st: StoredShotState) {
  * تجميع الخطوات المخزنة محليًا ونشرها: رفع الصور واحدة واحدة ثم إنشاء الدليل —
  * أو إضافتها لدليل قائم (CAP-17) في موضع محدد.
  * فشل رفع لقطة = خطوة صادقة بلا لقطة (لا كذب ولا إسقاط للدليل كله).
- * VOX: الصوت (إن وُجد مرفوعًا) يُرفق بالأدلة الجديدة فقط — جلسات الإضافة على
- * دليل قائم لا تبدأ صوتًا أصلًا (زر الصوت يظهر في وضع الخمول فقط).
  */
 export interface PublishResult {
   guideId: string
@@ -54,8 +52,7 @@ export async function publishSteps(
   stepCount: number,
   appendTo?: string,
   insertAt?: number,
-  audio?: AudioMeta,
-  opts: { onMemoProgress?: (message: string) => void } = {},
+  opts: { onMemoProgress?: (message: string) => void; /** المرحلة ٣: الاسم الاختياري — للدليل الجديد وحده */ title?: string } = {},
 ): Promise<PublishResult> {
   const raw: RawStep[] = []
   // VOX-09: التعليقات الصوتية تُحصى أولًا كي يُعرض تقدم رفع صادق «ن من م»
@@ -123,7 +120,10 @@ export async function publishSteps(
     guideId = appendTo
   } else {
     const guide = assembleGuide(raw)
-    if (audio) guide.audio = audio
+    // المرحلة ٣ (قرار المالك): التسمية لحظة «امتلاك» الدليل — ما كتبه المستخدم
+    // يغلب الاسم المشتق من الصفحة، والفراغ يترك الاشتقاق القائم بلا مساس
+    const named = opts.title?.trim()
+    if (named) guide.title = named
     const created = await client.createGuide(guide as unknown as Parameters<DaliliClient['createGuide']>[0])
     guideId = created.id
   }

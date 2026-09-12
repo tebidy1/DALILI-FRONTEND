@@ -5,7 +5,7 @@ import { buildRichHtml } from '../lib/rich-copy'
 import type { ShareInfoDto, StepDto, GuideDto, StepCommentDto } from '@dalili/shared'
 import { client } from '../api'
 import { createHistory, type History } from '../lib/history'
-import { requestAppendCapture, requestTrainStartGuide } from '../lib/append-capture'
+import { requestTrainStartGuide } from '../lib/append-capture'
 import { StepCard, type ZoomCommand } from '../components/StepCard'
 import { ToolRail } from './ToolRail'
 import { BulkBar } from './BulkBar'
@@ -25,6 +25,7 @@ import { InsertStep, type InsertKind } from '../components/InsertStep'
 import { ShareDialog } from '../components/ShareDialog'
 import { MoreMenu, type MoreMenuItem } from '../components/MoreMenu'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { useConfirm } from '../components/ConfirmProvider'
 import { VersionHistoryPanel } from './VersionHistoryPanel'
 import { Button } from '../ui/Button'
 import { StateView } from '../ui/StateView'
@@ -41,8 +42,8 @@ import {
   IconFolder,
   IconGlobe,
   IconList,
+  IconNumber,
   IconPencil,
-  IconPlus,
   IconShare,
   IconTarget,
   IconTrash,
@@ -66,8 +67,16 @@ function newStepId(): string {
 export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }) {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
+  const confirm = useConfirm()
   const [guide, setGuide] = useState<GuideDto | null>(null)
   const [share, setShare] = useState<ShareInfoDto | null>(null)
+  // بوابة النشر قبل الرابط (قرار المالك 2026-09-10): غياب الحالة (خادم قديم) = بلا بوابة
+  const [published, setPublished] = useState(true)
+  // شريط المسودة: انتظار النشر يمنع النقر المزدوج (قرار المالك 2026-09-11)
+  const [publishingBar, setPublishingBar] = useState(false)
+  // المرحلة ٤: «تم» تصنع نقطة استعادة — تلميح مطمئن أول ٣ مرات فقط (قرار المالك)
+  const [doneHint, setDoneHint] = useState(false)
+  const doneHintTimer = useRef<number | undefined>(undefined)
   const [loadError, setLoadError] = useState('')
   /** وضعا العرض/التعديل — يُفتح الدليل على العرض النظيف، والتحرير باختيار صريح */
   const [editMode, setEditMode] = useState(false)
@@ -103,8 +112,6 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   const [tags, setTags] = useState('')
   const [tagsState, setTagsState] = useState<'idle' | 'saved' | 'error'>('idle')
   const [copiedHtml, setCopiedHtml] = useState(false)
-  const [appendMsg, setAppendMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
-  const [appending, setAppending] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
   const [training, setTraining] = useState(false)
   const [trainMsg, setTrainMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
@@ -114,6 +121,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   const [askDelete, setAskDelete] = useState(false)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  // طلب المالك 2026-09-09: مبدّل «إظهار الأرقام» في قائمة «المزيد» — شارة رقم قرب علامة الهدف، مفعّل افتراضيًا
+  const [showNums, setShowNums] = useState(true)
   const [versionsOpen, setVersionsOpen] = useState(false)
   const [versionMsg, setVersionMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
   const [snapshotting, setSnapshotting] = useState(false)
@@ -125,6 +134,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   const skipFirstSave = useRef(true)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const historyRef = useRef<History<GuideDto>>(createHistory<GuideDto>())
+  // المرحلة ١: عدّاد إصدار المكدس — الأزرار تحتاج إعادة رسم عند كل دفع/تراجع
+  const [histVer, setHistVer] = useState(0)
 
   const retry = useCallback(() => {
     setLoadError('')
@@ -166,6 +177,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
       .then((d) => {
         setGuide(d.guide)
         setShare(d.share)
+        setPublished(d.visibility !== 'private')
         // LIB-03: الوسوم من بيانات التنظيم — لا تُلمس بالحفظ التلقائي للمحتوى
         if (d.meta) setTags(d.meta.tags.join('، '))
         // EDT-10: الحالة المحمَّلة هي قاعدة التراجع — أول دفعة في المكدس
@@ -284,6 +296,33 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
       historyRef.current.push(next, coalesceKey)
       return next
     })
+    setHistVer((v) => v + 1)
+  }, [])
+
+  /** المرحلة ١: زرا التراجع/الإعادة — نفس مكدس الاختصار، وتعطّلان حين لا ماضٍ/مستقبل */
+  const canUndo = useMemo(() => {
+    void histVer
+    return historyRef.current.canUndo()
+  }, [histVer])
+  const canRedo = useMemo(() => {
+    void histVer
+    return historyRef.current.canRedo()
+  }, [histVer])
+
+  const doUndo = useCallback(() => {
+    const next = historyRef.current.undo()
+    if (next) {
+      setGuide(next)
+      setHistVer((v) => v + 1)
+    }
+  }, [])
+
+  const doRedo = useCallback(() => {
+    const next = historyRef.current.redo()
+    if (next) {
+      setGuide(next)
+      setHistVer((v) => v + 1)
+    }
   }, [])
 
   const updateStep = useCallback(
@@ -560,7 +599,21 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     setActiveMark(null) // ولا شكل نشط ناجٍ من الوضع — الشريط يعود أدوات لا خصائص
     const wasEditing = editMode
     setEditMode(!editMode)
-    if (wasEditing) void snapshotOnDone()
+    if (wasEditing) {
+      void snapshotOnDone()
+      // المرحلة ٤: «تم» تحفظ إصدارًا — نطمئن بكلمة صريحة أول ٣ مرات فقط ثم نكفّ
+      try {
+        const n = Number(localStorage.getItem('dalili:doneHint') ?? '0')
+        if (n < 3) {
+          localStorage.setItem('dalili:doneHint', String(n + 1))
+          setDoneHint(true)
+          window.clearTimeout(doneHintTimer.current)
+          doneHintTimer.current = window.setTimeout(() => setDoneHint(false), 6000)
+        }
+      } catch {
+        // تخزين غير متاح — لا تلميح والعمل نفسه سليم
+      }
+    }
   }, [editMode, snapshotOnDone])
 
   /** VER-02: حذف الدليل من قائمة «المزيد» — نقل ناعم للسلة، ثم عودة للهوم بلافتة معلّقة */
@@ -605,9 +658,19 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     [commit],
   )
 
-  // VOX-05: يفرّغ صوت الدليل إلى نص ويملأ ملاحظة كل خطوة مباشرة — دفعة واحدة يعكسها Ctrl+Z
+  // VOX-05: يفرّغ صوت الدليل إلى نص ويملأ ملاحظة كل خطوة مباشرة — دفعة واحدة يعكسها Ctrl+Z.
+  // المرحلة ٢: وجود ملاحظات مكتوبة يسأل قبل استبدالها — لا حذف صامت لكلام المستخدم
   const runTranscribe = useCallback(async () => {
     if (!id || transcribing) return
+    if (guide?.steps.some((s) => (s.note ?? '').trim())) {
+      const ok = await confirm({
+        title: t('editor.transcribe'),
+        body: t('editor.transcribeOverwrite'),
+        confirmLabel: t('editor.transcribeOverwriteConfirm'),
+        danger: true,
+      })
+      if (!ok) return
+    }
     setTranscribing(true)
     setTranscribeMsg(null)
     try {
@@ -628,40 +691,40 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     } finally {
       setTranscribing(false)
     }
-  }, [id, transcribing, commit])
+  }, [id, transcribing, commit, guide, confirm])
 
-  // EDT-10: Ctrl+Z تراجع · Ctrl+Shift+Z أو Ctrl+Y إعادة — استعادة من المكدس بلا دفع جديد
+  // EDT-10: Ctrl+Z تراجع · Ctrl+Shift+Z أو Ctrl+Y إعادة — وضع التعديل وحده:
+  // قارئ «يقرأ فقط» لا يعدّل الدليل بغير قصد عبر اختصار كان يظنه للتصفح
   useEffect(() => {
+    if (!editMode) return
     function onKeydown(e: KeyboardEvent) {
       if (!(e.ctrlKey || e.metaKey)) return
       const k = e.key.toLowerCase()
       if (k !== 'z' && k !== 'y') return
       e.preventDefault()
       const next = e.shiftKey || k === 'y' ? historyRef.current.redo() : historyRef.current.undo()
-      if (next) setGuide(next)
+      if (next) {
+        setGuide(next)
+        setHistVer((v) => v + 1)
+      }
     }
     document.addEventListener('keydown', onKeydown)
     return () => document.removeEventListener('keydown', onKeydown)
-  }, [])
-
-  /** CAP-17: «أضف خطوات» — يطلب من الامتداد (عبر سكربت المحتوى) جلسة إضافة على هذا الدليل، بموضع إدراج صريح أو النهاية */
-  async function startAppendCapture(insertAt?: number) {
-    if (!id || appending) return
-    setAppending(true)
-    setAppendMsg(null)
-    const res = await requestAppendCapture(id, insertAt ?? guide?.steps.length)
-    setAppending(false)
-    if (res.ok) setAppendMsg({ kind: 'ok', text: t('editor.appendStarted') })
-    else setAppendMsg({ kind: 'err', text: res.errorAr || t('editor.appendNoExt') })
-  }
+  }, [editMode])
 
   /**
-   * BLK-01: إدراج كتلة من قائمة «+». الالتقاط يذهب لتدفّق الامتداد، وبقية الأنواع
-   * كتل عميل تُدرج في الموضع بدفعة `commit` واحدة (تراجع واحد). الخطوة اليدوية
-   * خطوة عادية بقيم حيادية آمنة تجتاز العقد، فتعمل عليها كل أدوات الريشة.
+   * قرار المالك 2026-09-10: الالتقاط الحقيقي من الامتداد وحده بلوحته الجانبية —
+   * زر «أضف خطوات» في الشريط وقائمة «+» يدرجان خطوات يدوية (صورة مرفقة + تعليق).
+   * مسار الالتقاط من صفحة الويب أُزيل كله: بلا جلسة إضافة من المحرر، فلا تعارض
+   * حفظ تلقائي مع خطوات قادمة.
+   */
+
+  /**
+   * BLK-01: إدراج كتلة من قائمة «+». كل الأنواع كتل عميل تُدرج في الموضع بدفعة
+   * `commit` واحدة (تراجع واحد). الخطوة اليدوية خطوة عادية بقيم حيادية آمنة
+   * تجتاز العقد، فتعمل عليها كل أدوات الريشة — وصورتها تُرفق من «أضف لقطة».
    */
   function insertBlock(kind: InsertKind, at: number) {
-    if (kind === 'capture') return void startAppendCapture(at)
     // BKL-01: سقوف الكرّاسة — رفض صادق برسالة محددة لا انهيار ولا صمت
     if (guide?.kind === 'booklet') {
       const room = canAddBlock(guide.steps.length)
@@ -708,7 +771,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   async function toggleShare() {
     if (!id) return
     if (share) {
-      if (!window.confirm(t('editor.revokeConfirm'))) return
+      if (!(await confirm({ title: t('editor.revokeShare'), body: t('editor.revokeConfirm'), confirmLabel: t('editor.revokeShare'), danger: true }))) return
       try {
         await client.revokeShare(id)
         setShare(null)
@@ -724,13 +787,37 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     }
   }
 
-  /** ينشئ رابط المشاركة إن لم يوجد — تُستدعى تلقائيًا عند فتح النافذة (بلا نقرة ثانية) */
+  /** ينشئ رابط المشاركة إن لم يوجد — بضغطة صريحة من نافذة المشاركة فقط */
   async function ensureShare() {
     if (!id || share) return
     try {
       setShare(await client.createShare(id))
     } catch {
       setLoadError(t('editor.shareError'))
+    }
+  }
+
+  /** بوابة النشر قبل الرابط — النشر فعل المالك/المدير وحده، والفشل يُعرض بصدق */
+  async function publishGuide(): Promise<boolean> {
+    if (!id) return false
+    try {
+      await client.updateGuideMeta(id, { visibility: 'workspace' })
+      setPublished(true)
+      return true
+    } catch {
+      setLoadError(t('home.publishError'))
+      return false
+    }
+  }
+
+  /** قرار المالك 2026-09-11: زر «نشر للمساحة» في شريط المسودة — نفس النشر بانتظار يمنع النقر المزدوج */
+  async function publishFromBar() {
+    if (publishingBar) return
+    setPublishingBar(true)
+    try {
+      await publishGuide()
+    } finally {
+      setPublishingBar(false)
     }
   }
 
@@ -844,12 +931,43 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
           >
             {editMode ? t('editor.done') : t('editor.edit')}
           </Button>
-          {/* VER-02: قائمة «المزيد» — الإصدارات والحذف فعّالان، البقية تصميم فقط بتلميح «قريبًا» */}
+          {/* المرحلة ١: تراجع/إعادة ظاهران في وضع التعديل — الممحانة لا تكون مخفية */}
+          {editMode && (
+            <>
+              <Button variant="ghost" onClick={doUndo} disabled={!canUndo} aria-label={t('editor.undo')} title={t('shortcuts.undo')}>
+                <span aria-hidden="true">↶</span>
+              </Button>
+              <Button variant="ghost" onClick={doRedo} disabled={!canRedo} aria-label={t('editor.redo')} title={t('shortcuts.redo')}>
+                <span aria-hidden="true">↷</span>
+              </Button>
+            </>
+          )}
+        </div>
+        {/* الباقي هنا: دربني ← (أضف خطوات) ← مشاركة ← «المزيد» في آخر الشريط (وضع استاندرد) */}
+        <div className="editor-bar-end">
+          {trainable && (
+            <Button
+              variant="ghost"
+              onClick={() => void startTrain()}
+              disabled={training}
+              aria-label={t('viewer.train')}
+              icon={<IconTarget size={16} />}
+            >
+              {t('viewer.train')}
+            </Button>
+          )}
+          {/* قرار المالك 2026-09-10: زر «أضف خطوات» بالشريط أُزيل — الإدراج من أزرار «+»
+              بين الشرائح، وهو إدراج يدوي (صورة مرفقة + تعليق) لا التقاط */}
+          <Button variant="solid" onClick={() => setShareOpen(true)} icon={<IconShare size={16} />}>            {t('editor.shareOpen')}
+          </Button>
+          {/* VER-02: قائمة «المزيد» في آخر الشريط — الإصدارات والحذف فعّالان، البقية تصميم فقط بتلميح «قريبًا».
+              طلب المالك 2026-09-09: النقاط الثلاث تعيش آخر الشاشة كما في الاستاندرد (كروم)، وفيها مبدّل «إظهار الأرقام» */}
           <div className="more-menu-wrap">
             <MoreMenu
               ariaLabel={t('editor.more.aria')}
               items={
                 [
+                  { key: 'showNumbers', label: t('editor.more.showNumbers'), icon: <IconNumber size={16} />, checked: showNums, onSelect: () => setShowNums((v) => !v) },
                   { key: 'sendToBooklet', label: t('editor.more.sendToBooklet'), icon: <IconBookOpen size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
                   { key: 'duplicate', label: t('editor.more.duplicate'), icon: <IconCopy size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
                   { key: 'translate', label: t('editor.more.translate'), icon: <IconWand size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
@@ -873,29 +991,24 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
             )}
           </div>
         </div>
-        {/* الباقي هنا: دربني ← (أضف خطوات) ← مشاركة في ركن النهاية */}
-        <div className="editor-bar-end">
-          {trainable && (
-            <Button
-              variant="ghost"
-              onClick={() => void startTrain()}
-              disabled={training}
-              aria-label={t('viewer.train')}
-              icon={<IconTarget size={16} />}
-            >
-              {t('viewer.train')}
-            </Button>
-          )}
-          {editMode && (
-            <Button variant="ghost" onClick={() => void startAppendCapture()} disabled={appending} icon={<IconPlus size={16} />}>
-              {t('editor.appendSteps')}
-            </Button>
-          )}
-          <Button variant="solid" onClick={() => setShareOpen(true)} icon={<IconShare size={16} />}>
-            {t('editor.shareOpen')}
+      </div>
+
+      {/* قرار المالك 2026-09-11: المسودة تُرى — شريط حالة فوق الصفحة ونشر بضغطة من هنا */}
+      {!published && (
+        <div className="draft-bar no-print" role="status">
+          <span className="draft-bar-tx">{t('editor.draftBarTitle')}</span>
+          <Button size="sm" variant="solid" disabled={publishingBar} onClick={() => void publishFromBar()}>
+            {publishingBar ? t('editor.publishingDraftBar') : t('editor.publishDraftBar')}
           </Button>
         </div>
-      </div>
+      )}
+
+      {/* المرحلة ٤: «تم» تصنع نقطة استعادة — التلميح يظهر أول ٣ مرات ثم يهدأ */}
+      {doneHint && (
+        <div className="draft-bar no-print" role="status">
+          <span className="draft-bar-tx">{t('editor.doneVersionHint')}</span>
+        </div>
+      )}
 
       <div className={`page editor-page${editMode ? ' editing' : ''}${guide.kind === 'booklet' ? ' is-booklet' : ''}`}>
         {/* S1/S2/S4: منضدة الأدوات — عمود ثابت يمين الشاشة، أداته سارية على كل اللقطات */}
@@ -926,7 +1039,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
               />
               <textarea
                 className="guide-desc-input"
-                dir="auto"
+                dir="rtl"
                 rows={2}
                 value={guide.description ?? ''}
                 onChange={(e) => setDescription(e.target.value)}
@@ -1021,6 +1134,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
           onClose={() => setShareOpen(false)}
           onEnsureShare={ensureShare}
           onToggleShare={toggleShare}
+          onPublish={publishGuide}
+          published={published}
           onExportMarkdown={exportMarkdown}
           onCopyRich={copyRichHtml}
           copiedHtml={copiedHtml}
@@ -1045,11 +1160,6 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
           {trainMsg.text}
         </div>
       )}
-      {appendMsg && (
-        <div className={`card no-print append-msg ${appendMsg.kind}`} role="status">
-          {appendMsg.text}
-        </div>
-      )}
 
       {/* LIB-03: وسوم الدليل — في وضع التعديل فقط، مطويّة كي لا تزدحم البداية */}
       <details className="guide-tags no-print" hidden={!editMode}>
@@ -1057,7 +1167,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
         <div className="tags-row">
           <input
             type="text"
-            dir="auto"
+            dir="rtl"
             aria-label={t('library.tags')}
             placeholder={t('library.tags')}
             value={tags}
@@ -1162,7 +1272,6 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
           <BookletBlockList
             steps={guide.steps}
             editing={editMode}
-            busy={appending}
             onPatch={(i, patch) => updateStep(i, patch)}
             onRemove={(i) => removeStep(i)}
             onInsert={insertBlock}
@@ -1174,7 +1283,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
             guideId={id}
             nums={nums}
             editMode={editMode}
-            appending={appending}
+            showNums={showNums}
             tool={tool}
             markColor={markColor}
             zoomCmd={zoomCmd}

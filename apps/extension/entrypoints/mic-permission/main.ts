@@ -2,7 +2,8 @@
  * VOX-06: صفحة إذن الميكروفون — الإذن يُطلب من صفحة امتداد ظاهرة، لا من
  * content script أبدًا. النتيجة (منحًا أو رفضًا) تُسلَّم للخلفية التي تبدأ
  * الالتقاط في الحالتين: الرفض = «لا صوت — الالتقاط مستمر» (صدق).
- * VOX-09: مسار flow=memo — الإذن لأجل تعليق خطوة جارية (ميك الخطوة).
+ * المسار بلا flow: «ابدأ مع تعليق صوتي» — تعليق تلقائي مع كل بطاقة (VOX-AUTO).
+ * VOX-09: مسار flow=memo — الإذن لأجل تعليق خطوة يدوي أثناء جلسة قائمة.
  */
 
 const state = document.getElementById('state')!
@@ -19,13 +20,22 @@ async function main() {
     granted = false
   }
   if (granted) {
-    state.textContent = flow === 'memo' ? 'تم فتح الميكروفون — عد لصفحتك وتكلم ثم أوقف التسجيل' : 'تم فتح الميكروفون — يعود التركيز لصفحتك ويبدأ الالتقاط الآن'
+    state.textContent =
+      flow === 'memo'
+        ? 'تم فتح الميكروفون — عد لصفحتك وتكلم ثم أوقف التسجيل'
+        : 'تم فتح الميكروفون — عد لصفحتك؛ سيُدمج صوتك مع كل بطاقة تلتقطها وتُحوَّل نصًا'
     state.className = 'state ok'
   } else {
     state.textContent = 'لا صوت — الالتقاط مستمر بلا تعليق. تفعّله لاحقًا بأذن من إعدادات الموقع'
     state.className = 'state no'
   }
   await chrome.runtime.sendMessage({ t: 'mic-result', granted, flow }).catch(() => {})
+  // المرحلة ٤: زر إغلاق يدوي — إن لم يغلق التبويب تلقائيًا (فقدان التركيز مثلًا) لا يعلق المستخدم
+  const closeBtn = document.getElementById('close')
+  if (closeBtn) {
+    closeBtn.hidden = false
+    closeBtn.addEventListener('click', () => window.close())
+  }
   // الخلفية تغلق هذا التبويب وتعيد التركيز للتبويب الأصلي بعد لحظة تكفي لقراءة الحالة
 }
 

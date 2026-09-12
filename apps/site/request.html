@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#F6F5F2">
+<title>اطلب عرضًا — إتقان (Active SOP)</title>
+<meta name="description" content="اطلب عرضًا من إتقان: نرد في يوم عمل واحد، ونصل الاجتماع بأجندة مكتوبة، ونرسل ملخصًا خلال ساعتين — ودفتر السرية يصلكم مع أول رد.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css?v=2">
+</head>
+<body>
+
+<nav class="nav">
+  <a class="logo" href="index.html" aria-label="إتقان — الرئيسية">
+    <span class="wordmark">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+  </a>
+  <a href="standard.html">المعيار</a>
+  <a href="security.html">الأمن والسرية</a>
+  <a href="sop-arabic.html">SOP بالعربي</a>
+  <a class="btn btn-sm" href="request.html">اطلب عرضًا</a>
+</nav>
+
+<a class="skip" href="#main">تجاوز إلى المحتوى</a>
+<main id="main">
+
+<div class="wrap" style="max-width:960px">
+  <section style="padding-top:72px;padding-bottom:40px">
+    <h1 class="doc-h">عرض لشركتكم — لا عرضًا عامًّا.</h1>
+    <p class="doc-p">اشرحها مرة… تكفِ الجميع. نرد في يوم عمل واحد، ونصل الاجتماع بأجندة مكتوبة تُرسل قبلها، ونرسل ملخصًا خلال ساعتين بعده.</p>
+
+    <div class="req-grid">
+      <form class="req" id="req-form" data-endpoint="">
+        <label for="org">اسم العمل</label>
+        <input id="org" name="org" type="text" autocomplete="organization" required>
+        <label for="email">بريد العمل</label>
+        <input id="email" name="email" type="email" autocomplete="email" spellcheck="false" autocapitalize="off" required>
+        <label for="size">نطاق الموظفين</label>
+        <select id="size" name="size">
+          <option>٢٠٠ – ٥٠٠</option>
+          <option>٥٠٠ – ٢٠٠٠</option>
+          <option>٢٠٠٠+</option>
+        </select>
+        <label for="branches">عدد الفروع</label>
+        <select id="branches" name="branches">
+          <option>فرع واحد (المقر)</option>
+          <option>٢ – ٥ فروع</option>
+          <option>٦ – ١٥ فرعًا</option>
+          <option>أكثر من ١٥ فرعًا</option>
+        </select>
+        <label for="msg">أكبر تحدٍّ تشغيلي تواجهونه (اختياري)</label>
+        <textarea id="msg" name="msg" rows="3" placeholder="مثال: كل فرع يُقفل يومه بطريقة مختلفة"></textarea>
+        <button class="btn" type="submit">أرسل الطلب</button>
+        <p class="req-note">دفتر السرية يصلكم مع أول رد — قبل الاجتماع، لا بعده.</p>
+        <div class="form-msg" id="form-msg" role="status"></div>
+      </form>
+
+      <ol class="steps-ol">
+        <li><b>نرد في يوم عمل واحد</b><span>برسالة بشرية تقرأها كتبها من فهم طلبكم — لا نموذج آلي.</span></li>
+        <li><b>جلسة ٣٠ دقيقة بأجندة مرسلة سلفًا</b><span>نعرض المنتج على إجراء من إجراءاتكم أنتم، لا على عرض تجريبي عام.</span></li>
+        <li><b>عرض بنطاق الشركة لا بالمقعد</b><span>فاتورة إبقاء الإجراء حيًّا — ومداها معلن لا مخفي.</span></li>
+      </ol>
+    </div>
+
+    <p class="refuse" style="padding-bottom:0">إتقان لا يناسب الفرق دون ٢٠٠ موظف — وهذا مقصود.</p>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="foot-grid">
+    <div class="foot-brand">
+      <span class="wordmark">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+      <p>إجراءات التشغيل القياسية النشطة — تُلتقط أثناء العمل، وتُفرَّغ بالعربي، وتنشر على بنيتكم أنتم.</p>
+      <span class="badge">مبني على متطلبات ISO 9001:2015 البند ٧٫٥</span>
+    </div>
+    <div class="foot-col">
+      <b>الموقع</b>
+      <a href="index.html">الرئيسية</a>
+      <a href="standard.html">المعيار الخماسي</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="sop-arabic.html">ما معنى SOP؟</a>
+      <a href="request.html">اطلب عرضًا</a>
+    </div>
+    <div class="foot-col">
+      <b>قريبًا</b>
+      <span class="foot-soon">معرض القوالب <span class="soon">قريبًا</span></span>
+      <span class="foot-soon">دراسات حالة العملاء <span class="soon">قريبًا</span></span>
+      <span class="foot-soon">دليل البدء خلال ساعة <span class="soon">قريبًا</span></span>
+    </div>
+  </div>
+  <div class="foot-base">
+    <span>إتقان (Active SOP) · ٢٠٢٦</span>
+    <span class="latin-lockup">ITQAN · Active SOP</span>
+  </div>
+</footer>
+
+<script>
+  // النموذج غير موصول بخدمة استقبال بعد — يُربط قبل النشر (data-endpoint).
+  document.getElementById('req-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const msg = document.getElementById('form-msg');
+    const endpoint = this.dataset.endpoint;
+    msg.textContent = endpoint
+      ? 'وصلنا طلبكم — سنجيب خلال يوم عمل واحد.'
+      : 'نسخة معاينة: النموذج غير موصول بخدمة الاستقبال بعد — يُربط قبل النشر.';
+    msg.classList.add('show');
+  });
+</script>
+
+<script src="assets/site.js?v=2"></script>
+</body>
+</html>

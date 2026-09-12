@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import type { SearchHitDto } from '@dalili/shared'
 import { client } from '../api'
 import { t } from '../i18n'
@@ -11,9 +11,17 @@ const TIMEOUT_MS = 5000
  * لوحة البحث الفوري (SRCH-03): Ctrl+K من أي مكان.
  * قوانين صلبة: debounce 200ms · إلغاء الطلب السابق · مهلة 5 ثوانٍ برسالة صريحة —
  * لا دوّامة أبدية أبدًا (قانون لا تعليق).
+ * المرحلة ٤: لا لوحة على الصفحات العامة (دخول/رابط مشاركة/هوية) — الزائر بلا حساب
+ * لا أدلة له، والاختصار يبقى للمتصفح لا لنا.
  */
 export function SearchPalette() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const isPublic =
+    location.pathname === '/login' ||
+    location.pathname === '/brand' ||
+    location.pathname.startsWith('/s/') ||
+    location.pathname.startsWith('/embed/s/')
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<SearchHitDto[] | null>(null)
@@ -22,6 +30,7 @@ export function SearchPalette() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    if (isPublic) return
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
@@ -30,7 +39,7 @@ export function SearchPalette() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [isPublic])
 
   useEffect(() => {
     if (open) {
@@ -100,6 +109,7 @@ export function SearchPalette() {
     }
   }
 
+  if (isPublic) return null
   if (!open) return null
 
   return (

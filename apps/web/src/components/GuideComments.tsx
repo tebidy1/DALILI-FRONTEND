@@ -3,6 +3,7 @@ import { threadComments } from '@dalili/core'
 import type { CommentKind, StepCommentDto } from '@dalili/shared'
 import { IconComment } from '../ui/icons'
 import { t } from '../i18n'
+import { useConfirm } from './ConfirmProvider'
 
 /** GM-05: اسم الضيف يُحفظ محليًا مرة واحدة — يظهر في تعليقاته اللاحقة بلا حساب */
 const NAME_KEY = 'dalili.commenter'
@@ -42,6 +43,7 @@ function CommentRow({
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(c.body)
+  const confirm = useConfirm()
   const edited = c.updatedAt > c.createdAt
   const isIssue = c.kind === 'issue' && !c.parentId
 
@@ -98,7 +100,14 @@ function CommentRow({
             <button
               className="btn sm ghost danger"
               onClick={() => {
-                if (window.confirm(t('comments.deleteConfirm'))) void onDelete(c.id)
+                void confirm({
+                  title: t('comments.delete'),
+                  body: t('comments.deleteConfirm'),
+                  confirmLabel: t('comments.delete'),
+                  danger: true,
+                }).then((ok) => {
+                  if (ok) void onDelete(c.id)
+                })
               }}
             >
               {t('comments.delete')}

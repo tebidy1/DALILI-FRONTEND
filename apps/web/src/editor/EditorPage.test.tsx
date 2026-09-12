@@ -195,9 +195,10 @@ describe('VOX-05: تفريغ الصوت إلى نص في المحرِّر', () =
 
     fireEvent.click(screen.getByText(t('editor.transcribe')))
 
-    const notes = await screen.findAllByPlaceholderText(t('editor.notePlaceholder'))
-    expect((notes[0] as HTMLTextAreaElement).value).toBe('اضغط الزر الأخضر في الأعلى')
-    expect((notes[1] as HTMLTextAreaElement).value).toBe('ثم اضغط حفظ لاعتماد الفاتورة')
+    // طلب المالك 2026-09-09: حقل واحد للعنوان — السطر الأول عنوان وما بعده ملاحظة
+    const notes = (await screen.findAllByPlaceholderText(t('editor.stepTitlePlaceholder'))) as HTMLTextAreaElement[]
+    expect(notes[0]!.value).toContain('اضغط الزر الأخضر في الأعلى')
+    expect(notes[1]!.value).toContain('ثم اضغط حفظ لاعتماد الفاتورة')
     expect(vi.mocked(client.transcribeGuide)).toHaveBeenCalledWith('g1')
   })
 
@@ -214,8 +215,10 @@ describe('VOX-05: تفريغ الصوت إلى نص في المحرِّر', () =
     fireEvent.click(screen.getByText(t('editor.transcribe')))
 
     await screen.findByText('تعذّر التفريغ من مزوّد الصوت — أعد المحاولة لاحقًا')
-    const notes = screen.getAllByPlaceholderText(t('editor.notePlaceholder'))
-    expect((notes[0] as HTMLTextAreaElement).value).toBe('')
+    const notes = screen.getAllByPlaceholderText(t('editor.stepTitlePlaceholder')) as HTMLTextAreaElement[]
+    expect(notes[0]!.value).not.toContain('اضغط الزر الأخضر في الأعلى')
+    // العنوان يبقى في مكانه بالحقل الواحد رغم فشل التفريغ
+    expect(notes[0]!.value).toBe('اضغط زر الإنشاء')
   })
 
   it('وصول بعد فشل التفريغ التلقائي (?stt=failed) → لافتة صادقة تختفي بنجاح المحاولة اليدوية', async () => {
@@ -248,9 +251,9 @@ describe('وضعا العرض والتعديل — التحرير باختيار
     renderEditor()
     await screen.findByText('دليل الفواتير')
     expect(screen.queryByDisplayValue('دليل الفواتير')).toBeNull()
-    expect(screen.queryByPlaceholderText(t('editor.notePlaceholder'))).toBeNull()
+    expect(screen.queryByPlaceholderText(t('editor.stepTitlePlaceholder'))).toBeNull()
     expect(screen.queryByRole('button', { name: t('editor.removeStep') })).toBeNull()
-    expect(screen.queryByRole('button', { name: t('editor.blockMenuOpen') })).toBeNull()
+    expect(screen.queryByRole('button', { name: t('editor.addStepsShort') })).toBeNull()
   })
 
   it('«تعديل» يكشف الحقول والأدوات، و«تم» يعيد وضع العرض', async () => {
@@ -261,7 +264,7 @@ describe('وضعا العرض والتعديل — التحرير باختيار
 
     fireEvent.click(screen.getByRole('button', { name: t('editor.edit') }))
     expect(screen.getByDisplayValue('دليل الفواتير')).toBeTruthy()
-    expect(screen.getByPlaceholderText(t('editor.notePlaceholder'))).toBeTruthy()
+    expect(screen.getByPlaceholderText(t('editor.stepTitlePlaceholder'))).toBeTruthy()
     expect(screen.getByRole('button', { name: t('editor.removeStep') })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: t('editor.done') }))
@@ -311,7 +314,7 @@ describe('إصلاحات بصرية: عنوان يمينيّ وشريط جانب
 describe('BLK-01: قائمة + وأنواع الكتل', () => {
   it('اختيار «تنبيه» يُدرج كتلة سماوية بلا رقم في النهاية', async () => {
     await load()
-    const adders = screen.getAllByRole('button', { name: t('editor.blockMenuOpen') })
+    const adders = screen.getAllByRole('button', { name: t('editor.addStepsShort') })
     fireEvent.click(adders[adders.length - 1]!)
     fireEvent.click(screen.getByRole('menuitem', { name: t('editor.addTip') }))
     expect(document.querySelector('.block-card.tip')).not.toBeNull()
@@ -322,7 +325,7 @@ describe('BLK-01: قائمة + وأنواع الكتل', () => {
     vi.mocked(client.getGuide).mockResolvedValue(fixture3()) // ٣ خطوات
     renderEditor()
     await ready()
-    const adders = screen.getAllByRole('button', { name: t('editor.blockMenuOpen') })
+    const adders = screen.getAllByRole('button', { name: t('editor.addStepsShort') })
     // أدرج هيدرًا قبل الخطوة الثانية (موضع 1)
     fireEvent.click(adders[1]!)
     fireEvent.click(screen.getByRole('menuitem', { name: t('editor.addHeader') }))
@@ -335,7 +338,7 @@ describe('BLK-01: قائمة + وأنواع الكتل', () => {
   it('«خطوة» يدوية بلا لقطة تُظهر «أضف لقطة»، والرفع يستدعي uploadBlob', async () => {
     const { client } = await import('../api')
     await load()
-    const adders = screen.getAllByRole('button', { name: t('editor.blockMenuOpen') })
+    const adders = screen.getAllByRole('button', { name: t('editor.addStepsShort') })
     fireEvent.click(adders[adders.length - 1]!)
     fireEvent.click(screen.getByRole('menuitem', { name: t('editor.addStepManual') }))
     const attach = await screen.findByText(t('editor.addShot'))
@@ -363,7 +366,7 @@ describe('نافذة المشاركة — تبويبات نظيفة بدل ال�
     expect(screen.getByRole('tab', { name: t('editor.shareTabExport') })).toBeTruthy()
   })
 
-  it('فتح النافذة ينشئ الرابط تلقائيًا فتظهر خيارات النسخ بلا نقرة ثانية', async () => {
+  it('قرار المالك 2026-09-10: فتح النافذة لا ينشئ الرابط — زر «أنشئ رابط مشاركة» هو الذي ينشئه', async () => {
     const { client } = await import('../api')
     vi.mocked(client.getGuide).mockResolvedValue(fixture())
     vi.mocked(client.createShare).mockResolvedValue({ token: 'tok', shareUrl: '/s/tok', views: 0 })
@@ -371,9 +374,11 @@ describe('نافذة المشاركة — تبويبات نظيفة بدل ال�
     await screen.findByText('دليل الفواتير')
     fireEvent.click(screen.getByRole('button', { name: t('editor.shareOpen') }))
 
-    // الرابط جاهز فورًا: زر النسخ ظاهر، وزر «أنشئ رابط مشاركة» غائب
+    // بلا توليد بفتح النافذة: زر الإنشاء الصريح ظاهر، ولا نداء createShare
+    expect(screen.queryByRole('button', { name: t('editor.copyLink') })).toBeNull()
+    expect(vi.mocked(client.createShare)).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: t('editor.shareEnable') }))
     expect(await screen.findByRole('button', { name: t('editor.copyLink') })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: t('editor.shareEnable') })).toBeNull()
     expect(vi.mocked(client.createShare)).toHaveBeenCalledWith('g1')
   })
 
@@ -492,39 +497,7 @@ describe('EDT-13 النص البديل', () => {
   })
 })
 
-describe('CAP-17 زر «أضف خطوات» (شريط الأدوات — إضافة في النهاية)', () => {
-  /** زر شريط الأدوات تحديدًا — بعد مواضع «+» صار الاسم المتاح هو المميّز الوحيد */
-  const toolbarBtn = () => screen.getByRole('button', { name: t('editor.appendSteps') })
-
-  it('يبعث append-capture بمعرّف الدليل ويعرض التأكيد عند ردّ الامتداد', async () => {
-    await load()
-    const received: unknown[] = []
-    const onMsg = (e: Event) => {
-      const me = e as MessageEvent
-      if (me.data?.source === 'dalili-web') received.push(me.data)
-      if (me.data?.source === 'dalili-web' && me.data.t === 'append-capture') {
-        window.postMessage({ source: 'dalili-ext', t: 'append-ack', ok: true }, '*')
-      }
-    }
-    window.addEventListener('message', onMsg)
-    fireEvent.click(toolbarBtn())
-    await screen.findByText(t('editor.appendStarted'), {}, { timeout: 3000 })
-    window.removeEventListener('message', onMsg)
-    expect(received[0]).toMatchObject({ source: 'dalili-web', t: 'append-capture', guideId: 'g1' })
-  })
-
-  it('بلا ردّ من الامتداد يعرض خطأً صادقًا بعد مهلة قصيرة', async () => {
-    const { client } = await import('../api')
-    vi.mocked(client.getGuide).mockResolvedValue(fixture())
-    renderEditor()
-    await ready()
-    fireEvent.click(toolbarBtn())
-    // بلا أي ردّ — مهلة الجسر 1500ms تنقضي فيظهر الخطأ الصادق
-    await screen.findByText(t('editor.appendNoExt'), {}, { timeout: 4000 })
-  })
-})
-
-describe('CAP-17 أزرار «+» بين الشرائح — مواضع إدراج مرئية', () => {
+describe('أزرار «+» بين الشرائح — مواضع إدراج مرئية', () => {
   async function load3() {
     const { client } = await import('../api')
     vi.mocked(client.getGuide).mockResolvedValue(fixture3())
@@ -533,24 +506,9 @@ describe('CAP-17 أزرار «+» بين الشرائح — مواضع إدرا�
     return client
   }
 
-  /** يستمع لرسائل dalili-web الصادرة ويردّ ack فورًا — يعيد ما وصل */
-  function bridge() {
-    const sent: Array<Record<string, unknown>> = []
-    const onMsg = (e: Event) => {
-      const me = e as MessageEvent
-      if (me.data?.source !== 'dalili-web') return
-      sent.push(me.data as Record<string, unknown>)
-      if (me.data.t === 'append-capture') {
-        window.postMessage({ source: 'dalili-ext', t: 'append-ack', ok: true }, '*')
-      }
-    }
-    window.addEventListener('message', onMsg)
-    return { sent, stop: () => window.removeEventListener('message', onMsg) }
-  }
-
   it('دليل بثلاث خطوات يعرض أربعة مواضع إدراج: قبل كل خطوة + في النهاية', async () => {
     await load3()
-    expect(screen.getAllByRole('button', { name: t('editor.blockMenuOpen') })).toHaveLength(4)
+    expect(screen.getAllByRole('button', { name: t('editor.addStepsShort') })).toHaveLength(4)
     for (const no of [1, 2, 3]) expect(screen.getByTitle(t('editor.insertBefore', { no }))).toBeTruthy()
     expect(screen.getByTitle(t('editor.insertAtEnd'))).toBeTruthy()
   })
@@ -560,7 +518,7 @@ describe('CAP-17 أزرار «+» بين الشرائح — مواضع إدرا�
     vi.mocked(client.getGuide).mockResolvedValue(fixture())
     const { unmount } = renderEditor()
     await ready()
-    expect(screen.getAllByRole('button', { name: t('editor.blockMenuOpen') })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: t('editor.addStepsShort') })).toHaveLength(2)
     unmount()
 
     const empty = fixture()
@@ -569,44 +527,17 @@ describe('CAP-17 أزرار «+» بين الشرائح — مواضع إدرا�
     renderEditor()
     await screen.findByText(t('editor.emptyTitle'))
     fireEvent.click(screen.getByRole('button', { name: t('editor.edit') }))
-    expect(screen.getAllByRole('button', { name: t('editor.blockMenuOpen') })).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: t('editor.addStepsShort') })).toHaveLength(1)
   })
 
-  it('«التقاط» من الموضع بين الخطوتين 1 و2 يبعث append-capture بـ insertAt: 1', async () => {
+  it('قرار المالك 2026-09-10: «التقاط» غاب من القائمة — «خطوة» تدرج خطوة يدوية في موضعها', async () => {
     await load3()
-    const br = bridge()
+    expect(screen.queryByRole('menuitem', { name: t('editor.addCaptureItem') })).toBeNull()
     fireEvent.click(screen.getByTitle(t('editor.insertBefore', { no: 2 })))
-    fireEvent.click(screen.getByRole('menuitem', { name: t('editor.addCaptureItem') }))
-    await screen.findByText(t('editor.appendStarted'), {}, { timeout: 3000 })
-    br.stop()
-    const req = br.sent.find((m) => m.t === 'append-capture')
-    expect(req).toMatchObject({ source: 'dalili-web', guideId: 'g1', insertAt: 1 })
-  })
-
-  it('«التقاط» من «قبل الخطوة 1» يبعث insertAt: 0 — ومن النهاية insertAt: 3 (عدد الخطوات)', async () => {
-    await load3()
-    const br = bridge()
-    fireEvent.click(screen.getByTitle(t('editor.insertBefore', { no: 1 })))
-    fireEvent.click(screen.getByRole('menuitem', { name: t('editor.addCaptureItem') }))
-    await screen.findByText(t('editor.appendStarted'), {}, { timeout: 3000 })
-    fireEvent.click(screen.getByTitle(t('editor.insertAtEnd')))
-    fireEvent.click(screen.getByRole('menuitem', { name: t('editor.addCaptureItem') }))
-    await screen.findByText(t('editor.appendStarted'), {}, { timeout: 3000 })
-    br.stop()
-    const reqs = br.sent.filter((m) => m.t === 'append-capture')
-    expect(reqs[0]).toMatchObject({ guideId: 'g1', insertAt: 0 })
-    expect(reqs[1]).toMatchObject({ guideId: 'g1', insertAt: 3 })
-  })
-
-  it('موضع إدراج معطّل أثناء انتظار ردّ الامتداد — لا طلب مزدوج', async () => {
-    await load3()
-    const opener = screen.getByTitle(t('editor.insertBefore', { no: 2 }))
-    fireEvent.click(opener)
-    fireEvent.click(screen.getByRole('menuitem', { name: t('editor.addCaptureItem') }))
-    expect((opener as HTMLButtonElement).disabled).toBe(true)
-    // بلا ردّ — تتحرر الأزرار بعد المهلة وتظهر رسالة الامتداد الغائب
-    await screen.findByText(t('editor.appendNoExt'), {}, { timeout: 4000 })
-    expect((opener as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(screen.getByRole('menuitem', { name: t('editor.addStepManual') }))
+    // أربع خطوات بعد الإدراج — والجديدة بلا لقطة فتعرض «أضف لقطة»
+    expect(await screen.findByText(t('common.steps', { count: '٤' }))).toBeTruthy()
+    expect(screen.getByText(t('editor.attachShot'))).toBeTruthy()
   })
 })
 
@@ -824,7 +755,9 @@ describe('ترتيب رأس البطاقة والشريط الجانبي — ا�
     const kids = Array.from(head.children)
     const at = (sel: string) => kids.findIndex((c) => c.matches(sel))
     expect(at('.step-num')).toBe(0)
-    expect(at('input.step-title-input')).toBe(1)
+    // طلب المالك 2026-09-09: العنوان والملاحظة إطار واحد — الحاوية مكان الحقل مباشرة
+    expect(at('.step-title-field')).toBe(1)
+    expect(head.querySelector('.step-title-field textarea.step-title-input')).toBeTruthy()
     expect(at('.step-url-pill')).toBe(2)
     expect(at('.step-tools')).toBe(3)
     // خرجا من الرأس
@@ -876,5 +809,48 @@ describe('التحسينات البصرية المماثلة للتطبيق ال
     expect(pill.href).toBe('https://erp.example.com/i')
     expect(pill.target).toBe('_blank')
     expect(pill.querySelector('.step-url-text')?.textContent).toBe('https://erp.example.com/i')
+  })
+})
+
+describe('شريط المسودة في صفحة الدليل (قرار المالك 2026-09-11)', () => {
+  it('الدليل الخاص يعرض شريط «مسودة» وزر نشر ينشر للمساحة ويزيل الشريط', async () => {
+    const { client } = await import('../api')
+    vi.mocked(client.getGuide).mockResolvedValue({ ...fixture(), visibility: 'private' })
+    renderEditor()
+    await ready(false)
+    expect(screen.getByText(t('editor.draftBarTitle'))).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: t('editor.publishDraftBar') }))
+    await waitFor(() => expect(vi.mocked(client.updateGuideMeta)).toHaveBeenCalledWith('g1', { visibility: 'workspace' }))
+    await waitFor(() => expect(screen.queryByText(t('editor.draftBarTitle'))).toBeNull())
+  })
+
+  it('الدليل المنشور لا يعرض شريط المسودة', async () => {
+    vi.mocked(client.getGuide).mockResolvedValue({ ...fixture(), visibility: 'workspace' })
+    renderEditor()
+    await ready(false)
+    expect(screen.queryByText(t('editor.draftBarTitle'))).toBeNull()
+  })
+})
+
+describe('تلميح «تم» — نقطة الاستعادة (المرحلة ٤)', () => {
+  it('أول خروج من التحرير يطمئن أن إصدارًا جديدًا حُفظ', async () => {
+    localStorage.clear()
+    const { client } = await import('../api')
+    vi.mocked(client.getGuide).mockResolvedValue(fixture())
+    renderEditor()
+    await ready(true)
+    fireEvent.click(screen.getByRole('button', { name: t('editor.done') }))
+    expect(await screen.findByText(t('editor.doneVersionHint'))).toBeTruthy()
+    expect(localStorage.getItem('dalili:doneHint')).toBe('1')
+  })
+
+  it('بعد ٣ مرات يصمت التلميح — العمل محفوظ دائمًا بلا إزعاج', async () => {
+    localStorage.setItem('dalili:doneHint', '3')
+    const { client } = await import('../api')
+    vi.mocked(client.getGuide).mockResolvedValue(fixture())
+    renderEditor()
+    await ready(true)
+    fireEvent.click(screen.getByRole('button', { name: t('editor.done') }))
+    expect(screen.queryByText(t('editor.doneVersionHint'))).toBeNull()
   })
 })

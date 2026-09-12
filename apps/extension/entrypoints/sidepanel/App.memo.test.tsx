@@ -78,12 +78,12 @@ describe('VOX-09: زر الميك في اللوحة الجانبية', () => {
   it('الزر يظهر أثناء الالتقاط فقط', async () => {
     stubChrome(capturing(1))
     const { unmount } = render(<App />)
-    await waitFor(() => expect(screen.getByRole('button', { name: 'سجّل ملاحظة صوتية لهذه الخطوة' })).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'سجّل تعليقًا صوتيًا لهذه الخطوة' })).toBeTruthy())
     unmount()
     stubChrome({ state: 'idle', sessionId: '', startedAt: 0, stepCount: 0 })
     render(<App />)
     await waitFor(() => expect(screen.getByText('● جاهز')).toBeTruthy())
-    expect(screen.queryByRole('button', { name: 'سجّل ملاحظة صوتية لهذه الخطوة' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'سجّل تعليقًا صوتيًا لهذه الخطوة' })).toBeNull()
   })
 
   it('معطل قبل أول خطوة بتلميح صادق', async () => {
@@ -113,12 +113,18 @@ describe('VOX-09: زر الميك في اللوحة الجانبية', () => {
     nowSpy.mockRestore()
   })
 
-  it('✕ على شارة 🎙 يحذف التعليق', async () => {
+  it('✕ على شارة 🎙 يحذف التعليق بخطوتين — النقرة الأولى تسلّح والثانية تحذف (المرحلة ٢)', async () => {
     const memo: StoredVoiceMemo = { memoId: 'm1', chunks: ['QQ=='], durationMs: 12_000, pending: true }
     stubChrome(capturing(1), { [stepKey('s1', 0)]: clickStep(0), [voiceMemoKey('s1', 0)]: memo })
     render(<App />)
     const del = await screen.findByRole('button', { name: 'حذف التعليق الصوتي' })
     fireEvent.click(del)
+    // النقرة الأولى: تسليح فقط — لا حذف بعد، والزر يطلب التأكيد
+    expect(send).not.toHaveBeenCalledWith({ t: 'memo-delete', index: 0 })
+    expect(screen.getByRole('button', { name: 'اضغط مجددًا لتأكيد حذف التعليق الصوتي' })).toBeTruthy()
+    // المرحلة ٤: العدّاد يُرى على الزر المسلَّح — أربع ثوانٍ بالأرقام الهندية
+    expect(screen.getByRole('button', { name: 'اضغط مجددًا لتأكيد حذف التعليق الصوتي' }).textContent).toContain('٤')
+    fireEvent.click(screen.getByRole('button', { name: 'اضغط مجددًا لتأكيد حذف التعليق الصوتي' }))
     await waitFor(() => expect(send).toHaveBeenCalledWith({ t: 'memo-delete', index: 0 }))
     expect(screen.getByText(/١٢ ث/)).toBeTruthy()
   })
@@ -127,7 +133,7 @@ describe('VOX-09: زر الميك في اللوحة الجانبية', () => {
     stubPermissions('denied')
     stubChrome(capturing(1))
     render(<App />)
-    const btn = await screen.findByRole('button', { name: 'سجّل ملاحظة صوتية لهذه الخطوة' })
+    const btn = await screen.findByRole('button', { name: 'سجّل تعليقًا صوتيًا لهذه الخطوة' })
     fireEvent.click(btn)
     await waitFor(() => expect(screen.getByText(/لا صوت — الالتقاط مستمر/)).toBeTruthy())
     expect((btn as HTMLButtonElement).disabled).toBe(true)

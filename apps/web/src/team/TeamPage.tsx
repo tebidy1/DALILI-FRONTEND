@@ -5,8 +5,9 @@ import { Button } from '../ui/Button'
 import { StateView } from '../ui/StateView'
 import { IconCloudOff, IconPlus, IconTrash, IconUsers } from '../ui/icons'
 import { t } from '../i18n'
-import { arDigits, copyToClipboard, roleLabelAr } from '../lib/format'
+import { arDigits, copyToClipboard, hijriDateAr, roleLabelAr } from '../lib/format'
 import { useOverview } from '../shell/OverviewContext'
+import { useConfirm } from '../components/ConfirmProvider'
 
 /**
  * المرحلة د (الفرق — WS-08) على نمط المرجع داخل القشرة: جدول أعضاء (بريد + حالة
@@ -20,6 +21,7 @@ type TeamRole = 'admin' | 'creator' | 'viewer'
 
 export function TeamPage() {
   const { overview } = useOverview()
+  const confirm = useConfirm()
   const isAdmin = overview?.myRole === 'admin'
 
   const [members, setMembers] = useState<MemberDto[] | null>(null)
@@ -84,7 +86,7 @@ export function TeamPage() {
       await client.updateMember(id, { role })
       reload()
     } catch {
-      setError(t('library.folderError'))
+      setError(t('team.actionError'))
     }
   }
 
@@ -93,20 +95,25 @@ export function TeamPage() {
       await client.updateMember(id, { teamId: teamId || null })
       reload()
     } catch {
-      setError(t('library.folderError'))
+      setError(t('team.actionError'))
     }
   }
 
   async function remove(m: MemberDto) {
-    const msg = t('team.removeConfirm', { email: m.email, count: arDigits(m.guideCount ?? 0) })
-    if (!window.confirm(msg)) return
+    const ok = await confirm({
+      title: t('team.remove'),
+      body: t('team.removeConfirm', { email: m.email, count: arDigits(m.guideCount ?? 0) }),
+      confirmLabel: t('team.remove'),
+      danger: true,
+    })
+    if (!ok) return
     setError('')
     try {
       await client.removeMember(m.id)
       setNotice(t('team.removed'))
       reload()
     } catch {
-      setError(t('library.deleteError'))
+      setError(t('team.actionError'))
     }
   }
 
@@ -124,12 +131,18 @@ export function TeamPage() {
   }
 
   async function deleteTeam(tm: TeamDto) {
-    if (!window.confirm(t('team.deleteTeamConfirm', { name: tm.name }))) return
+    const ok = await confirm({
+      title: t('team.deleteTeam'),
+      body: t('team.deleteTeamConfirm', { name: tm.name }),
+      confirmLabel: t('team.deleteTeam'),
+      danger: true,
+    })
+    if (!ok) return
     try {
       await client.deleteTeam(tm.id)
       reload()
     } catch {
-      setError(t('library.deleteError'))
+      setError(t('team.actionError'))
     }
   }
 
@@ -221,8 +234,8 @@ export function TeamPage() {
                 </thead>
                 <tbody>
                   {members.map((m) => {
-                    const d = m.joinedAt ? new Date(m.joinedAt) : null
-                    const joined = d ? `${arDigits(d.getFullYear())}/${arDigits(d.getMonth() + 1)}/${arDigits(d.getDate())}` : '—'
+                    // توحيد القاموس: تاريخ الانضمام هجري كبقية الواجهة (النتائج والتقارير)
+                    const joined = m.joinedAt ? hijriDateAr(m.joinedAt) : '—'
                     return (
                       <tr key={m.id}>
                         <td>

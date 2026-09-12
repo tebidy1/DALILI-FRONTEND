@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import type { FolderDto, GuideSummaryDto } from '@dalili/shared'
 import { webShareUrl } from '../api'
-import { Button } from '../ui/Button'
 import { IconShare } from '../ui/icons'
 import { t } from '../i18n'
 import { ownerNameFromEmail, arDigits, relativeTimeAr, dualDateAr } from '../lib/format'
+import { GuideMenuActions } from './GuideMenuActions'
 
 /**
  * LIB-05: الشريط الجانبي لبطاقة الدليل — مربّع التحديد خارج البطاقة، محاذٍ لرأسها.
@@ -13,16 +13,19 @@ import { ownerNameFromEmail, arDigits, relativeTimeAr, dualDateAr } from '../lib
 function GuideRail({
   picked,
   onPick,
+  title,
 }: {
   picked: boolean
   onPick: (shiftKey: boolean) => void
+  title: string
 }) {
   return (
     <div className="guide-rail no-print">
       <button
         className={`pick${picked ? ' on' : ''}`}
         aria-pressed={picked}
-        aria-label={t('library.selectGuide', { title: '' })}
+        aria-label={t('library.selectGuide', { title })}
+        title={t('library.selectGuide', { title })}
         onClick={(e) => onPick(e.shiftKey)}
       >
         ✓
@@ -54,7 +57,6 @@ export interface GuideCardProps {
   inTrash: boolean
   picked: boolean
   showPick: boolean
-  confirming: boolean
   onPick: (shiftKey: boolean) => void
   onOpen: () => void
   onBookmark: () => void
@@ -80,14 +82,15 @@ export function GuideCard(p: GuideCardProps) {
         <GuideRail
           picked={p.picked}
           onPick={(shift) => p.onPick(shift)}
+          title={g.title}
         />
       )}
       <div className={`card guide-card${p.picked ? ' picked' : ''}`}>
       <div className="row guide-card-head">
-        {/* سطر عنوان واحد — البقية تظهر بتحويم المؤشر فوقه */}
-        <div className="title" title={g.title}>
+        {/* المرحلة ٣: العنوان يفتح الدليل بنقرة واحدة — لا «⋯» ثم «فتح المحرر» */}
+        <button type="button" className="title" title={g.title} onClick={p.onOpen}>
           <bdi>{g.title}</bdi>
-        </div>
+        </button>
         {!p.inTrash && g.mine && (
           <button
             className="btn ghost icon-btn"
@@ -204,51 +207,20 @@ export function GuideCard(p: GuideCardProps) {
                 </a>
               )}
             </div>
-            {/* — الإجراءات — */}
-            <div className="guide-menu-actions">
-              {p.inTrash ? (
-                <>
-                  <Button size="sm" onClick={p.onRestore}>
-                    {t('library.restore')}
-                  </Button>
-                  <Button size="sm" variant={p.confirming ? 'danger' : 'ghost'} onClick={p.onRemove}>
-                    {t('library.deleteForever')}
-                  </Button>
-                </>
-              ) : g.mine ? (
-                <>
-                  <Button size="sm" onClick={p.onOpen}>
-                    {t('common.openEditor')}
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={p.onPublish}>
-                    {g.visibility === 'private' ? t('home.publish') : t('home.unpublish')}
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={p.onDuplicate}>
-                    {t('library.duplicate')}
-                  </Button>
-                  <select
-                    className="lib-move"
-                    aria-label={`${t('library.moveToFolder')} — ${g.title}`}
-                    value={g.folderId ?? ''}
-                    onChange={(e) => p.onMove(e.target.value || null)}
-                  >
-                    <option value="">{t('library.rootFolder')}</option>
-                    {p.folders.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </select>
-                  <Button size="sm" variant={p.confirming ? 'danger' : 'ghost'} onClick={p.onRemove}>
-                    {p.confirming ? t('common.confirmDelete') : t('common.delete')}
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" onClick={p.onOpen}>
-                  {t('common.openEditor')}
-                </Button>
-              )}
-            </div>
+            {/* — الإجراءات: مصدر واحد مشترك مع قائمة الجدول (المرحلة ٣) — */}
+            <GuideMenuActions
+              g={g}
+              folders={p.folders}
+              inTrash={p.inTrash}
+              onOpen={p.onOpen}
+              onBookmark={p.onBookmark}
+              onDuplicate={p.onDuplicate}
+              onPublish={p.onPublish}
+              onShare={p.onShare}
+              onMove={p.onMove}
+              onRemove={p.onRemove}
+              onRestore={p.onRestore}
+            />
           </div>
         </>
       )}

@@ -148,10 +148,11 @@ describe('الإجراءات السريعة على بطاقات أدلتي (ال
     )
   })
 
-  it('«مشاركة» على غير المشترك: تنشئ رابطًا ثم تنسخه — ولافتة النسخ تبقى بلا إعادة جلب تمحوها', async () => {
+  it('«مشاركة» على غير المشترك المنشور: تنشئ رابطًا ثم تنسخه — ولافتة النسخ تبقى بلا إعادة جلب تمحوها', async () => {
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } })
     vi.mocked(client.createShare).mockResolvedValue({ token: 'tok1', shareUrl: 'http://x/s/tok1', views: 0 })
-    renderHome('/mine', [MINE])
+    // بوابة النشر قبل الرابط (قرار المالك 2026-09-10): المشاركة على منشور
+    renderHome('/mine', [{ ...MINE, visibility: 'workspace' }])
     const card = await screen.findByText('دليلي الخاص').then((el) => el.closest('.guide-card') as HTMLElement)
 
     fireEvent.click(within(card).getByLabelText(t('home.share')))
@@ -167,12 +168,26 @@ describe('الإجراءات السريعة على بطاقات أدلتي (ال
 
   it('«مشاركة» على المشترك: تنسخ الرابط القائم بلا إنشاء رابط جديد', async () => {
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } })
-    renderHome('/mine', [{ ...MINE, shared: true, shareUrl: 'http://x/s/live' }])
+    renderHome('/mine', [{ ...MINE, visibility: 'workspace', shared: true, shareUrl: 'http://x/s/live' }])
     const card = await screen.findByText('دليلي الخاص').then((el) => el.closest('.guide-card') as HTMLElement)
 
     fireEvent.click(within(card).getByLabelText(t('home.share')))
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith('http://x/s/live'))
     expect(vi.mocked(client.createShare)).not.toHaveBeenCalled()
+  })
+
+  it('قرار المالك 2026-09-11: «مشاركة» على دليل خاص تنشئ رابطًا سريًا وتنسخه بلا نشر', async () => {
+    Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } })
+    vi.mocked(client.createShare).mockResolvedValue({ token: 'tok1', shareUrl: 'http://x/s/tok1', views: 0 })
+    renderHome('/mine', [MINE]) // دليلي الخاص: private
+    const card = await screen.findByText('دليلي الخاص').then((el) => el.closest('.guide-card') as HTMLElement)
+
+    fireEvent.click(within(card).getByLabelText(t('home.share')))
+    await waitFor(() => expect(vi.mocked(client.createShare)).toHaveBeenCalledWith('g1'))
+    await waitFor(() => expect(screen.getByText(t('home.shareSecretCopied'))).toBeTruthy())
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('http://x/s/tok1')
+    // الرابط السري لا يغيّر رؤية الدليل — يبقى خاصًا خارج بحث المساحة
+    expect(vi.mocked(client.updateGuideMeta)).not.toHaveBeenCalled()
   })
 
   it('أدلة الزملاء لا تحمل أزرار نشر ولا مشاركة — القراءة لا الكتابة', async () => {

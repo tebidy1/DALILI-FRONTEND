@@ -21,6 +21,11 @@
       .state { font-size: 15px; font-weight: 700; }
       .ok { color: #3BBD6A; }
       .no { color: #FDBA74; }
+      button.close {
+        margin-top: 6px; padding: 9px 26px; border-radius: 10px; border: 1px solid #2A3B37;
+        background: #16241F; color: #EAF4F1; font: inherit; font-size: 14px; cursor: pointer;
+      }
+      button.close:hover { background: #1D302A; }
     </style>
   </head>
   <body>
@@ -29,6 +34,7 @@
       <h1>تشغيل التعليق الصوتي</h1>
       <p>سيطلب المتصفح إذن الميكروفون مرة واحدة. صوتك يُسجَّل أثناء الالتقاط فقط، ويُرفع مع الدليل حين تنهيه.</p>
       <p class="state" id="state">بانتظار إذنك…</p>
+      <button class="close" id="close" hidden>إغلاق هذه الصفحة</button>
     </div>
     <script type="module" src="./main.ts"></script>
   </body>

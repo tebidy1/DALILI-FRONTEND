@@ -52,6 +52,7 @@ function renderShell(at = '/', overview: LibraryOverviewDto = ADMIN, folders: Fo
           <Route path="/" element={<Probe />} />
           <Route path="/mine" element={<Probe />} />
           <Route path="/saved" element={<Probe />} />
+          <Route path="/assigned" element={<Probe />} />
           <Route path="/trash" element={<Probe />} />
           <Route path="/settings" element={<Probe />} />
           <Route path="/team" element={<div>صفحة الفريق</div>} />
@@ -94,6 +95,23 @@ describe('الشريط الجانبي بنمط المرجع (WS-06)', () => {
     // بند المجلد بشارة حرف وعدد الأدلة في الطرف المقابل (نمط المرجع)
     const folderRow = screen.getByText('الفواتير').closest('.side-item') as HTMLElement
     expect(folderRow.textContent).toContain(arDigits(2))
+  })
+
+  it('بند «أُسند إليّ» يظهر بشارة العدد الجديد وينقل إلى /assigned', async () => {
+    renderShell('/', { ...ADMIN, assignedNewCount: 2 })
+    await screen.findAllByText('مساحة الفواتير')
+    const item = screen.getByText(t('assigned.nav')).closest('.side-item') as HTMLElement
+    expect(item).toBeTruthy()
+    expect(item.textContent).toContain(arDigits(2))
+    fireEvent.click(screen.getByText(t('assigned.nav')))
+    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('/assigned'))
+  })
+
+  it('لا شارة على «أُسند إليّ» حين العدّاد صفر', async () => {
+    renderShell('/', { ...ADMIN, assignedNewCount: 0 })
+    await screen.findAllByText('مساحة الفواتير')
+    const item = screen.getByText(t('assigned.nav')).closest('.side-item') as HTMLElement
+    expect(item.querySelector('.side-badge')).toBeNull()
   })
 
   it('المشاهد: لا إنشاء مجلد ولا أزرار ✎/× على المجلدات — وشارة دوره «مشاهد»', async () => {

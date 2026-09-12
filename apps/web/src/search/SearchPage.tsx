@@ -149,7 +149,7 @@ export function SearchPage() {
       </div>
 
       {!q.trim() ? (
-        <StateView kind="empty" icon={<IconSearchX size={30} />} title={t('search.submit')} desc={t('search.hintIdle')} />
+        <StateView kind="empty" icon={<IconSearchX size={30} />} title={t('search.idleTitle')} desc={t('search.hintIdle')} />
       ) : error ? (
         <StateView
           kind="error"

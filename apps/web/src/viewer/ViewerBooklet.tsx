@@ -1,4 +1,4 @@
-import { richToHtml } from '@dalili/core'
+import { bookletOutline, richToHtml } from '@dalili/core'
 import type { GuideDto, StepDto } from '@dalili/shared'
 import { t } from '../i18n'
 import { StepImage } from '../components/StepImage'
@@ -27,8 +27,11 @@ export function ViewerBooklet({
     return <p className="booklet-empty">{t('booklet.empty')}</p>
   }
 
+  // بلا فهرس (لا كتل عنوان) لا يُحجز عمود جانبي — العمود يملأ عرض الدليل ويتوسّط،
+  // وإلا سقط المتن في عمود الفهرس الضيّق فتكسّرت الكلمة على سطر (بلاغ المالك 2026-09-10)
+  const hasIndex = bookletOutline(guide.steps).length > 0
   return (
-    <div className="booklet-view booklet-doc">
+    <div className={`booklet-view booklet-doc${hasIndex ? ' has-index' : ''}`}>
       <BookletOutline steps={guide.steps} />
       <div className="booklet-body">
         {guide.steps.map((s) => (

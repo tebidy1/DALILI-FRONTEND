@@ -44,8 +44,15 @@ export function BulkBar({ count, folders, trash, busy, onMove, onDelete, onShare
           {t('library.bulkShare')}
         </Button>
       )}
-      <Button size="sm" variant="danger" onClick={onDelete} busy={busy} aria-label={t('library.bulkDelete')}>
-        {t('common.delete')}
+      {/* القاعدة الموحدة: خارج السلة النقل ناعم بلمسة، وفي السلة الحذف نهائي */}
+      <Button
+        size="sm"
+        variant="danger"
+        onClick={onDelete}
+        busy={busy}
+        aria-label={trash ? t('library.deleteForever') : t('library.bulkDelete')}
+      >
+        {trash ? t('library.deleteForever') : t('library.bulkDelete')}
       </Button>
       <Button size="sm" variant="ghost" onClick={onClear}>
         {t('library.clearSelection')}

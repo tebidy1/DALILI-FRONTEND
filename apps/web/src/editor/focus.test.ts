@@ -59,53 +59,79 @@ describe('focusViewport — المنظر الافتتاحي: الصورة كام
     expect(withMark.scale).toBeCloseTo(without.scale, 5)
   })
 
-  it('الصورة كاملة معروضة عرضًا وارتفاعًا — لا جزء مخفي عند فتح الدليل', () => {
+  it('الزوم الافتتاحي ١٠٪ فوق ملء العرض — والهدف يبقى ظاهرًا (القاعدة المعمّمة)', () => {
+    // طلب المالك 2026-09-10: محتوى أوضح فور الفتح بلا زوم يدوي، مع بقاء الركن
+    // الذي به الزر المحدد هو الظاهر — فالمقياس ١٫١× والهدف داخل المنظار.
     const v = focusViewport(mark, IMG_W, IMG_H, BOX_W, BOX_H)
-    const visibleW = BOX_W / v.scale
-    const visibleH = BOX_H / v.scale
-    expect(visibleW).toBeCloseTo(IMG_W, 3) // ملء العرض: كل عرض الصورة داخل المنظار
-    expect(visibleH).toBeGreaterThanOrEqual(IMG_H - 1) // وارتفاعها كاملًا أيضًا (16:9 في صندوق أعرض نسبةً)
+    expect(v.scale).toBeCloseTo((BOX_W / IMG_W) * 1.1, 5)
+    const cx = (mark.x + mark.w / 2) * v.scale + v.tx
+    const cy = (mark.y + mark.h / 2) * v.scale + v.ty
+    expect(cx).toBeGreaterThan(0)
+    expect(cx).toBeLessThan(BOX_W)
+    expect(cy).toBeGreaterThan(0)
+    expect(cy).toBeLessThan(BOX_H)
   })
 
-  it('بلا هدف (لقطة قديمة أو خطوة تنقّل): يعود لملاءمة الصورة كاملة', () => {
+  it('القاعدة المعمّمة: هدف قرب أي ركن يبقى ظاهرًا داخل المنظار مع الزوم الافتتاحي', () => {
+    const corners = [
+      { x: 20, y: 20, w: 120, h: 40 }, // أعلى-يسار
+      { x: IMG_W - 140, y: 20, w: 120, h: 40 }, // أعلى-يمين
+      { x: 20, y: IMG_H - 60, w: 120, h: 40 }, // أسفل-يسار
+      { x: IMG_W - 140, y: IMG_H - 60, w: 120, h: 40 }, // أسفل-يمين
+    ]
+    for (const m of corners) {
+      const v = focusViewport(m, IMG_W, IMG_H, BOX_W, BOX_H)
+      const cx = (m.x + m.w / 2) * v.scale + v.tx
+      const cy = (m.y + m.h / 2) * v.scale + v.ty
+      expect(cx, `مركز هدف الركن خارج المنظار: ${JSON.stringify(m)}`).toBeGreaterThanOrEqual(0)
+      expect(cx, `مركز هدف الركن خارج المنظار: ${JSON.stringify(m)}`).toBeLessThanOrEqual(BOX_W)
+      expect(cy, `مركز هدف الركن خارج المنظار: ${JSON.stringify(m)}`).toBeGreaterThanOrEqual(0)
+      expect(cy, `مركز هدف الركن خارج المنظار: ${JSON.stringify(m)}`).toBeLessThanOrEqual(BOX_H)
+    }
+  })
+
+  it('بلا هدف (لقطة قديمة أو خطوة تنقّل): ملء العرض مع الزوم الافتتاحي والقصّ محمول على الأعلى', () => {
     const v = focusViewport(undefined, IMG_W, IMG_H, BOX_W, BOX_H)
-    expect(v.scale).toBeCloseTo(fitScale(IMG_W, IMG_H, BOX_W, BOX_H), 5)
+    expect(v.scale).toBeCloseTo(fitScale(IMG_W, IMG_H, BOX_W, BOX_H) * 1.1, 5)
+    expect(v.ty).toBeGreaterThanOrEqual(0)
   })
 
-  it('هدف ضخم يملأ الصورة لا يكبّر فوق الملاءمة — لا تشويه', () => {
+  it('هدف ضخم يملأ الصورة يسير بمنظار الخطوات غير المعلَّمة نفسه — لا فرع خاص', () => {
     const huge = { x: 0, y: 0, w: IMG_W, h: IMG_H }
     const v = focusViewport(huge, IMG_W, IMG_H, BOX_W, BOX_H)
-    expect(v.scale).toBeCloseTo(fitScale(IMG_W, IMG_H, BOX_W, BOX_H), 5)
+    const without = focusViewport(undefined, IMG_W, IMG_H, BOX_W, BOX_H)
+    expect(v.scale).toBeCloseTo(without.scale, 5)
   })
 
-  it('فيض الارتفاع الطفيف يُحامَل نحو العلامة — الجزء المُعلَّم هو الظاهر، لا قصّ التوسّط الأعمى', () => {
-    // صورة مربّعة أعرض نسبةً من الصندوق: ملء العرض يقصّ من الارتفاع؛ علامة أسفل
-    // الصورة كانت تسقط خارج القصّ المتوسّط — التبؤير عليها يُبقيها ظاهرة.
+  it('فيض الارتفاع يُحامَل نحو العلامة — الجزء المُعلَّم هو الظاهر، لا قصّ التوسّط الأعمى', () => {
+    // صورة مربّعة أعرض نسبةً من الصندوق: ملء العرض بالزوم الافتتاحي يقصّ من
+    // الارتفاع؛ علامة أسفل الصورة كانت تسقط خارج القصّ المتوسّط — التبؤير
+    // عليها يُبقيها ظاهرة حتى مع الزوم ١٠٪ (القاعدة).
     const nearBottom = { x: 400, y: 880, w: 120, h: 40 }
     const v = focusViewport(nearBottom, 1000, 1000, BOX_W, BOX_H)
-    expect(v.scale).toBeCloseTo(BOX_W / 1000, 5)
+    expect(v.scale).toBeCloseTo((BOX_W / 1000) * 1.1, 5)
     const cy = (nearBottom.y + nearBottom.h / 2) * v.scale + v.ty
     expect(cy).toBeGreaterThan(0)
     expect(cy).toBeLessThan(BOX_H)
-    // وللمقارنة: قصّ التوسّط الأعمى كان سيُخرجها من المنظار (586 > 500)
+    // وللمقارنة: قصّ التوسّط الأعمى كان سيُخرجها من المنظار
     const blindCy = (nearBottom.y + nearBottom.h / 2) * v.scale + (BOX_H - 1000 * v.scale) / 2
     expect(blindCy).toBeGreaterThanOrEqual(BOX_H)
   })
 })
 
-describe('focusViewport بلا هدف — يملأ عرض المنظار فلا فراغ عرضي حول اللقطة', () => {
-  it('صورة أنحف من الصندوق تملأ عرضه بالكامل (لا فجوة جانبية) وأكبر من ملاءمة الاحتواء', () => {
+describe('focusViewport بلا هدف — يملأ عرض المنظار بالزوم الافتتاحي فلا فراغ عرضي حول اللقطة', () => {
+  it('صورة أنحف من الصندوق تملأ عرضه بالكامل ثم ١٠٪ (الزوم الافتتاحي) وأكبر من ملاءمة الاحتواء', () => {
     // صورة مربّعة داخل صندوق أعرض: ملاءمة الاحتواء محدودة بالارتفاع فتترك فراغًا عرضيًا —
-    // وهو بالضبط ما اشتكى منه المالك. الملء العرضي يزيله ويكبّر اللقطة قليلًا.
+    // وهو بالضبط ما اشتكى منه المالك. الملء العرضي بالزوم الافتتاحي يزيله ويكبّر اللقطة.
     const v = focusViewport(undefined, 1000, 1000, 800, 500)
-    expect(1000 * v.scale).toBeCloseTo(800, 3) // العرض المعروض = عرض الصندوق كاملًا
+    expect(1000 * v.scale).toBeCloseTo(800 * 1.1, 3) // العرض المعروض = ملء العرض ثم ١٠٪
     expect(v.scale).toBeGreaterThan(fitScale(1000, 1000, 800, 500))
     expect(v.scale).toBeLessThanOrEqual(MAX_SCALE)
   })
 
-  it('صورة أعرض من الصندوق (محدودة بالعرض أصلًا): الملء العرضي يساوي الملاءمة — لا تكبير زائد', () => {
+  it('صورة أعرض من الصندوق (محدودة بالعرض أصلًا): الزوم الافتتاحي ١٠٪ فوق ملء العرض', () => {
     const v = focusViewport(undefined, 2000, 1200, 800, 500)
-    expect(v.scale).toBeCloseTo(fitScale(2000, 1200, 800, 500), 5)
+    expect(v.scale).toBeCloseTo(fitScale(2000, 1200, 800, 500) * 1.1, 5)
   })
 })
 

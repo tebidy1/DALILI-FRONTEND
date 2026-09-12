@@ -11,6 +11,7 @@ import { patchParams } from '../lib/params'
 import { BulkBar } from '../components/BulkBar'
 import { emptySelection, toggleSelect, rangeSelect, selectAll, isPicked, type Selection } from '../lib/selection'
 import { useOverview } from '../shell/OverviewContext'
+import { AssignedBand } from '../assigned/AssignedBand'
 import { GuideCard } from './GuideCard'
 import { GuideTable } from './GuideTable'
 import { HomeSearch } from './HomeSearch'
@@ -266,6 +267,9 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
       {/* البحث في سطر مستقل فاصلًا بين الشريط والبطاقات (طلب المالك 2026-09-03) */}
       {(screen === 'home' || screen === 'mine' || screen === 'saved') && <HomeSearch />}
 
+      {/* — ASG: قسم «أُسند إليّ» أعلى الرئيسية فقط — يظهر إن وُجد مُسنَد — */}
+      {screen === 'home' && <AssignedBand />}
+
       {/* — المرحلة ج: التقرير المجمّع أعلى «أنشئ بواسطي» فقط — */}
       {screen === 'mine' && report && <ReportStrip report={report} />}
 
@@ -346,7 +350,6 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
                   trash={inTrash}
                   sort={sort}
                   sel={sel}
-                  confirming={actions.confirming}
                   onSort={(col, dir) => setParams({ sort: `${col}-${dir}` })}
                   onPick={(id, shift) =>
                     setSel((s) =>
@@ -356,6 +359,11 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
                   onOpen={(g) => navigate(`/g/${g.id}`)}
                   onRestore={(g) => void actions.restore(g)}
                   onRemove={(g) => void actions.remove(g)}
+                  onShare={(g) => void actions.shareCopy(g)}
+                  onBookmark={(g) => void actions.toggleBookmark(g)}
+                  onPublish={(g) => void actions.toggleVisibility(g)}
+                  onDuplicate={(g) => void actions.duplicate(g)}
+                  onMove={(g, fid) => void actions.moveTo(g, fid)}
                 />
               ) : (
                 <div className={`grid-cards${screen === 'saved' ? ' saved-grid' : ''}`}>
@@ -367,7 +375,6 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
                       inTrash={inTrash}
                       picked={isPicked(sel, g.id)}
                       showPick={g.mine}
-                      confirming={actions.confirming === g.id}
                       onPick={(shift) =>
                         setSel((s) =>
                           shift ? rangeSelect(s, g.id, list.filter((x) => x.mine).map((x) => x.id)) : toggleSelect(s, g.id),

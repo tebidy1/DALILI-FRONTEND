@@ -3,6 +3,7 @@ import type { GuideDto, StepDto } from '@dalili/shared'
 import { StepCard, type ZoomCommand } from '../components/StepCard'
 import { InsertStep, type InsertKind } from '../components/InsertStep'
 import { isPicked, type Selection } from '../lib/selection'
+import { hostOf } from '../lib/format'
 import type { EditorTool } from './tools'
 import type { MarkColor, Rect } from '@dalili/core'
 import { t } from '../i18n'
@@ -16,7 +17,8 @@ export function GuideStepList(p: {
   guideId?: string
   nums: (number | null)[]
   editMode: boolean
-  appending: boolean
+  /** طلب المالك 2026-09-09: مبدّل «إظهار الأرقام» من قائمة «المزيد» — شارة رقم قرب علامة الهدف */
+  showNums?: boolean
   tool: EditorTool
   markColor: MarkColor
   zoomCmd: ZoomCommand | null
@@ -38,13 +40,20 @@ export function GuideStepList(p: {
   setDragFrom: (i: number | null) => void
 }) {
   const {
-    guide, guideId: id, nums, editMode, appending, tool, markColor, zoomCmd, sel, dragFrom, activeMark,
+    guide, guideId: id, nums, editMode, showNums, tool, markColor, zoomCmd, sel, dragFrom, activeMark,
     onInsert: insertBlock, onVoiceTranscribed, onBlurApplied, onAttachShot: attachShot,
     updateStep, moveStep, removeStep, duplicateStep, setMark, setActiveMark, pickStep, moveStepTo, setDragFrom,
   } = p
+  // طلب المالك 2026-09-09: كبسولة الرابط عند أول ظهور للدومين أو تغيّره فقط —
+  // كأن تسجيلًا فتح تبويبًا آخر. تُقارن بآخر خطوة لها رابط لا بالسطر السابق حتمًا.
+  let prevHost: string | null = null
   return (
     <>
-        {guide.steps.map((s, i) => (
+        {guide.steps.map((s, i) => {
+          const host = s.url ? hostOf(s.url) : null
+          const showUrl = !!host && host !== prevHost
+          if (host) prevHost = host
+          return (
           <Fragment key={s.id}>
             {/* CAP-17: موضع إدراج فوق كل شريحة — في وضع التعديل فقط، يحمل موضعه الصريح */}
             {editMode && (
@@ -52,7 +61,6 @@ export function GuideStepList(p: {
                 label={t('editor.insertBefore', { no: i + 1 })}
                 insertAt={i}
                 onInsert={insertBlock}
-                busy={appending}
               />
             )}
             <div id={`step-${s.id}`} className="step-block">
@@ -63,6 +71,8 @@ export function GuideStepList(p: {
                 onVoiceTranscribed={onVoiceTranscribed}
                 onBlurApplied={onBlurApplied}
                 displayNo={nums[i] ?? null}
+                showNumber={!!showNums}
+                showUrl={showUrl}
                 onAttachShot={(file) => void attachShot(i, file)}
                 canUp={i > 0}
                 canDown={i < guide.steps.length - 1}
@@ -102,14 +112,14 @@ export function GuideStepList(p: {
               />
             </div>
           </Fragment>
-        ))}
+          )
+        })}
         {editMode && (
-          <InsertStep
-            label={guide.steps.length ? t('editor.insertAtEnd') : t('editor.addStepsShort')}
-            insertAt={guide.steps.length}
-            onInsert={insertBlock}
-            busy={appending}
-          />
+            <InsertStep
+              label={guide.steps.length ? t('editor.insertAtEnd') : t('editor.addStepsShort')}
+              insertAt={guide.steps.length}
+              onInsert={insertBlock}
+            />
         )}
     </>
   )

@@ -14,9 +14,16 @@ interface Props {
   title: string
   share: ShareInfoDto | null
   onClose: () => void
-  /** ينشئ الرابط تلقائيًا عند الفتح إن لم يوجد — بلا نقرة ثانية */
+  /** ينشئ الرابط عند ضغط الزر الصريح فقط (قرار المالك 2026-09-10: لا توليد بفتح النافذة) */
   onEnsureShare: () => Promise<void>
   onToggleShare: () => void | Promise<void>
+  /**
+   * النشر للمساحة (قرار المالك 2026-09-11): خيار الدليل الخاص الثاني بجانب الرابط
+   * السري — يعيد false عند الفشل كي لا يُولَّد رابط على وعد فاشل.
+   */
+  onPublish: () => Promise<boolean>
+  /** حالة النشر من بيانات الدليل — غيابها (خادم قديم) يعني بلا بوابة */
+  published: boolean
   onExportMarkdown: () => void
   onCopyRich: () => void
   copiedHtml: boolean
@@ -45,6 +52,8 @@ export function ShareDialog({
   onClose,
   onEnsureShare,
   onToggleShare,
+  onPublish,
+  published,
   onExportMarkdown,
   onCopyRich,
   copiedHtml,
@@ -56,6 +65,7 @@ export function ShareDialog({
   const [copiedEmbed, setCopiedEmbed] = useState(false)
   const [showQr, setShowQr] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   // القائمة تظهر مرة واحدة قبل أول توليد؛ الموافقة ترفعها للأبد في هذه الجلسة
   const [checkPassed, setCheckPassed] = useState(false)
   const needsCheck = !!embedTitles?.length && !share && !checkPassed
@@ -65,19 +75,20 @@ export function ShareDialog({
     closeRef.current?.focus()
   }, [])
 
-  // إنشاء الرابط تلقائيًا عند الفتح إن لم يوجد — الخيارات جاهزة فورًا بلا نقرة ثانية
-  useEffect(() => {
-    if (share || needsCheck) return
-    let alive = true
-    setCreating(true)
-    Promise.resolve(onEnsureShare()).finally(() => {
-      if (alive) setCreating(false)
-    })
-    return () => {
-      alive = false
+  // قرار المالك 2026-09-10: بلا توليد تلقائي عند الفتح — الرابط ضغطة صريحة.
+  /** نشر ثم توليد — الزر الواحد للدليل الخاص: قرار واعٍ واحد بدل خطتين متفرقتين */
+  async function publishAndCreate() {
+    setPublishing(true)
+    try {
+      if (await onPublish()) {
+        setCreating(true)
+        await Promise.resolve(onEnsureShare())
+        setCreating(false)
+      }
+    } finally {
+      setPublishing(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- مرة واحدة بعد اجتياز الفحص
-  }, [needsCheck])
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -213,8 +224,29 @@ export function ShareDialog({
                     </div>
                   )}
                 </>
-              ) : creating ? (
-                <p className="muted dialog-hint">{t('editor.shareCreating')}</p>
+              ) : creating || publishing ? (
+                <p className="muted dialog-hint" role="status">
+                  {publishing ? t('editor.publishingShare') : t('editor.shareCreating')}
+                </p>
+              ) : !published ? (
+                <>
+                  {/* قرار المالك 2026-09-11: الدليل الخاص له بابان — رابط سري دون نشر، أو نشر كامل */}
+                  <div className="share-option">
+                    <p className="muted dialog-hint">{t('editor.shareSecretHint')}</p>
+                    <Button variant="solid" onClick={() => void onEnsureShare()}>
+                      {t('editor.shareSecretCreate')}
+                    </Button>
+                  </div>
+                  <div className="share-or" aria-hidden="true">
+                    {t('editor.shareOptionsOr')}
+                  </div>
+                  <div className="share-option">
+                    <p className="muted dialog-hint">{t('editor.shareNeedsPublish')}</p>
+                    <Button variant="ghost" onClick={() => void publishAndCreate()}>
+                      {t('editor.publishAndShare')}
+                    </Button>
+                  </div>
+                </>
               ) : (
                 <>
                   <p className="muted dialog-hint">{t('editor.shareLinkHint')}</p>

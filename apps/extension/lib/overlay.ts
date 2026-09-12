@@ -286,8 +286,8 @@ export function createOverlay(): Overlay {
     const paused = meta.state === 'paused'
     dot.classList.toggle('paused', paused)
     label.textContent = paused ? 'متوقف مؤقتًا' : 'يسجّل الآن'
-    // VOX-06: مؤشر الميكروفون يرافق الجلسة المسموعة كاملة (تسجيلًا وإيقافًا مؤقتًا)
-    mic?.classList.toggle('on', !!meta.micOn)
+    // VOX-AUTO: مؤشر الميكروفون مع الوضع التلقائي ومع كل تعليق جارٍ — صدق المؤشر
+    mic?.classList.toggle('on', !!meta.autoMemo || !!meta.memoLive)
     count.textContent = ` · ${meta.stepCount.toLocaleString('ar-EG')} خطوة`
     // CAP-13 معيار القبول ③: الطمس أثناء التسجيل الفعلي فقط — يُطفأ بالإيقاف المؤقت
     if (paused) setBlurMode(false)

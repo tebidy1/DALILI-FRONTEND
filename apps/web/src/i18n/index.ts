@@ -15,6 +15,12 @@ export const ar = {
   'common.exportMarkdown': 'تصدير Markdown',
   'common.delete': 'حذف',
   'common.confirmDelete': 'تأكيد الحذف؟',
+  // توحيد القاموس (المرحلة ١): «حذف» للحذف النهائي وحده — وما ينقل للسلة يُسمّى نقله
+  'library.moveToTrash': 'نقل إلى السلة',
+  'library.confirmMove': 'تأكيد النقل؟',
+  // أزرار نافذة التأكيد الموحدة
+  'common.confirm': 'تأكيد',
+  'common.cancel': 'إلغاء',
   'common.openEditor': 'فتح المحرر',
   'common.logout': 'خروج',
   'common.unexpected': 'حدث خطأ غير متوقع — حاول مجددًا',
@@ -60,6 +66,9 @@ export const ar = {
   'editor.emptyTitle': 'لا خطوات بعد',
   'editor.emptyDesc': 'سجّل من امتداد كروم ثم افتح الدليل هنا — كل نقرة تصبح خطوة بلقطة وعنوان عربي.',
   'editor.titleA11y': 'عنوان الدليل',
+  // المرحلة ١: زرا التراجع/الإعادة ظاهران في شريط المحرر (وضع التعديل وحده)
+  'editor.undo': 'تراجع',
+  'editor.redo': 'إعادة',
   'editor.descPlaceholder': 'أضف وصفاً أو ملخصاً يوضح محتوى هذا الدليل...',
   'editor.descA11y': 'وصف الدليل',
   'editor.capturedSites': 'المواقع والتطبيقات المستخدمة',
@@ -75,16 +84,20 @@ export const ar = {
   'editor.edit': 'تعديل',
   'editor.done': 'تم',
   // طلب المالك 2026-09-03: زر عودة في شريط المحرر يقود للرئيسية بسهم رجوع
-  'editor.myHome': 'مساحتي الرئيسية',
+  // توحيد القاموس (المرحلة ١): الشاشة الواحدة اسم واحد — «المكتبة» في كل المواضع
+  'editor.myHome': 'المكتبة',
   'editor.you': 'أنت',
   // VER-02: قائمة «المزيد» بجوار «مساحتي الرئيسية» — ٦ عناصر، الإصدارات والحذف فعّالان فقط
   'editor.more.aria': 'المزيد من الخيارات',
+  // طلب المالك 2026-09-09: الترقيم مبدّل عرض في قائمة «المزيد» لا أداة رسم
+  'editor.more.showNumbers': 'إظهار الأرقام',
   'editor.more.sendToBooklet': 'إرسال لكرّاسة',
   'editor.more.duplicate': 'تكرار',
   'editor.more.translate': 'ترجمة',
   'editor.more.versions': 'الإصدارات',
   'editor.more.moveTo': 'نقل إلى…',
-  'editor.more.delete': 'حذف',
+  // النقل الناعم للسلة لا يُسمّى حذفًا — «حذف» للحذف النهائي وحده
+  'editor.more.delete': 'نقل إلى السلة',
   'editor.more.soon': 'قريبًا',
   // VER-01: سجل الإصدارات — لقطة عند «تم»، عرض فقط في هذه المرحلة
   'editor.versions.title': 'سجل الإصدارات',
@@ -113,7 +126,21 @@ export const ar = {
   'editor.shareTabExport': 'تصدير',
   'editor.shareLinkHint': 'أنشئ رابطًا يفتحه أي شخص بلا حساب.',
   'editor.shareEnable': 'أنشئ رابط مشاركة',
+  // بوابة النشر قبل الرابط (قرار المالك 2026-09-10) — وعودّلها المالك 2026-09-11:
+  // الدليل الخاص له بابان — رابط سري دون نشر، أو نشر كامل يجعله مرئيًا بالبحث
+  'editor.shareNeedsPublish': 'النشر للمساحة يجعل الدليل مرئيًا لزملائك في البحث ويُنشئ رابط مشاركة.',
+  'editor.publishAndShare': 'انشر للمساحة وأنشئ الرابط',
+  'editor.shareSecretHint': 'رابط سري: الدليل يبقى خاصًا ولا يظهر في بحث المساحة — من يملك الرابط وحده يفتحه.',
+  'editor.shareSecretCreate': 'أنشئ رابطًا سريًا',
+  'editor.shareOptionsOr': 'أو',
+  // شريط المسودة في صفحة الدليل (قرار المالك 2026-09-11): المسودة تُرى وتُنشر بضغطة
+  'editor.draftBarTitle': 'مسودة — خاصة بك فقط، لم تُنشر للمساحة',
+  'editor.publishDraftBar': 'نشر للمساحة',
+  'editor.publishingDraftBar': 'جارٍ النشر…',
+  // المرحلة ٤: «تم» تصنع نقطة استعادة — تلميح أول ٣ مرات فقط
+  'editor.doneVersionHint': 'حُفظ إصدار جديد من دليلك — ارجع إليه وقتما شئت من «المزيد» ← «الإصدارات»',
   'editor.shareCreating': 'جارٍ تحضير رابط المشاركة…',
+  'editor.publishingShare': 'جارٍ النشر وتحضير الرابط…',
   'editor.embedHint': 'الصق هذا الكود في صفحتك لعرض الدليل مضمّنًا.',
   'editor.embedCopy': 'نسخ كود التضمين',
   'editor.embedCopied': 'نُسخ الكود',
@@ -214,6 +241,8 @@ export const ar = {
   'shortcuts.hideBar': 'إخفاء/إظهار شريط التسجيل (الامتداد — الالتقاط يستمر)',
   'auth.checking': 'جارٍ التحقق من الجلسة…',
   'editor.stepTitleLabel': 'عنوان الخطوة {no}',
+  // طلب المالك 2026-09-09: حقل واحد للعنوان يتمدد — العبارة التوضيحية للعنوان لا للملاحظة
+  'editor.stepTitlePlaceholder': 'عنوان الخطوة…',
   'editor.moveUp': 'أعلى',
   'editor.moveDown': 'أسفل',
   'editor.removeStep': 'حذف',
@@ -285,6 +314,9 @@ export const ar = {
   'editor.sensitiveChip': 'حقل حساس — القيمة لم تُحفظ إطلاقًا',
   'editor.audioLabel': 'تعليقك الصوتي المسجّل مع هذا الدليل',
   'editor.transcribe': 'حوّل الصوت إلى نص',
+  // حماية الملاحظات المكتوبة — التفريغ يستبدلها فورًا
+  'editor.transcribeOverwrite': 'سيُستبدل نصّ الملاحظات المكتوبة تحت الخطوات بتفريغ صوتك. متابعة؟',
+  'editor.transcribeOverwriteConfirm': 'استبدل الملاحظات',
   'editor.transcribing': 'يُفرّغ الصوت…',
   'editor.transcribeDone': 'مُلئت {count} ملاحظة من صوتك — راجعها وعدّل ما تشاء',
   'editor.transcribeEmpty': 'لم يُلتقط كلام واضح في التسجيل — لا نص لإضافته',
@@ -303,6 +335,8 @@ export const ar = {
   'search.title': 'البحث',
   'search.placeholder': 'ابحث في كل أدلتك… يتحمّل التشكيل والهمزات',
   'search.submit': 'ابحث',
+  // الحالة الفارغة عنوانها وصفٌ للحالة لا فعل الزر
+  'search.idleTitle': 'ابحث في كل أدلتك',
   'search.hintIdle': 'ابحث في كل أدلتك — النتيجة خطوة لا دليلًا، تفتح مباشرة في مكانها',
   'search.noResults': 'لا نتائج لهذا البحث',
   'search.noResultsDesc': 'جرّب كلمة أقصر أو تأكد من الإملاء — البحث يتحمل التشكيل والهمزات والأرقام الشرقية.',
@@ -387,14 +421,17 @@ export const ar = {
   'library.bulkBar': 'عمليات التحديد',
   'library.bulkMove': 'انقل المحدد إلى مجلد…',
   'library.bulkShare': 'شارك المحدد',
-  'library.bulkDelete': 'حذف المحدد',
-  'library.bulkDeleteConfirm': 'حذف {count} من الأدلة إلى السلة — متابعة؟',
+  // النقل الناعم للسلة لا يُسمّى حذفًا — والسلة زرها «حذف نهائي» بلا اموّهات
+  'library.bulkDelete': 'نقل إلى السلة',
+  'library.bulkDeleteConfirm': 'نقل {count} من الأدلة إلى السلة — متابعة؟',
   'library.bulkDeleteForeverConfirm': 'حذف نهائي لـ{count} من الأدلة لا يمكن التراجع عنه — متابعة؟',
   'library.bulkDeleted': 'انتقل {count} من الأدلة إلى السلة — 30 يومًا قبل الحذف الدائم',
   'library.bulkDeletedForever': 'حُذف {count} من الأدلة نهائيًا',
   'library.bulkMoved': 'نُقل {count} من الأدلة إلى المجلد',
   'library.bulkShared': 'تمت مشاركة {count} من الأدلة — الروابط في بطاقاتها',
   'library.bulkError': 'فشلت العملية الجماعية — حاول مجددًا',
+  // بوابة النشر قبل الرابط (قرار المالك): الجماعي بلا هدف صالح يبلغ بصدق لا يصمت
+  'library.bulkShareNone': 'لا أدلة منشورة غير مشتركة بين المحدد — انشرها أولًا ثم شاركها',
   'library.clearSelection': 'إلغاء التحديد',
 
   // ——— المرحلة ب: الهوم والشريط الجانبي (WS-06) ———
@@ -407,6 +444,45 @@ export const ar = {
   'home.navFolders': 'المجلدات',
   'home.navNav': 'التنقل',
   'home.navTeam': 'الفريق',
+  // ASG (الإسناد): «أُسند إليّ» — بند شريط جانبي وشاشة وقسم رئيسية وحوار ولوحة
+  'assigned.nav': 'أُسند إليّ',
+  'assigned.title': 'أُسند إليّ',
+  'assigned.empty': 'لا شيء مُسند إليك الآن',
+  'assigned.loadError': 'تعذّر تحميل المُسند إليك',
+  'assigned.open': 'افتح',
+  'assigned.markDone': 'تمّ',
+  'assigned.doneState': 'تم الإنجاز',
+  'assigned.newBadge': 'جديد',
+  'assigned.from': 'أسنده',
+  'assigned.disclosure': 'يرى المُسنِد حالة اطّلاعك وإتمامك',
+  'assigned.kindBooklet': 'كرّاسة',
+  'assigned.kindGuide': 'دليل',
+  'assigned.stepsLabel': 'خطوة',
+  // إعلان الرئيسية — {count} عنصرًا مُسندًا جديدًا
+  'assigned.newBanner': 'لديك {count} مُسند إليك بانتظار الاطّلاع',
+  // حوار الإسناد
+  'assign.button': 'أسند',
+  'assign.title': 'إسناد',
+  'assign.tabUser': 'شخص',
+  'assign.tabTeam': 'فريق',
+  'assign.tabWorkspace': 'كل الشركة',
+  'assign.note': 'ملاحظة (اختياري)',
+  'assign.notePlaceholder': 'مثال: اقرأه قبل نهاية الأسبوع',
+  'assign.privateWarn': 'سيُمنح المستهدَفون حق قراءة هذا الدليل الخاص عبر الإسناد',
+  'assign.submit': 'أسند',
+  'assign.pickTarget': 'اختر شخصًا أو فريقًا أو الشركة كلها',
+  'assign.done': 'تم الإسناد',
+  'assign.pickWorkspace': 'إسناد لكل أعضاء الشركة',
+  // لوحة المُسنِد
+  'assignees.title': 'من أُسند إليهم',
+  'assignees.header': 'فُتح {opened} من {total} · أتمّ {done}',
+  'assignees.colMember': 'العضو',
+  'assignees.colTeam': 'الفريق',
+  'assignees.stateOpened': 'فُتح',
+  'assignees.stateDone': 'أتمّ',
+  'assignees.stateNew': 'لم يُفتح',
+  'assignees.empty': 'لا مستهدَفين بعد',
+  'assignees.loadError': 'تعذّر تحميل اللوحة',
   'home.viewAll': 'الكل',
   'home.viewMine': 'أدلتي',
   'home.viewPublished': 'المنشورة',
@@ -436,6 +512,8 @@ export const ar = {
   'home.noResultsDesc': 'جرّب تخفيف الفلاتر أو امسحها لعرض أدلة أكثر.',
   'home.startTitle': 'ابدأ من هنا',
   'home.startDesc': 'أنشئ أول دليل، أو ثبّت امتداد كروم لالتقاط خطوات عملك تلقائيًا.',
+  // قرار المالك 2026-09-10: الدعوة للتثبيت تأخذ المستخدم للرابط — تختفي حتى يوضع VITE_EXTENSION_URL
+  'home.installExt': 'ثبّت امتداد كروم',
   'home.viewerEmpty': 'لم تُنشر أدلة بعد',
   'home.viewerEmptyDesc': 'لم ينشر أعضاء المساحة أي دليل حتى الآن — ستظهر الأدلة هنا فور نشر أول واحد.',
   'home.badgePrivate': 'خاص',
@@ -453,11 +531,12 @@ export const ar = {
   'home.viewToggle': 'نمط العرض',
   'home.siteChipA11y': 'ترشيح بموقع {site}',
   // — نمط المرجع: بنود الشريط وشريط الأعلى والجدول —
-  'home.navHome': 'الرئيسية',
+  // توحيد القاموس (المرحلة ١): شاشة الأدلة كلها «المكتبة» — في التنقل وفي عنوانها وزر العودة إليها
+  'home.navHome': 'المكتبة',
   'home.navMine': 'أنشئ بواسطي',
   'home.navSaved': 'المحفوظات',
   'home.navSettings': 'الإعداد',
-  'home.wsAllDocs': 'كل المستندات',
+  'home.wsAllDocs': 'كل الأدلة',
   'home.invite': 'دعوة زميل',
   'home.filters': 'فلاتر',
   'home.sortLabel': 'الترتيب',
@@ -484,8 +563,11 @@ export const ar = {
   'home.publishError': 'تعذر تغيير حالة النشر — حاول مجددًا',
   'home.share': 'مشاركة',
   'home.shareCopied': 'نُسخ رابط المشاركة',
+  // قرار المالك 2026-09-11: مشاركة دليل خاص = رابط سري — يُنسخ مباشرة والدليل يبقى خارج بحث المساحة
+  'home.shareSecretCopied': 'رابط سري نُسخ — الدليل يبقى خاصًا ولا يظهر في بحث المساحة',
   'home.shareManual': 'انسخ الرابط يدويًا: {url}',
   'home.shareError': 'تعذر إنشاء رابط المشاركة — حاول مجددًا',
+
   // ——— المرحلة د: شاشة الفريق (WS-08) — جدول الأعضاء والدعوة برابط والفرق ———
   'team.title': 'الفريق',
   'team.invite': 'دعوة زميل',
@@ -510,6 +592,8 @@ export const ar = {
   'team.deleteTeam': 'حذف الفريق',
   'team.deleteTeamConfirm': 'حذف الفريق «{name}»؟ أعضاؤه يرجعون بلا فريق ولا شيء آخر يتغير.',
   'team.remove': 'إزالة',
+  // توحيد القاموس (المرحلة ١): رسائل الفريق لا تستعير كلام المجلدات
+  'team.actionError': 'تعذر تنفيذ العملية — حاول مجددًا',
   'team.transferNote': 'أدلته ستُنقل لملكيتك',
   'team.removeConfirm': 'إزالة {email} من المساحة؟ {count} من أدلته ستُنقل لملكيتك.',
   'team.removed': 'أُزيل العضو ونُقلت أدلته إلى مكتبتك',
@@ -544,7 +628,7 @@ export const ar = {
   'settings.reportsDesc': 'المشاهدات والتعليقات تنتظر ردًا — أعلى «أنشئ بواسطي»',
   'settings.open': 'فتح',
   'settings.noFolders': 'لا مجلدات بعد — أنشئ أول مجلد مساحي',
-  'library.deleteFolderConfirm': 'حذف المجلد «{name}»؟ أدلته ستعود إلى «كل المستندات» ولا شيء يُحذف.',
+  'library.deleteFolderConfirm': 'حذف المجلد «{name}»؟ أدلته ستعود إلى «كل الأدلة» ولا شيء يُحذف.',
   'library.searchHintShort': 'بحث…',
   'settings.placeholder': 'شاشة الإعداد تُبنى في مرحلة هـ بقرارك — وستجمع: المجلدات · الفرق · أدلتي والمنشورة والمحفوظات · التقارير · بيانات المساحة. وإدارة الفريق متاحة الآن:',
 

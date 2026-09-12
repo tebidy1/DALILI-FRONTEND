@@ -8,6 +8,7 @@ import { t } from '../i18n'
 import { arDigits, roleLabelAr } from '../lib/format'
 import { readTheme, setTheme, type ThemeChoice } from '../lib/theme'
 import { useOverview } from '../shell/OverviewContext'
+import { useConfirm } from '../components/ConfirmProvider'
 
 /**
  * المرحلة هـ (الإعداد — WS-09): «فهرسُ كل شيء» لا تكرار للشاشات — بطاقة بيانات
@@ -19,6 +20,7 @@ import { useOverview } from '../shell/OverviewContext'
 export function SettingsPage() {
   const { overview } = useOverview()
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const isViewer = overview?.myRole === 'viewer'
 
   const [folders, setFolders] = useState<FolderDto[] | null>(null)
@@ -59,7 +61,7 @@ export function SettingsPage() {
   }
 
   async function removeFolder(f: FolderDto) {
-    if (!window.confirm(t('library.deleteFolderConfirm', { name: f.name }))) return
+    if (!(await confirm({ title: t('library.folderDelete'), body: t('library.deleteFolderConfirm', { name: f.name }), confirmLabel: t('library.folderDelete'), danger: true }))) return
     try {
       await client.deleteFolder(f.id)
       reload()

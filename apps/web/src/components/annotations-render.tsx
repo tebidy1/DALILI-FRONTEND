@@ -46,7 +46,8 @@ export function hitTextAnnotation(annotations: Annotation[], nx: number, ny: num
 /**
  * إطار الهدف: خط صلب واحد بسمك أدوات الريشة نفسه (طلب المالك 2026-09-01).
  * `alpha` مُضاعِف شفافية (١ للمحفوظ، ٠٫٥ لمعاينة التحريك)، و`shape` يبدّل
- * المسار بين مستطيل مدوّر وقطع ناقص يتوسّط الإطار (طلب المالك 2026-09-04).
+ * المسار بين مستطيل وقطع ناقص يتوسّط الإطار (طلب المالك 2026-09-04).
+ * المستطيل **قائم الزوايا** لا مدوّر (طلب المالك 2026-09-10).
  */
 export function drawMark(
   c: CanvasRenderingContext2D,
@@ -67,7 +68,7 @@ export function drawMark(
     c.beginPath()
     c.ellipse(b.x + b.w / 2, b.y + b.h / 2, Math.abs(b.w / 2), Math.abs(b.h / 2), 0, 0, Math.PI * 2)
   } else {
-    roundRect(c, b, Math.min(16, b.w / 2, b.h / 2))
+    roundRect(c, b, 0)
   }
   c.stroke()
   c.restore()
@@ -178,6 +179,67 @@ export function drawAnnotation(c: CanvasRenderingContext2D, a: Annotation, crop:
   c.restore()
 }
 
+/**
+ * طلب المالك 2026-09-11 (العلاج الجذري): الرقم والسهم **مثبَّتان على الزر نفسه**
+ * لا على مركز الصورة. العطب القديم كان يحسب الاتجاه «من مركز الزر نحو مركز اللقطة»
+ * فيضطرب ويُقذف حين يكون الزر وسط الشاشة (بلاغ المالك: «الوسط خطأ، الأطراف صحيحة»)
+ * — والعارض أصلاً يمركز الزر في المنظار، فمرجع «مركز الصورة» لا علاقة له بما يُرى.
+ *
+ * القاعدة الجديدة (متوقَّعة في كل الحالات): الرقم **فوق الزر** متمركزًا أفقيًّا عليه،
+ * والسهم قصير من الرقم إلى حافة الزر العليا. وإن كان الزر ملاصقًا لأعلى اللقطة
+ * يُقلب الرقم أسفله والسهم يشير صعودًا. **رقم عاري بلا إطار** (الدائرة تسرق ضوء
+ * الزر — طلب سابق) بحدّ أبيض رفيع للقراءة، و**السهم بلونه فقط بلا هالة بيضاء**
+ * (الهالة كانت كتلة بيضاء تشوّش على اللقطات الداكنة). معاينة حيّة لا محتوى محفوظًا.
+ */
+export function drawStepBadge(
+  c: CanvasRenderingContext2D,
+  rect: Rect,
+  n: number,
+  color: string,
+  scale: number,
+  bounds: { w: number; h: number },
+) {
+  const r = Math.min(40, Math.max(16, scale * 0.02))
+  const gap = Math.max(r * 1.6, scale * 0.03) // فجوة الرقم عن حافة الزر
+  const lw = Math.max(3, lineWidthFor(scale))
+  const m = Math.max(6, Math.round(scale * 0.004)) + lw // خارج هامش الزر المرسوم وسمك خطه
+  const mcx = rect.x + rect.w / 2
+
+  // الوضع الافتراضي: الرقم فوق الزر. يُقلب أسفله إن لم يتّسع فوقه (زر قرب الحافة العليا).
+  const aboveY = rect.y - gap - r
+  const placeBelow = aboveY < r * 1.6
+  const cx = Math.min(Math.max(r * 1.6, mcx), Math.max(r * 1.6, bounds.w - r * 1.6))
+  const rawCy = placeBelow ? rect.y + rect.h + gap + r : aboveY
+  const cy = Math.min(Math.max(r * 1.6, rawCy), Math.max(r * 1.6, bounds.h - r * 1.6))
+
+  // السهم القصير: من طرف الرقم المواجه للزر إلى حافة الزر القريبة (بهامش لا يلامس خطه)
+  const dirY = placeBelow ? -1 : 1 // رقم فوق ⇒ السهم ينزل للزر؛ رقم أسفل ⇒ يصعد إليه
+  const sx = cx
+  const sy = cy + dirY * r * 1.4
+  const ex = mcx
+  const ey = placeBelow ? rect.y + rect.h + m : rect.y - m
+
+  c.save()
+  // السهم بلون العلامة فقط — منحنٍ قليلًا (لا قوسًا)، بلا هالة بيضاء تشوّش الخلفية الداكنة
+  c.strokeStyle = color
+  c.fillStyle = color
+  c.lineWidth = lw
+  strokeArrow(c, sx, sy, ex, ey, lw, true, 0.14)
+  c.restore()
+
+  // الرقم العاري — بلون العلامة، وحدّ أبيض رفيع خلفه للقراءة على أي خلفية
+  c.save()
+  c.font = `700 ${Math.round(r * 1.05)}px 'IBM Plex Sans Arabic', system-ui, sans-serif`
+  c.textAlign = 'center'
+  c.textBaseline = 'middle'
+  c.lineWidth = Math.max(2, r * 0.14)
+  c.strokeStyle = '#ffffff'
+  c.strokeText(String(n), cx, cy + r * 0.05)
+  c.fillStyle = color
+  c.fillText(String(n), cx, cy + r * 0.05)
+  c.restore()
+}
+
 /** رسم شكل قيد السحب (معاينة حيّة) بإحداثيات العرض المحوَّلة للطبيعية */
 export function drawPreview(
   c: CanvasRenderingContext2D,
@@ -249,7 +311,17 @@ export function drawStrokePreview(
 }
 
 /** سهم مستقيم أو منحنٍ برأس مثلّث ممتلئ */
-function strokeArrow(c: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number, lw: number, curved: boolean) {
+function strokeArrow(
+  c: CanvasRenderingContext2D,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  lw: number,
+  curved: boolean,
+  /** نسبة تقويس المسار من طوله — الافتراضي كفاية لأداة السهم المنحني */
+  bendRatio = 0.25,
+) {
   const head = Math.max(10, lw * 3.2)
   let angle: number
   c.beginPath()
@@ -261,7 +333,7 @@ function strokeArrow(c: CanvasRenderingContext2D, x0: number, y0: number, x1: nu
     const dx = x1 - x0
     const dy = y1 - y0
     const len = Math.hypot(dx, dy) || 1
-    const bend = Math.min(60, len * 0.25)
+    const bend = Math.min(60, len * bendRatio)
     const cx = mx + (-dy / len) * bend
     const cy = my + (dx / len) * bend
     c.quadraticCurveTo(cx, cy, x1, y1)

@@ -8,6 +8,7 @@ import { t } from '../i18n'
 import { arDigits } from '../lib/format'
 import { patchParams } from '../lib/params'
 import { useOverview } from './OverviewContext'
+import { useConfirm } from '../components/ConfirmProvider'
 
 /**
  * قسم «المجلدات» في الشريط الجانبي — نمط Team Directory المرفق (طلب المالك
@@ -17,6 +18,7 @@ import { useOverview } from './OverviewContext'
  */
 export function FoldersSection({ isViewer }: { isViewer: boolean }) {
   const { reload } = useOverview()
+  const confirm = useConfirm()
   const [sp, setSp] = useSearchParams()
   const folder = sp.get('folder')
 
@@ -62,7 +64,7 @@ export function FoldersSection({ isViewer }: { isViewer: boolean }) {
   }
 
   async function deleteFolderNow(f: FolderDto) {
-    if (!window.confirm(t('library.folderDeleteNote'))) return
+    if (!(await confirm({ title: t('library.folderDelete'), body: t('library.folderDeleteNote'), confirmLabel: t('library.folderDelete'), danger: true }))) return
     try {
       await client.deleteFolder(f.id)
       if (folder === f.id) setSp(patchParams(sp, { folder: null }))

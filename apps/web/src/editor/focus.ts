@@ -16,6 +16,11 @@ export interface Viewport {
 /** أقصى تكبير — أبعد من هذا يصير البكسل عجينة بلا فائدة */
 export const MAX_SCALE = 4
 
+/** طلب المالك 2026-09-10: الزوم الافتتاحي — ١٠٪ فوق ملء العرض كي يظهر محتوى
+ *  الشاشة أوضح فور الفتح بلا زوم يدوي، والقاعدة محفوظة: الركن الذي به الزر
+ *  المحدد هو الذي يظهر (التبؤير على الهدف مع حصرٍ يحمّل القصّ نحوه) */
+export const OPENING_ZOOM = 1.1
+
 /** أكبر مقياس يُظهر الصورة كاملة داخل المنظار، وبلا تكبير فوق الطبيعي */
 export function fitScale(imgW: number, imgH: number, boxW: number, boxH: number): number {
   if (imgW <= 0 || imgH <= 0) return 1
@@ -35,11 +40,11 @@ export function clampViewport(v: Viewport, imgW: number, imgH: number, boxW: num
 }
 
 /**
- * منظر افتتاحي للخطوة (قرار المالك 2026-09-01 اللاحق — «بطاقة ونصف»): اللقطة
- * دائمًا لكامل الشاشة، فالمطلوب **الصورة كاملة** تملأ عرض بطاقة ثابتة الحجم —
- * لا نافذة تكبيق حول الزر. العلامة تظهر تلقائيًا لأن كل الشاشة معروضة، وإن فاض
- * الارتفاع الطفيف عن الصندوق حُمِل القصّ نحو العلامة (لا قصّ التوسّط الأعمى).
- * بلا هدف (لقطة قديمة/خطوة تنقّل) نفس المقياس — فرعا الدالة مقياس واحد الآن.
+ * منظر افتتاحي للخطوة: ملء العرض ثم **زوم افتتاحي ١٠٪** (طلب المالك 2026-09-10)
+ * — محتوى الشاشة أوضح افتراضيًا بلا زوم يدوي. والقاعدة المعمّلة سابقًا محفوظة:
+ * الإطار يُبؤَّر على الهدف المُعلَّم، و`clampViewport` يحمل القصّ نحوه فيبقى
+ * الركن الذي به الزر المحدد هو الظاهر للمستخدم. بلا هدف (لقطة قديمة/خطوة
+ * تنقّل) نفس المقياس والقصّ محمول على **أعلى** الشاشة — أول ما يُقرأ.
  */
 export function focusViewport(
   mark: Rect | undefined,
@@ -49,12 +54,11 @@ export function focusViewport(
   boxH: number,
 ): Viewport {
   const fit = fitScale(imgW, imgH, boxW, boxH)
-  // ملء عرض المنظار (محصورًا بالسقف): يختفي الفراغ العرضي بين اللقطة وإطار
-  // البطاقة، وتُعرض الصورة كلها بحجم ثابت معقول (~ربع الحجم على الشاشات العادية).
-  const scale = imgW > 0 ? Math.min(MAX_SCALE, Math.max(fit, boxW / imgW)) : fit
+  const scale =
+    imgW > 0 ? Math.min(MAX_SCALE, Math.max(fit, boxW / imgW) * OPENING_ZOOM) : fit
   if (!mark || mark.w <= 0 || mark.h <= 0) {
     return clampViewport(
-      { scale, tx: (boxW - imgW * scale) / 2, ty: (boxH - imgH * scale) / 2 },
+      { scale, tx: (boxW - imgW * scale) / 2, ty: 0 },
       imgW,
       imgH,
       boxW,

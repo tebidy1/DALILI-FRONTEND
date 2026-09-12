@@ -1,6 +1,7 @@
 import { StateView } from '../ui/StateView'
 import { IconBookOpen, IconBookmark, IconUser } from '../ui/icons'
 import { t } from '../i18n'
+import { EXTENSION_INSTALL_URL } from '../lib/extension-install'
 import type { HomeScreen } from './screen'
 
 /**
@@ -38,7 +39,19 @@ export function LibraryEmpty(p: {
     return <StateView kind="empty" icon={<IconBookOpen size={30} />} title={t('home.viewerEmpty')} desc={t('home.viewerEmptyDesc')} />
   }
   if (p.screen === 'home' && p.hasOverview && p.allCount === 0) {
-    return <StateView kind="empty" icon={<IconBookOpen size={30} />} title={t('home.startTitle')} desc={t('home.startDesc')} action={emptyStart} />
+    return (
+      <>
+        <StateView kind="empty" icon={<IconBookOpen size={30} />} title={t('home.startTitle')} desc={t('home.startDesc')} action={emptyStart} />
+        {/* قرار المالك 2026-09-10: الدعوة للتثبيت تأخذ للرابط — والزر يختفي حتى يوضع VITE_EXTENSION_URL */}
+        {EXTENSION_INSTALL_URL && (
+          <div className="row center">
+            <a className="btn ghost" href={EXTENSION_INSTALL_URL} target="_blank" rel="noreferrer">
+              {t('home.installExt')} ↗
+            </a>
+          </div>
+        )}
+      </>
+    )
   }
   if (p.anyFilter || p.screen !== 'home') {
     return (

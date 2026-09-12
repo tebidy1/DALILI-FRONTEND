@@ -10,6 +10,9 @@ export interface MoreMenuItem {
   /** تلميح يظهر عند الحوم على المعطّل — عادةً «قريبًا» */
   disabledHint?: string
   danger?: boolean
+  /** طلب المالك 2026-09-09: عنصر تبديل (مثل «إظهار الأرقام») — وجوده يجعله
+   *  مربع اختيار يعلن حالته بعلامة ✓ في آخر السطر */
+  checked?: boolean
 }
 
 interface Props {
@@ -59,8 +62,9 @@ export function MoreMenu({ items, ariaLabel }: Props) {
             <button
               key={it.key}
               type="button"
-              role="menuitem"
-              className={`more-menu-item${it.danger ? ' danger' : ''}${it.disabled ? ' is-disabled' : ''}`}
+              role={it.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+              aria-checked={it.checked === undefined ? undefined : !!it.checked}
+              className={`more-menu-item${it.danger ? ' danger' : ''}${it.disabled ? ' is-disabled' : ''}${it.checked ? ' is-checked' : ''}`}
               aria-disabled={it.disabled ? 'true' : undefined}
               title={it.disabled ? it.disabledHint : undefined}
               onClick={() => {
@@ -71,6 +75,11 @@ export function MoreMenu({ items, ariaLabel }: Props) {
             >
               {it.icon && <span className="more-menu-item-icon">{it.icon}</span>}
               <span>{it.label}</span>
+              {it.checked !== undefined && (
+                <span className="more-menu-check" aria-hidden="true">
+                  {it.checked ? '✓' : ''}
+                </span>
+              )}
             </button>
           ))}
         </div>

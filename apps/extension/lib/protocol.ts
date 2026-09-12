@@ -50,10 +50,16 @@ export interface SessionMeta {
   appendTo?: string
   /** موضع إدراج الخطوات في الدليل الهدف — النهاية افتراضيًا */
   insertAt?: number
-  /** VOX-06: يسجَّل تعليق صوتي مع هذه الجلسة — مؤشر «ميكروفون ●» في الشريط والنافذة */
-  micOn?: boolean
+  /** VOX-AUTO: «ابدأ مع تعليق صوتي» — كل بطاقة جديدة يبدأ عليها التعليق تلقائيًا حتى التالية */
+  autoMemo?: boolean
   /** VOX-09 «ميك الخطوة»: تعليق جارٍ الآن — حلقة حمراء فوق معاينة الخطوة ومؤقت بالزر */
   memoLive?: { stepIndex: number; startedAt: number }
+  /**
+   * المرحلة ٣ (قرار المالك): لحظة نجاح النشر — اللوحة تعرض بطاقة «دليلك جاهز»
+   * بعد عودة الحالة للخمول. `at` يجعلها زائلة بنفسها بعد دقيقة كي لا تستقبِل
+   * لوحة مفتوحة لاحقًا بنجاح قديم.
+   */
+  lastPublished?: { guideId: string; stepCount: number; at: number }
 }
 
 /**
@@ -89,7 +95,8 @@ export type BgMsg =
   | { t: 'pause' }
   | { t: 'resume' }
   | { t: 'cancel' }
-  | { t: 'finish' }
+  /** المرحلة ٣: الاسم الاختياري من لوحة الالتقاط — يُستخدم عند إنشاء دليل جديد فقط */
+  | { t: 'finish'; title?: string }
   | { t: 'toggle' }
   | { t: 'delete-step'; index: number }
   /** CAP-13: زر «طمس» في اللوحة الجانبية — تُرحَّل للتبويب النشط لتفعيل/إطفاء وضع سحب الطمس */
@@ -98,19 +105,10 @@ export type BgMsg =
   | { t: 'toggle-bar-cmd' }
   /** CAP-17: بدء جلسة إضافة على دليل قائم — يصل مُرحَّلًا من صفحة الويب عبر سكربت المحتوى */
   | { t: 'append-capture'; guideId: string; insertAt?: number }
-  /** VOX-06: نتيجة إذن الميكروفون من صفحة الإذن القصيرة (لا يُطلب الإذن من content script أبدًا).
-   * ‏flow=memo: الإذن طُلب لأجل تعليق خطوة (ميك الخطوة) لا للصوت المستمر */
+  /** VOX-09: نتيجة إذن الميكروفون من صفحة الإذن القصيرة (لا يُطلب الإذن من content script أبدًا).
+   * ‏flow=memo: الإذن طُلب لأجل تعليق خطوة يدوي؛ بلا flow: مسار «ابدأ مع تعليق صوتي» التلقائي */
   | { t: 'mic-result'; granted: boolean; flow?: 'memo' }
-  /** VOX-01: مقطع صوت من وثيقة offscreen — b64 + إزاحته عن بدء التسجيل (ms) */
-  | { t: 'audio-chunk'; sid: string; idx: number; b64: string; offsetMs: number }
-  /** VOX-01: تسجيل offscreen توقف وأفرغ آخر مقطع */
-  | { t: 'audio-stopped'; sid: string }
-  /** VOX-01: أمر من الخلفية لوثيقة offscreen — بدء/إيقاف/إيقاف مؤقت للتسجيل */
-  | { t: 'offscreen-start'; sid: string }
-  | { t: 'offscreen-stop'; sid: string }
-  | { t: 'offscreen-pause'; sid: string }
-  | { t: 'offscreen-resume'; sid: string }
-  /** VOX-09 «ميك الخطوة»: بدء تعليق صوتي على آخر خطوة ملتقطة — مقاطع قصيرة تُجمع ولا تبثّ */
+  /** VOX-09 «ميك الخطوة»: بدء تعليق صوتي على آخر خطوة ملتقطة (إلى offscreen) — مقاطع تُجمع ولا تبثّ */
   | { t: 'memo-start'; sid: string; memoId: string }
   /** VOX-09: إيقاف التعليق — الرد MemoStopAck بالمقاطع b64 والمدة */
   | { t: 'memo-stop'; sid: string }
@@ -120,6 +118,8 @@ export type BgMsg =
   | { t: 'memo-request' }
   /** VOX-09: حذف شارة التعليق عن خطوة قبل النشر (ندم) */
   | { t: 'memo-delete'; index: number }
+  /** VOX-AUTO: زر الميك داخل الوضع التلقائي — مفتاح إيقاف/تشغيل التعليق التلقائي — الرد AutoMemoToggleAck */
+  | { t: 'auto-memo-toggle' }
   /** دربني: طلب بدء تدريب من الويب (يرحّله سكربت المحتوى) — رمز عام من العارض أو الدليل نفسه من المحرر — الرد TrainAck */
   | { t: 'train-start'; token?: string; guide?: GuideDto }
   /** دربني: تقدّم من تبويب التدريب — done خطوة نجحت، skip تخطٍّ، stop إنهاء */
@@ -147,6 +147,13 @@ export interface MemoToggleAck {
   /** بلغ التعليق حده 60ث فأُوقف تلقائيًا */
   capped?: boolean
   stepIndex?: number
+  errorAr?: string
+}
+
+/** VOX-AUTO: رد مفتاح التعليق التلقائي — الحالة الجديدة بعد الضغط */
+export interface AutoMemoToggleAck {
+  ok: boolean
+  enabled?: boolean
   errorAr?: string
 }
 

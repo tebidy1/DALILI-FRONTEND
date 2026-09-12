@@ -24,6 +24,12 @@ interface Props {
   onBlurApplied?: (index: number, rect: Rect, size: { w: number; h: number }) => void
   /** BLK-01: رقم العرض المُصفّى (الكتل null) — بدل index+1 كي لا تُرقَّم الكتل */
   displayNo: number | null
+  /** طلب المالك 2026-09-09: مبدّل «إظهار الأرقام» من قائمة «المزيد» — شارة رقم
+   *  تُرسم بعيدًا عن علامة الهدف بلونها، معاينة حيّة لا محتوى محفوظًا */
+  showNumber?: boolean
+  /** طلب المالك 2026-09-09: كبسولة الرابط عند أول ظهور للدومين أو تغيّره فقط —
+   *  غيابها أو false يخفي الكبسولة (الخطوات التابعة لنفس النطاق) */
+  showUrl?: boolean
   canUp: boolean
   canDown: boolean
   /** وضع التعديل: الأدوات والحقول تظهر. وضع العرض: قراءة نظيفة فقط */
@@ -110,6 +116,8 @@ export function StepCard({
   onVoiceTranscribed,
   onBlurApplied,
   displayNo,
+  showNumber,
+  showUrl,
   canUp,
   canDown,
   editing,
@@ -134,6 +142,8 @@ export function StepCard({
 }: Props) {
   const [viewport, setViewport] = useState<Viewport | null>(null)
   const figRef = useRef<HTMLDivElement>(null)
+  // طلب المالك 2026-09-09: حقل واحد لعنوان الخطوة يتمدد بنفسه مع النص
+  const titleRef = useRef<HTMLTextAreaElement>(null)
   const shot = step.screenshot && !('missing' in step.screenshot) ? step.screenshot : null
   const missing = step.screenshot && 'missing' in step.screenshot ? step.screenshot : null
   // الوضع مشتقّ من الأداة العالمية — لا `useState` هنا، فلا حالتان تتباعدان
@@ -174,6 +184,14 @@ export function StepCard({
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps -- الأمر يُنفَّذ مرة لكل نقرة (seq)
   }, [zoomCmd?.seq])
+
+  // الحقل الواحد يتمدد مع النص — يقيس المحتوى ويضبط ارتفاعه بلا شريط تمرير
+  useEffect(() => {
+    const el = titleRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [step.title, step.note, editing])
 
   function setBlurRects(rects: Rect[]) {
     if (!shot) return
@@ -245,7 +263,7 @@ export function StepCard({
               />
               <textarea
                 className="block-body-input"
-                dir="auto"
+                dir="rtl"
                 rows={2}
                 value={step.note ?? ''}
                 onChange={(e) => onChange({ note: e.target.value || undefined })}
@@ -285,21 +303,32 @@ export function StepCard({
         {/* طلب المالك: الرقم والعنوان أولًا فيلتصقان بيمين الشاشة (RTL) — رقم مُصفّى */}
         <div className="step-num">{displayNo}</div>
         {editing ? (
-          <input
-            type="text"
-            className="step-title-input"
-            dir="auto"
-            value={step.title}
-            onChange={(e) => onChange({ title: e.target.value })}
-            aria-label={t('editor.stepTitleLabel', { no: index + 1 })}
-          />
+          /* طلب المالك 2026-09-09 (تصحيح): حقل واحد فقط لعنوان الخطوة — السطر الأول
+             هو العنوان وما بعده ملاحظة تُقرأ تحت الخطوة في العرض، والحقل يتمدد بنفسه */
+          <div className="step-title-field">
+            <textarea
+              ref={titleRef}
+              className="step-title-input"
+              dir="rtl"
+              rows={1}
+              value={step.note ? `${step.title}\n${step.note}` : step.title}
+              onChange={(e) => {
+                const v = e.target.value
+                const nl = v.indexOf('\n')
+                if (nl === -1) onChange({ title: v, note: undefined })
+                else onChange({ title: v.slice(0, nl), note: v.slice(nl + 1) || undefined })
+              }}
+              placeholder={t('editor.stepTitlePlaceholder')}
+              aria-label={t('editor.stepTitleLabel', { no: index + 1 })}
+            />
+          </div>
         ) : (
           <h2 className="step-title-read" dir="auto">
             <bdi>{step.title}</bdi>
           </h2>
         )}
 
-        {step.url && (
+        {step.url && showUrl !== false && (
           <a
             href={step.url}
             target="_blank"
@@ -366,22 +395,12 @@ export function StepCard({
         )}
       </div>
 
-      {/* بلاغ المالك 2026-09-04: نص التفريغ يُقرأ مباشرة بعد العنوان لا أسفل البطاقة */}
-      {editing ? (
-        <textarea
-          className="step-note"
-          dir="auto"
-          value={step.note ?? ''}
-          onChange={(e) => onChange({ note: e.target.value || undefined })}
-          placeholder={t('editor.notePlaceholder')}
-          rows={2}
-        />
-      ) : (
-        step.note && (
-          <p className="muted step-note-read" dir="auto">
-            <bdi>{step.note}</bdi>
-          </p>
-        )
+      {/* بلاغ المالك 2026-09-04: نص التفريغ يُقرأ مباشرة بعد العنوان لا أسفل البطاقة —
+          وفي التعديل صار داخل إطار العنوان نفسه فوق */}
+      {!editing && step.note && (
+        <p className="muted step-note-read" dir="auto">
+          <bdi>{step.note}</bdi>
+        </p>
       )}
 
       {shot ? (
@@ -392,6 +411,7 @@ export function StepCard({
             crop={shot.crop}
             annotations={shot.annotations}
             mark={shot.mark}
+            autoNumber={showNumber ? displayNo ?? undefined : undefined}
             mode={mode}
             tool={annotationToolOf(tool)}
             color={markColor}
@@ -493,7 +513,7 @@ export function StepCard({
             <input
               type="text"
               className="alt-input"
-              dir="auto"
+              dir="rtl"
               aria-label={t('editor.altLabel')}
               placeholder={t('editor.altLabel')}
               value={step.alt ?? ''}

@@ -252,11 +252,14 @@ export function IconGrip({ size, ...rest }: IconProps) {
   )
 }
 
-/** VER-02: ثلاث نقاط عمودية — زر «المزيد» في شريط المحرر */
+/** VER-02: ثلاث نقاط عمودية — زر «المزيد» في شريط المحرر.
+ *  طلب المالك 2026-09-09: نقاط ممتلئة سميكة كالاستاندرد في التطبيقات لا نقاط شعرية */
 export function IconMoreVertical({ size, ...rest }: IconProps) {
   return (
     <Svg size={size} {...rest}>
-      <path d="M12 5h.01M12 12h.01M12 19h.01" />
+      <circle cx="12" cy="5.5" r="2" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="18.5" r="2" fill="currentColor" stroke="none" />
     </Svg>
   )
 }
@@ -447,6 +450,16 @@ export function IconHome({ size, ...rest }: IconProps) {
     <Svg size={size} {...rest}>
       <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <path d="M9 22V12h6v10" />
+    </Svg>
+  )
+}
+
+/** ASG: «أُسند إليّ» — صندوق وارد */
+export function IconInbox({ size, ...rest }: IconProps) {
+  return (
+    <Svg size={size} {...rest}>
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
     </Svg>
   )
 }

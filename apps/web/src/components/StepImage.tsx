@@ -15,7 +15,7 @@ import {
 } from '../editor/rectmath'
 import { focusViewport, panViewport, type Viewport } from '../editor/focus'
 import { useInView } from '../lib/inview'
-import { drawAnnotation, drawHandles, drawMark, drawPreview, drawStrokePreview, hitTextAnnotation, uid } from './annotations-render'
+import { drawAnnotation, drawHandles, drawMark, drawPreview, drawStepBadge, drawStrokePreview, hitTextAnnotation, uid } from './annotations-render'
 
 export type DrawMode = 'view' | 'blur' | 'crop' | 'annotate' | 'move-target'
 /** أداة الشرح النشطة داخل وضع annotate — أي شكل يرسمه السحب */
@@ -40,6 +40,9 @@ interface Props {
    */
   markActive?: boolean
   onMarkActivate?: (active: boolean) => void
+  /** طلب المالك 2026-09-09: رقم الخطوة يُرسم بجوار علامة الهدف بمبدّل «إظهار
+   *  الأرقام» — معاينة حيّة لا محتوى محفوظًا؛ غيابه يعني لا شارة */
+  autoNumber?: number
   /** المنظار: متحكَّم فيه من الأعلى حين يُمرَّر، وإلا حالة داخلية تبؤّر تلقائيًا */
   viewport?: Viewport
   onViewportChange?: (v: Viewport) => void
@@ -72,6 +75,7 @@ export function StepImage({
   tool = 'rect',
   color = DEFAULT_COLOR,
   mark,
+  autoNumber,
   markActive,
   onMarkActivate,
   viewport,
@@ -152,7 +156,7 @@ export function StepImage({
   useEffect(() => {
     render()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blurRects, crop, annotations, drag, markDrag, mode, tool, color, mark, markHandlesShown, strokePts, textDrag])
+  }, [blurRects, crop, annotations, drag, markDrag, mode, tool, color, mark, markHandlesShown, strokePts, textDrag, autoNumber])
 
   /** تغيّر مقاس الصندوق (تدوير الجهاز/تغيير النافذة) يعيد حساب المنظار */
   useEffect(() => {
@@ -218,15 +222,19 @@ export function StepImage({
      * إن وُجدت — تحلّ محلّ الأساسي في الرسم لا تُضاف إليه: ما تسحبه هو الشكل
      * نفسه، تمامًا كما في وورد.
      */
-    if (mark) {
-      const shown = markPreviewRect() ?? mark.rect
-      const ml = markLocal(shown, crop)
-      if (ml) {
-        drawMark(c, ml, mark.color, img.naturalWidth, 1, markShapeOf(mark))
-        // المقابض للشكل المنشَّط وحده — الشكل الهادئ يظل خطًّا نظيفًا كما يُطبع
-        if (markHandlesShown) drawHandles(c, ml, img.naturalWidth, mark.color)
-      }
+    const ml = mark ? markLocal(markPreviewRect() ?? mark.rect, crop) : undefined
+    if (mark && ml) {
+      drawMark(c, ml, mark.color, img.naturalWidth, 1, markShapeOf(mark))
+      // المقابض للشكل المنشَّط وحده — الشكل الهادئ يظل خطًّا نظيفًا كما يُطبع
+      if (markHandlesShown) drawHandles(c, ml, img.naturalWidth, mark.color)
+      // طلب المالك 2026-09-09: «إظهار الأرقام» يرسم رقم الخطوة بجوار علامة الهدف من بعيد.
+      // البُعد والحدود بإحداثيات اللوحة الظاهرة (cw×ch) لا الصورة الأصلية — وإلا
+      // انحرف الرقم والسهم في اللقطات المقصوصة (طلب المالك 2026-09-11).
+      if (autoNumber != null) drawStepBadge(c, ml, autoNumber, mark.color, cw, { w: cw, h: ch })
     }
+    // طلب المالك 2026-09-11: الخطوة بلا هدف (كفتح الموقع) لا تُرسم رقمها على اللوحة —
+    // منظار العارض يقصّ حواف اللقطة فيضيع رقم الركن. تُعرَض بشارة HTML فوق الإطار
+    // الثابت (`shot-viewport`) بدل الرسم على اللوحة (انظر JSX أدناه).
     // الشرح فوق الطمس — بمقياس يتناسب مع عرض الصورة الطبيعي
     const scale = img.naturalWidth
     for (const a of annotations ?? []) {
@@ -625,6 +633,15 @@ export function StepImage({
           />
         ) : (
           <div className="shot-idle" aria-hidden="true" />
+        )}
+        {/*
+          طلب المالك 2026-09-11: رقم الخطوة بلا هدف (كفتح الموقع) — شارة فوق الإطار
+          الثابت لا على اللوحة، فلا يقصّها منظار العرض. لا سهم: لا زرّ يشير إليه.
+        */}
+        {active && autoNumber != null && !mark && (
+          <div className="shot-step-num" style={{ backgroundColor: color }} aria-hidden="true">
+            {autoNumber}
+          </div>
         )}
         {dragRect && (
           <div

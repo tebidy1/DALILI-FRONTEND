@@ -113,10 +113,11 @@ describe('محرر الكرّاسة', () => {
     expect((input as HTMLInputElement).value).toBe('التمهيد')
   })
 
-  it('محرر الدليل العادي لم يتغيّر — قائمته تعرض الالتقاط', async () => {
+  it('محرر الدليل العادي: قائمته خطوة يدوية بلا الالتقاط ولا كتل الكرّاسة (قرار المالك 2026-09-10)', async () => {
     await renderEditor(plainGuide())
-    fireEvent.click((await screen.findAllByRole('button', { name: t('editor.blockMenuOpen') }))[0]!)
-    expect(screen.getByRole('menuitem', { name: t('editor.addCaptureItem') })).toBeTruthy()
+    fireEvent.click((await screen.findAllByRole('button', { name: t('editor.addStepsShort') }))[0]!)
+    expect(screen.getByRole('menuitem', { name: t('editor.addStepManual') })).toBeTruthy()
+    expect(screen.queryByRole('menuitem', { name: t('editor.addCaptureItem') })).toBeNull()
     expect(screen.queryByRole('menuitem', { name: t('editor.addEmbed') })).toBeNull()
   })
 })

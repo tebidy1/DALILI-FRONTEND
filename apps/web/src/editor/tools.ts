@@ -38,14 +38,14 @@ export const PRIMARY_TOOLS: ToolDef[] = [
   { tool: 'crop', key: 'editor.cropImage', hintKey: 'editor.cropDrawHint' },
 ]
 
-/** أشكال الرسم التي تكشفها الريشة */
+/** أشكال الرسم التي تكشفها الريشة — «الترقيم» انتقل لمبدّل «إظهار الأرقام» في
+ *  قائمة «المزيد» (طلب المالك 2026-09-09) فلم يبقَ أداة رسم */
 export const PEN_DRAW_TOOLS: ToolDef[] = [
   { tool: 'rect', key: 'editor.annToolRect', hintKey: 'editor.annDrawHint' },
   { tool: 'ellipse', key: 'editor.annToolEllipse', hintKey: 'editor.annDrawHint' },
   { tool: 'oval', key: 'editor.annToolOval', hintKey: 'editor.annDrawHint' },
   { tool: 'arrow', key: 'editor.annToolArrow', hintKey: 'editor.annDrawHint' },
   { tool: 'curved-arrow', key: 'editor.annToolCurvedArrow', hintKey: 'editor.annDrawHint' },
-  { tool: 'number', key: 'editor.annToolNumber', hintKey: 'editor.annNumberHint' },
   // EDT-05 إكمال (2026-09-04): النص المكتوب والرسم الحر
   { tool: 'text', key: 'editor.annToolText', hintKey: 'editor.annTextHint' },
   { tool: 'draw', key: 'editor.annToolDraw', hintKey: 'editor.annDrawHint' },

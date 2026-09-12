@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#F6F5F2">
+<title>إتقان — إجراءات التشغيل القياسية النشطة · Active SOP</title>
+<meta name="description" content="إتقان هو المقابل العربي لـ SOP: إجراءات التشغيل القياسية النشطة. اربط خطوات العمل بمسؤوليات واضحة وأدلة تنفيذ، ليبقى الإجراء حاضرًا في العمل اليومي، لا محفوظًا في ملف.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css?v=5">
+<link rel="stylesheet" href="assets/site-v2.css?v=5">
+
+<!-- بيانات منظّمة: تثبيت العبارة العربية كاسم بديل للعلامة -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "إتقان",
+  "alternateName": ["ITQAN", "Active SOP", "إجراءات التشغيل القياسية النشطة"],
+  "description": "إتقان (ITQAN · Active SOP) — المقابل العربي لـ SOP: إجراءات التشغيل القياسية النشطة؛ إجراءات تُلتقط أثناء العمل وتُسند إلى مسؤولين وتُقاس وتُنشر، بدل أن تُحفظ في ملف."
+}
+</script>
+</head>
+<body>
+
+<a class="skip-link" href="#main">تجاوز إلى المحتوى</a>
+
+<!-- ═══════════════════════════════════════════════════════
+     الترويسة — الوصول الواضح
+     ═══════════════════════════════════════════════════════ -->
+<header class="site-header" id="site-header" role="banner">
+  <div class="header-inner container">
+    <!-- الشعار -->
+    <a class="header-logo" href="index.html" aria-label="إتقان — الرئيسية">
+      <span class="wordmark" aria-label="إتقان">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+      <span class="header-tagline">Active SOP</span>
+    </a>
+
+    <!-- التنقل الرئيسي -->
+    <nav class="header-nav" aria-label="التنقل الرئيسي">
+      <a href="#how-it-works">كيف يعمل</a>
+      <a href="#roles">في إدارتك</a>
+      <a href="#faq">أسئلة القرار</a>
+    </nav>
+
+    <!-- إجراء الترويسة -->
+    <div class="header-action">
+      <a class="btn btn-primary" href="request.html">احجز عرضًا</a>
+    </div>
+
+    <!-- زر قائمة الجوال -->
+    <button class="nav-toggle" id="nav-toggle" type="button"
+            aria-expanded="false" aria-controls="mobile-menu"
+            aria-label="فتح القائمة">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+  </div>
+
+  <!-- قائمة الجوال -->
+  <div class="mobile-menu" id="mobile-menu" hidden>
+    <nav aria-label="قائمة الجوال">
+      <a href="#how-it-works">كيف يعمل</a>
+      <a href="#roles">في إدارتك</a>
+      <a href="#faq">أسئلة القرار</a>
+      <a href="standard.html">المعيار</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="sop-arabic.html">SOP بالعربي</a>
+      <a class="btn btn-primary btn-full" href="request.html">احجز عرضًا</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+
+<!-- ═══════════════════════════════════════════════════════
+     01 الواجهة الافتتاحية — الأثر الذي يستقر
+     ═══════════════════════════════════════════════════════ -->
+<section class="hero-section" id="hero" aria-labelledby="hero-heading">
+  <div class="container hero-inner">
+
+    <!-- كتلة النص -->
+    <div class="hero-text" id="hero-text-block">
+      <!-- كتلة العلامة: الكلام قبل الحركة، ثم الشعار، ثم العبارة التي اشتُقّ منها، والإنجليزي آخرًا -->
+      <div class="hero-brand" id="hero-brand">
+
+        <p class="brand-eyebrow">المقابل العربي لـ <span class="lat">SOP</span></p>
+
+        <!-- الشعار: أربعة حروف تأتي من الكلمات الأربع، والألف الخامسة تأتي آخرًا بلون العلامة -->
+        <svg class="hero-brand-mark" viewBox="100 35 520 245" role="img"
+             aria-label="شعار إتقان — إجراءات التشغيل القياسية النشطة">
+          <!-- إ: الألف اليمنى — من «إجراءات» -->
+          <path class="ink" pathLength="1" style="--del:940ms; --dur:520ms"
+            d="M 574 66 C 570 102, 575 144, 572 185"/>
+          <!-- الهمزة تحت الألف -->
+          <path class="ink detail" pathLength="1" style="--del:1380ms; --dur:200ms"
+            d="M 579 207 C 567 199, 558 208, 565 216 L 578 216 L 560 226"/>
+          <!-- ت: جسم التاء واتصالها بالقاف — من «التشغيل» -->
+          <path class="ink" pathLength="1" style="--del:1190ms; --dur:560ms"
+            d="M 540 148 C 546 169, 531 185, 508 185 L 449 185"/>
+          <!-- نقطتا التاء -->
+          <path class="ink dot" pathLength="1" style="--del:1620ms; --dur:150ms" d="M 519 124 L 518 126"/>
+          <path class="ink dot" pathLength="1" style="--del:1690ms; --dur:150ms" d="M 502 124 L 501 126"/>
+          <!-- ق: حلقة القاف — من «القياسية» -->
+          <path class="ink" pathLength="1" style="--del:1440ms; --dur:460ms"
+            d="M 449 185 C 466 175, 466 145, 449 143 C 430 140, 428 168, 445 174 C 449 176, 453 177, 457 176"/>
+          <!-- ن: النون النهائية — من «النشطة» -->
+          <path class="ink" pathLength="1" style="--del:1690ms; --dur:540ms"
+            d="M 312 148 C 319 175, 317 205, 295 220 C 270 239, 222 239, 203 215 C 191 200, 192 183, 198 168"/>
+          <!-- نقطتا القاف -->
+          <path class="ink dot" pathLength="1" style="--del:1900ms; --dur:150ms" d="M 452 116 L 451 118"/>
+          <path class="ink dot" pathLength="1" style="--del:1970ms; --dur:150ms" d="M 435 116 L 434 118"/>
+          <!-- نقطة النون -->
+          <path class="ink dot" pathLength="1" style="--del:2100ms; --dur:180ms" d="M 257 151 L 256 153"/>
+          <!-- امتداد القاف: يترك مقعدًا فارغًا تنتظره الألف -->
+          <path class="ink" pathLength="1" style="--del:1830ms; --dur:300ms"
+            d="M 449 185 C 428 186, 400 186, 376 184"/>
+          <!-- ا: الألف التي لا تقابلها كلمة — تأتي أخيرًا وبلون العلامة وحدها -->
+          <path class="ink alif" pathLength="1" style="--del:2320ms; --dur:520ms"
+            d="M 373 66 C 371 103, 374 142, 376 184"/>
+        </svg>
+
+        <!-- العبارة التي يختصرها الاسم: الحروف الأربعة بالحبر، وبقية الكلمات أخفت -->
+        <p class="brand-phrase">
+          <span class="w" style="--wd:320ms"><b class="src" style="--sd:900ms">إ</b>جراءات</span>
+          <span class="w" style="--wd:460ms">ال&zwj;<b class="src" style="--sd:1150ms">&zwj;ت&zwj;</b>&zwj;شغيل</span>
+          <span class="w" style="--wd:600ms">ال&zwj;<b class="src" style="--sd:1400ms">&zwj;ق&zwj;</b>&zwj;ياسية</span>
+          <span class="w" style="--wd:740ms">ال&zwj;<b class="src" style="--sd:1650ms">&zwj;ن&zwj;</b>&zwj;شطة</span>
+        </p>
+
+        <p class="brand-alif-note">
+          أربع كلمات… وخمسة حروف. <b>الألف</b> التي بلا كلمة هي فريقكم: من يجعل الإجراء نشطًا.
+        </p>
+
+        <p class="brand-latin"><bdi>ITQAN</bdi> · <bdi>Active SOP</bdi></p>
+      </div>
+      <h1 class="hero-heading" id="hero-heading">
+        الإجراء الذي يُنفَّذ.<br>والأثر الذي يستقر.
+      </h1>
+      <p class="hero-lead">
+        اربط خطوات العمل بمسؤوليات واضحة وأدلة تنفيذ، ليبقى الإجراء حاضرًا في العمل اليومي، لا محفوظًا في ملف.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="request.html">احجز عرضًا</a>
+        <a class="btn btn-secondary" href="#how-it-works">شاهد كيف يعمل</a>
+      </div>
+    </div>
+
+    <!-- لوحة المنتج التوضيحية: محاكاة الالتقاط داخل نافذة متصفح مصغّرة -->
+    <div class="hero-panel textured">
+      <span class="hero-panel-mark" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>
+
+      <p class="sr-only">
+        مثال توضيحي متحرك: موظف يتصفح نظام شركته وتسجيل إتقان مفعّل. عند كل نقرة على زر
+        تُرسَم علامة الهدف حول الزر وتُلتقط لقطة شاشة، وتظهر الخطوة فورًا في قائمة الخطوات برقمها وعنوانها:
+        خطوة 1 إنشاء طلب شراء، خطوة 2 إضافة عرض سعر، خطوة 3 إرسال للاعتماد. ثم يُحفظ الدليل بثلاث خطوات.
+      </p>
+
+      <div class="cap-window" id="cap-window" aria-hidden="true">
+        <!-- شريط المتصفح -->
+        <div class="cap-chrome">
+          <span class="cap-dots"><i></i><i></i><i></i></span>
+          <span class="cap-url">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="11" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2"/></svg>
+            <bdi>erp.company.local</bdi> · المشتريات
+          </span>
+          <span class="cap-state">
+            <span class="cap-rec"><i></i>إتقان يسجّل</span>
+            <span class="cap-saved">حُفظ الدليل</span>
+          </span>
+        </div>
+
+        <div class="cap-body">
+          <!-- شاشة النظام -->
+          <div class="cap-app" id="cap-app">
+            <div class="cap-app-head">
+              <div>
+                <span class="cap-app-title">طلب شراء جديد</span>
+                <span class="cap-crumb">المشتريات / الطلبات / جديد</span>
+              </div>
+              <span class="cap-btn small" id="cap-btn-3">إرسال للاعتماد</span>
+            </div>
+            <div class="cap-lines"><span class="cap-line w80"></span><span class="cap-line w55"></span></div>
+            <div class="cap-fields">
+              <div class="cap-field"><span class="cap-field-l">الجهة الطالبة</span><span class="cap-field-v">إدارة التشغيل</span></div>
+              <div class="cap-field"><span class="cap-field-l">المورّد</span><span class="cap-field-v">— بانتظار العروض</span></div>
+              <div class="cap-field"><span class="cap-field-l">التقدير</span><span class="cap-field-v"><bdi>48,000</bdi> ر.س</span></div>
+              <div class="cap-field"><span class="cap-field-l">الأولوية</span><span class="cap-field-v">عادية</span></div>
+            </div>
+            <div class="cap-actions">
+              <span class="cap-btn primary" id="cap-btn-1">إنشاء طلب</span>
+              <span class="cap-btn" id="cap-btn-2">إضافة عرض سعر</span>
+            </div>
+
+            <!-- طبقات المحاكاة -->
+            <svg class="cap-mark" id="cap-mark" width="10" height="10" viewBox="0 0 10 10">
+              <rect class="frame" x="0" y="0" width="10" height="10" pathLength="100"/>
+              <rect class="c" x="0" y="0" width="5" height="5"/>
+              <rect class="c" x="0" y="0" width="5" height="5"/>
+              <rect class="c" x="0" y="0" width="5" height="5"/>
+              <rect class="c" x="0" y="0" width="5" height="5"/>
+            </svg>
+            <span class="cap-flash" id="cap-flash"></span>
+            <span class="cap-click" id="cap-click"></span>
+            <span class="cap-shot" id="cap-shot"></span>
+            <svg class="cap-cursor" id="cap-cursor" viewBox="0 0 18 22" fill="none">
+              <path d="M1.5 1.5v16.2l4.3-3.6 3 6.4 2.9-1.3-3-6.3h5.8z" fill="#2B2A26" stroke="#F6F5F2" stroke-width="1.4" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- قائمة الخطوات -->
+          <aside class="cap-side">
+            <div class="cap-side-head"><span>الخطوات</span><span class="cap-count" id="cap-count">0 / 3</span></div>
+            <div class="cap-steps" id="cap-steps">
+              <div class="cap-step" data-step="1">
+                <span class="cap-thumb"><i></i></span>
+                <span class="cap-step-text"><span class="cap-step-num">خطوة 1</span><span class="cap-step-title">إنشاء طلب شراء</span></span>
+              </div>
+              <div class="cap-step" data-step="2">
+                <span class="cap-thumb"><i></i></span>
+                <span class="cap-step-text"><span class="cap-step-num">خطوة 2</span><span class="cap-step-title">إضافة عرض سعر</span></span>
+              </div>
+              <div class="cap-step" data-step="3">
+                <span class="cap-thumb"><i></i></span>
+                <span class="cap-step-text"><span class="cap-step-num">خطوة 3</span><span class="cap-step-title">إرسال للاعتماد</span></span>
+              </div>
+            </div>
+            <span class="cap-done" id="cap-done">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 12l4 4L19 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              الدليل جاهز · 3 خطوات
+            </span>
+          </aside>
+        </div>
+      </div>
+
+      <div class="cap-controls">
+        <span class="cap-caption">مثال توضيحي · محاكاة الالتقاط</span>
+        <button class="btn-text-icon" id="cap-replay-btn" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M1 4v6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 .49-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          إعادة المحاكاة
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- الفاصل: خيط أخضر -->
+  <div class="hero-divider" aria-hidden="true">
+    <span class="hero-divider-line"></span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     01-ب فيلم الهيرو — الإجراء يُنفَّذ، والأثر يستقر
+     ثلاث لقطات صامتة بلا وجوه ولا نص: يد تُنفِّذ، مسؤولية تنتقل، مكتب يستقر.
+     ═══════════════════════════════════════════════════════ -->
+<section class="hero-film" id="film" aria-labelledby="film-cap">
+  <div class="container">
+    <figure class="film-frame" id="film-frame">
+      <video class="film-video" id="film-video"
+             muted playsinline autoplay preload="metadata"
+             poster="assets/film/film-poster.webp"
+             aria-describedby="film-cap">
+        <source src="assets/film/hero-film.webm" type="video/webm">
+        <source src="assets/film/hero-film.mp4" type="video/mp4">
+      </video>
+      <!-- العنوان فوق الإطار المستقر -->
+      <div class="film-overlay" aria-hidden="true">
+        <p class="film-line">الإجراء الذي يُنفَّذ.</p>
+        <p class="film-line film-line-2">والأثر الذي يستقر.</p>
+      </div>
+      <figcaption class="film-cap" id="film-cap">
+        مشهد توضيحي · بلا صوت — الإجراء يُنفَّذ، والمسؤولية تنتقل، والأثر يستقر في مكانه.
+      </figcaption>
+    </figure>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     02 الدليل أمامك — من الوصف إلى الأثر
+     ═══════════════════════════════════════════════════════ -->
+<section class="section-inspect" id="inspect" aria-labelledby="inspect-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:45rem">
+      <p class="eyebrow">الدليل أمامك</p>
+      <h2 id="inspect-heading">لا تكتفِ بأن الإجراء موجود.</h2>
+      <p class="section-lead">انظر إلى الخطوة، ومن يتولاها، والدليل المرتبط بها، في سياق واحد.</p>
+    </div>
+
+    <div class="inspect-layout">
+      <!-- أزرار الاختيار -->
+      <div class="inspect-choices" role="tablist" aria-label="اختر ما تريد فحصه">
+        <button class="choice-btn choice-active" role="tab" aria-selected="true"
+                aria-controls="inspect-panel" id="choice-step"
+                data-panel="step">
+          <span class="choice-num" aria-hidden="true">01</span>
+          <span class="choice-title">الخطوة</span>
+          <span class="choice-desc">ما المطلوب تنفيذه بالتفصيل</span>
+        </button>
+        <button class="choice-btn" role="tab" aria-selected="false"
+                aria-controls="inspect-panel" id="choice-owner"
+                data-panel="owner">
+          <span class="choice-num" aria-hidden="true">02</span>
+          <span class="choice-title">المسؤولية</span>
+          <span class="choice-desc">من يتولى الخطوة وموعد مراجعتها</span>
+        </button>
+        <button class="choice-btn" role="tab" aria-selected="false"
+                aria-controls="inspect-panel" id="choice-guide"
+                data-panel="guide">
+          <span class="choice-num" aria-hidden="true">03</span>
+          <span class="choice-title">الدليل</span>
+          <span class="choice-desc">المستند الذي يوضح ما نُفّذ</span>
+        </button>
+      </div>
+
+      <!-- لوحة العرض -->
+      <div class="inspect-panel" id="inspect-panel" role="tabpanel" aria-labelledby="choice-step">
+        <!-- محتوى: الخطوة -->
+        <div class="panel-content panel-visible" id="panel-step">
+          <h3 class="panel-title">مراجعة صلاحيات الوصول</h3>
+          <span class="status-badge">نشط</span>
+          <p class="panel-desc">التحقق من صلاحيات المستخدمين وفق سياسة الوصول المعتمدة، وتوثيق نتيجة المراجعة.</p>
+          <div class="panel-data-row">
+            <span class="panel-data-label">الدورية</span>
+            <span class="panel-data-value">كل 6 أشهر</span>
+          </div>
+          <div class="panel-data-row">
+            <span class="panel-data-label">آخر تنفيذ</span>
+            <span class="panel-data-value">مارس 2026</span>
+          </div>
+          <div class="panel-preview" aria-label="معاينة دليل التنفيذ">
+            <span class="panel-preview-label">دليل التنفيذ</span>
+            <span class="panel-preview-name">سياسة الوصول · v1.3</span>
+          </div>
+        </div>
+
+        <!-- محتوى: المسؤولية -->
+        <div class="panel-content panel-hidden" id="panel-owner">
+          <h3 class="panel-title">مالك العملية</h3>
+          <span class="status-badge">معيّن</span>
+          <p class="panel-desc">مسؤول واضح عن كل خطوة، مع موعد مراجعة معلوم ومسجّل في النظام.</p>
+          <div class="panel-data-row">
+            <span class="panel-data-label">المالك</span>
+            <span class="panel-data-value">مدير أمن المعلومات</span>
+          </div>
+          <div class="panel-data-row">
+            <span class="panel-data-label">موعد المراجعة</span>
+            <span class="panel-data-value">سبتمبر 2026</span>
+          </div>
+          <div class="panel-preview" aria-label="معاينة دليل التنفيذ">
+            <span class="panel-preview-label">الإجراء المرتبط</span>
+            <span class="panel-preview-name">مراجعة الصلاحيات · الإصدار 03</span>
+          </div>
+        </div>
+
+        <!-- محتوى: الدليل -->
+        <div class="panel-content panel-hidden" id="panel-guide">
+          <h3 class="panel-title">سجل المراجعة</h3>
+          <span class="status-badge">موثّق</span>
+          <p class="panel-desc">مستند يوضح ما نُفّذ فعلًا، مرتبط بالخطوة والمسؤول، قابل للمراجعة في أي وقت.</p>
+          <div class="panel-data-row">
+            <span class="panel-data-label">الإصدار</span>
+            <span class="panel-data-value">v1.3</span>
+          </div>
+          <div class="panel-data-row">
+            <span class="panel-data-label">تاريخ التوثيق</span>
+            <span class="panel-data-value">15 مارس 2026</span>
+          </div>
+          <div class="panel-preview" aria-label="معاينة دليل التنفيذ">
+            <span class="panel-preview-label">حالة الدليل</span>
+            <span class="panel-preview-name">مكتمل · بانتظار الاعتماد</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     03 الفجوة التشغيلية — أين ينقطع المسار؟
+     ═══════════════════════════════════════════════════════ -->
+<section class="section-gap" id="gap" aria-labelledby="gap-heading">
+  <div class="container gap-layout">
+    <!-- المقدمة -->
+    <div class="gap-intro" id="gap-intro-block">
+      <p class="eyebrow">الفجوة التشغيلية</p>
+      <h2 id="gap-heading">بين «موثّق» و«مُنفَّذ»… قد ينقطع الأثر.</h2>
+      <p class="section-lead">حين تنفصل الخطوة عن المسؤولية، وينفصل التنفيذ عن دليله، يصبح تتبّع ما حدث عملًا إضافيًا.</p>
+    </div>
+
+    <!-- مخطط الفجوة -->
+    <div class="gap-diagram-wrap" id="gap-diagram-wrap">
+      <!-- وصف نصي لقارئ الشاشة -->
+      <p class="sr-only">
+        مخطط يوضح ثلاث عقد: إجراء موثّق، تنفيذ يومي، أثر قابل للتتبّع.
+        بين الأولى والثانية فجوة: «من يتولى الخطوة؟» — مسؤولية غير واضحة.
+        بين الثانية والثالثة فجوة: «أين دليل التنفيذ؟» — دليل منفصل عن الخطوة.
+        الخلاصة: الفجوة ليست في وجود الوثيقة، بل في اتصال المسار.
+      </p>
+
+      <div class="gap-diagram" aria-hidden="true" id="gap-diagram">
+        <!-- العقدة 01 -->
+        <div class="gap-node" id="gap-node-a">
+          <span class="gap-node-num">01</span>
+          <span class="gap-node-title">إجراء موثّق</span>
+        </div>
+
+        <!-- الفجوة الأولى -->
+        <div class="gap-link" id="gap-link-1">
+          <span class="gap-link-line"></span>
+          <span class="gap-link-q">من يتولى الخطوة؟</span>
+        </div>
+
+        <!-- العقدة 02 -->
+        <div class="gap-node" id="gap-node-b">
+          <span class="gap-node-num">02</span>
+          <span class="gap-node-title">تنفيذ يومي</span>
+        </div>
+
+        <!-- الفجوة الثانية -->
+        <div class="gap-link" id="gap-link-2">
+          <span class="gap-link-line"></span>
+          <span class="gap-link-q">أين دليل التنفيذ؟</span>
+        </div>
+
+        <!-- العقدة 03 -->
+        <div class="gap-node" id="gap-node-c">
+          <span class="gap-node-num">03</span>
+          <span class="gap-node-title">أثر قابل للتتبّع</span>
+        </div>
+      </div>
+
+      <!-- الخلاصة -->
+      <p class="gap-conclusion" id="gap-conclusion">
+        الفجوة ليست في وجود الوثيقة، بل في اتصال المسار.
+      </p>
+
+      <div class="gap-replay-wrap">
+        <button class="btn btn-secondary btn-sm" id="gap-replay-btn" type="button">
+          أعد بناء المشهد
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ═══════════════════════════════════════════════════════
+     04 الترويسة الداخلية — فاصل بصري
+     ═══════════════════════════════════════════════════════ -->
+<div class="section-divider" aria-hidden="true"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     05 كيف يعمل — مسار يتصل
+     ═══════════════════════════════════════════════════════ -->
+<section class="section-standard section-dark textured" id="how-it-works" aria-labelledby="how-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:45rem">
+      <p class="eyebrow">كيف يعمل</p>
+      <h2 id="how-heading">مسار يتصل. من المتطلب إلى الدليل.</h2>
+      <p class="section-lead">اربط ما يجب تنفيذه بمن ينفّذه، ثم اجمع دليل التنفيذ في سياقه؛ لتبقى المراجعة امتدادًا للعمل، لا مشروعًا منفصلًا.</p>
+    </div>
+
+    <!-- لوحة المخطط -->
+    <div class="how-diagram-wrap" id="how-diagram-wrap">
+      <div class="how-nodes" id="how-nodes">
+        <div class="how-node" id="how-node-1">
+          <div class="how-node-badge">01</div>
+          <h3 class="how-node-title">حدّد المتطلب</h3>
+          <p class="how-node-desc">ما المطلوب، وما معيار اكتماله؟</p>
+          <div class="how-node-example">مراجعة صلاحيات الوصول</div>
+        </div>
+
+        <div class="how-connector" id="how-conn-1" aria-hidden="true">
+          <svg viewBox="0 0 40 24" fill="none" preserveAspectRatio="none">
+            <line class="how-conn-line" x1="0" y1="12" x2="34" y2="12" stroke="#77736B" stroke-width="2"/>
+            <polyline points="28,6 34,12 28,18" stroke="#77736B" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <div class="how-node" id="how-node-2">
+          <div class="how-node-badge">02</div>
+          <h3 class="how-node-title">عيّن المسؤولية</h3>
+          <p class="how-node-desc">مالك واضح وموعد مراجعة معلوم.</p>
+          <div class="how-node-example">مالك المتطلب · الموعد</div>
+        </div>
+
+        <div class="how-connector" id="how-conn-2" aria-hidden="true">
+          <svg viewBox="0 0 40 24" fill="none" preserveAspectRatio="none">
+            <line class="how-conn-line" x1="0" y1="12" x2="34" y2="12" stroke="#77736B" stroke-width="2"/>
+            <polyline points="28,6 34,12 28,18" stroke="#77736B" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <div class="how-node" id="how-node-3">
+          <div class="how-node-badge">03</div>
+          <h3 class="how-node-title">اربط دليل التنفيذ</h3>
+          <p class="how-node-desc">مستند أو سجل يوضح ما نُفّذ.</p>
+          <div class="how-node-example">سجل المراجعة · الإصدار 03</div>
+        </div>
+
+        <div class="how-connector" id="how-conn-3" aria-hidden="true">
+          <svg viewBox="0 0 40 24" fill="none" preserveAspectRatio="none">
+            <line class="how-conn-line" x1="0" y1="12" x2="34" y2="12" stroke="#77736B" stroke-width="2"/>
+            <polyline points="28,6 34,12 28,18" stroke="#77736B" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <div class="how-node" id="how-node-4">
+          <div class="how-node-badge">04</div>
+          <h3 class="how-node-title">راجع واعتمد</h3>
+          <p class="how-node-desc">نتيجة مراجعة مرتبطة بالدليل نفسه.</p>
+          <div class="how-node-example">تمت المراجعة · ملاحظة موثقة</div>
+        </div>
+      </div>
+
+      <p class="how-caption" id="how-caption">كل خطوة تحتفظ بعلاقتها بما قبلها وما بعدها.</p>
+      <p class="how-note">هذه دورة توضيحية؛ تُطابق أسماء الحالات والوظائف مع المنتج قبل النشر.</p>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     06 مواكبة التغيير — يتغيّر المتطلب ويبقى السياق
+     ═══════════════════════════════════════════════════════ -->
+<section class="section-standard" id="change" aria-labelledby="change-heading">
+  <div class="container change-layout">
+    <!-- النص -->
+    <div class="change-text" id="change-text-block">
+      <p class="eyebrow">مواكبة التغيير</p>
+      <h2 id="change-heading">التغيير لا يبدأ من صفحة بيضاء.</h2>
+      <p class="section-lead">اعرف ما تغيّر، وأي دليل يتأثر به، وما يحتاج إلى مراجعة؛ مع بقاء النسخة السابقة قابلة للتتبّع.</p>
+
+      <ul class="change-points">
+        <li>
+          <strong class="change-point-title">تغيير محدد</strong>
+          <span class="change-point-desc">الفرق ظاهر، لا مدفون بين النسخ.</span>
+        </li>
+        <li>
+          <strong class="change-point-title">أثر مفهوم</strong>
+          <span class="change-point-desc">علاقة التغيير بالدليل والمسؤول واضحة.</span>
+        </li>
+        <li>
+          <strong class="change-point-title">مراجعة موثّقة</strong>
+          <span class="change-point-desc">التحديث لا يمحو ما سبقه.</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- نموذج المقارنة -->
+    <div class="change-demo textured" id="change-demo-wrap">
+      <div class="change-card" id="change-card">
+        <div class="change-card-header">
+          <span class="change-card-name">سياسة مراجعة الصلاحيات</span>
+          <span class="status-badge status-demo">مثال توضيحي</span>
+        </div>
+
+        <div class="change-versions">
+          <!-- قبل -->
+          <div class="change-version change-before" id="change-before">
+            <span class="change-version-label">قبل التغيير — v1.2</span>
+            <div class="change-field">
+              <span class="change-field-label">قيمة سابقة</span>
+              <span class="change-field-value change-field-old">دورية المراجعة: كل 12 شهرًا</span>
+            </div>
+          </div>
+
+          <!-- بعد -->
+          <div class="change-version change-after" id="change-after">
+            <span class="change-version-label">بعد التغيير — v1.3</span>
+            <div class="change-field">
+              <span class="change-field-label">قيمة جديدة</span>
+              <span class="change-field-value change-field-new">دورية المراجعة: كل 6 أشهر</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- شارة التغيير -->
+        <div class="change-alert" id="change-alert">
+          <span class="change-alert-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01" stroke="#8A5447" stroke-width="2" stroke-linecap="round"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#8A5447" stroke-width="1.5"/></svg>
+          </span>
+          <span>تحديث مطلوب: مراجعة الدليل المرتبط</span>
+        </div>
+
+        <div class="change-replay-wrap">
+          <button class="btn-text-icon" id="change-replay-btn" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M1 4v6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 .49-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            إعادة عرض التغيير
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     07 إتقان في إدارتك — السياق نفسه والأولوية تختلف
+     ═══════════════════════════════════════════════════════ -->
+<section class="section-standard" id="roles" aria-labelledby="roles-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:45rem">
+      <p class="eyebrow">إتقان في إدارتك</p>
+      <h2 id="roles-heading">اختر دورك. شاهد ما يهمّك.</h2>
+      <p class="section-lead">تختلف زاوية المتابعة، لكن المتطلب والمسؤولية والدليل يبقون في سياق واحد.</p>
+    </div>
+
+    <!-- شريط الأدوار -->
+    <div class="roles-tabs-wrap">
+      <div class="roles-tablist" role="tablist" aria-label="اختر دورك">
+        <button class="role-tab role-tab-active" role="tab" aria-selected="true"
+                aria-controls="role-panel" id="role-tab-quality"
+                data-role="quality">الجودة والامتثال</button>
+        <button class="role-tab" role="tab" aria-selected="false"
+                aria-controls="role-panel" id="role-tab-leadership"
+                data-role="leadership">القيادة</button>
+        <button class="role-tab" role="tab" aria-selected="false"
+                aria-controls="role-panel" id="role-tab-owner"
+                data-role="owner">مالك العملية</button>
+        <button class="role-tab" role="tab" aria-selected="false"
+                aria-controls="role-panel" id="role-tab-audit"
+                data-role="audit">التدقيق الداخلي</button>
+      </div>
+    </div>
+
+    <!-- بطاقات الدور -->
+    <div class="role-panel" id="role-panel" role="tabpanel" aria-labelledby="role-tab-quality">
+      <!-- الجودة والامتثال -->
+      <div class="role-cards" id="role-cards-quality">
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="#405B50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="#405B50" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="role-card-title">المتطلبات</h3>
+          <p class="role-card-desc">ما المرتبط وما الناقص؟</p>
+        </div>
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="#405B50" stroke-width="1.5"/><path d="M14 2v6h6M8 13h8M8 17h5" stroke="#405B50" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="role-card-title">الأدلة</h3>
+          <p class="role-card-desc">ما الذي يحتاج مراجعة؟</p>
+        </div>
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#405B50" stroke-width="1.5"/><path d="M12 8v4l3 3" stroke="#405B50" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="role-card-title">التغيير</h3>
+          <p class="role-card-desc">أي تحديث يؤثر في العمل؟</p>
+        </div>
+      </div>
+
+      <!-- القيادة -->
+      <div class="role-cards role-cards-hidden" id="role-cards-leadership">
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#405B50" stroke-width="1.5"/><path d="M3 9h18M9 21V9" stroke="#405B50" stroke-width="1.5"/></svg>
+          </div>
+          <h3 class="role-card-title">صورة الاستعداد</h3>
+          <p class="role-card-desc">ما المكتمل وما العالق؟</p>
+        </div>
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="#405B50" stroke-width="1.5" fill="none"/></svg>
+          </div>
+          <h3 class="role-card-title">أولويات القرار</h3>
+          <p class="role-card-desc">ما الذي يحتاج دعمًا؟</p>
+        </div>
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#405B50" stroke-width="1.5"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#405B50" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="role-card-title">المسؤولية</h3>
+          <p class="role-card-desc">من يملك الخطوة التالية؟</p>
+        </div>
+      </div>
+
+      <!-- مالك العملية -->
+      <div class="role-cards role-cards-hidden" id="role-cards-owner">
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="#405B50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="role-card-title">المطلوب مني</h3>
+          <p class="role-card-desc">ما المهمة التالية؟</p>
+        </div>
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#405B50" stroke-width="1.5"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#405B50" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="role-card-title">موعد المراجعة</h3>
+          <p class="role-card-desc">متى يلزم التحديث؟</p>
+        </div>
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="#405B50" stroke-width="1.5"/></svg>
+          </div>
+          <h3 class="role-card-title">الملاحظات</h3>
+          <p class="role-card-desc">ما المطلوب لاستكمال الدليل؟</p>
+        </div>
+      </div>
+
+      <!-- التدقيق الداخلي -->
+      <div class="role-cards role-cards-hidden" id="role-cards-audit">
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#405B50" stroke-width="1.5"/><path d="m21 21-4.35-4.35" stroke="#405B50" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="role-card-title">نطاق المراجعة</h3>
+          <p class="role-card-desc">ما الذي يدخل فيه؟</p>
+        </div>
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="#405B50" stroke-width="1.5"/><path d="M14 2v6h6" stroke="#405B50" stroke-width="1.5"/></svg>
+          </div>
+          <h3 class="role-card-title">سياق الدليل</h3>
+          <p class="role-card-desc">لأي متطلب وأي إصدار؟</p>
+        </div>
+        <div class="role-card">
+          <div class="role-card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="#405B50" stroke-width="1.5" stroke-linecap="round"/><polyline points="22 4 12 14.01 9 11.01" stroke="#405B50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="role-card-title">المتابعة</h3>
+          <p class="role-card-desc">ما الملاحظة وحالتها؟</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="roles-cta-wrap">
+      <a class="link-arrow" href="request.html">شاهد هذا الدور في العرض</a>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     08 الاستعداد للتدقيق — الدليل في سياقه
+     ═══════════════════════════════════════════════════════ -->
+<section class="section-standard section-band textured" id="audit-ready" aria-labelledby="audit-heading">
+  <div class="container audit-layout">
+    <!-- النص -->
+    <div class="audit-text" id="audit-text-block">
+      <p class="eyebrow">الاستعداد للتدقيق</p>
+      <h2 id="audit-heading">لا تبدأ رحلة البحث عند طلب الدليل.</h2>
+      <p class="section-lead">اجعل كل دليل قابلًا للفهم: المتطلب الذي يخدمه، المسؤول عنه، نسخته، ونتيجة مراجعته.</p>
+    </div>
+
+    <!-- بطاقة التتبّع -->
+    <div class="audit-card-wrap" id="audit-card-wrap">
+      <div class="audit-card">
+        <div class="audit-card-header">
+          <h3 class="audit-card-title">بطاقة تتبّع دليل</h3>
+          <span class="status-badge status-demo">مثال توضيحي</span>
+        </div>
+
+        <div class="audit-rows" id="audit-rows">
+          <div class="audit-row" id="audit-row-1">
+            <span class="audit-row-label">المتطلب</span>
+            <span class="audit-row-value">مراجعة الصلاحيات دوريًا</span>
+          </div>
+          <div class="audit-row" id="audit-row-2">
+            <span class="audit-row-label">المسؤول</span>
+            <span class="audit-row-value">مالك العملية</span>
+          </div>
+          <div class="audit-row" id="audit-row-3">
+            <span class="audit-row-label">الدليل</span>
+            <span class="audit-row-value">سجل مراجعة الصلاحيات</span>
+          </div>
+          <div class="audit-row" id="audit-row-4">
+            <span class="audit-row-label">الإصدار</span>
+            <span class="audit-row-value"><bdi>v1.3</bdi></span>
+          </div>
+          <div class="audit-row audit-row-status" id="audit-row-5">
+            <span class="audit-row-label">حالة المراجعة</span>
+            <span class="audit-row-value audit-status-value">يحتاج استكمالًا</span>
+          </div>
+          <div class="audit-row" id="audit-row-6">
+            <span class="audit-row-label">الملاحظة</span>
+            <span class="audit-row-value">توثيق مراجعة الاستثناءات</span>
+          </div>
+        </div>
+
+        <p class="audit-disclaimer">
+          الاستعداد للمراجعة لا يعني ضمان اجتياز التدقيق أو الحصول على اعتماد.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     09 الأثر — أرقام يمكن الرجوع إليها
+     ═══════════════════════════════════════════════════════ -->
+<section class="section-compact" id="impact" aria-labelledby="impact-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:45rem">
+      <p class="eyebrow">الأثر</p>
+      <h2 id="impact-heading">ما نقيسه معك.</h2>
+      <p class="section-lead">نتائج مرتبطة بنطاق قياس واضح، وفترة معلومة، ومصدر يمكنك مراجعته. الأرقام أدناه تنتظر بيانات معتمدة قبل النشر.</p>
+    </div>
+
+    <div class="impact-cards" id="impact-cards">
+      <div class="impact-card">
+        <div class="impact-metric" aria-hidden="true">
+          <span class="impact-number" id="impact-num-1" data-target="—">—</span>
+        </div>
+        <p class="impact-label" id="impact-label-1">انخفاض زمن تجهيز أدلة التدقيق</p>
+        <p class="impact-source">
+          يُنشر بعد توافر دراسة عميل معتمدة.
+          <a href="request.html" class="impact-source-link">اطلب عرضًا لمعرفة المنهجية</a>
+        </p>
+        <!-- نص ثابت لقارئ الشاشة -->
+        <span class="sr-only">المؤشر: انخفاض زمن تجهيز أدلة التدقيق — يُنشر بعد توافر بيانات معتمدة.</span>
+      </div>
+
+      <div class="impact-card">
+        <div class="impact-metric" aria-hidden="true">
+          <span class="impact-number" id="impact-num-2" data-target="—">—</span>
+        </div>
+        <p class="impact-label" id="impact-label-2">الأدلة ذات المالك والمراجعة المحددين</p>
+        <p class="impact-source">
+          يُنشر بعد توافر تقرير جودة بيانات مؤرخ.
+          <a href="request.html" class="impact-source-link">اطلب عرضًا لمعرفة المنهجية</a>
+        </p>
+        <span class="sr-only">المؤشر: الأدلة ذات المالك والمراجعة المحددين — يُنشر بعد توافر بيانات معتمدة.</span>
+      </div>
+
+      <div class="impact-card">
+        <div class="impact-metric" aria-hidden="true">
+          <span class="impact-number" id="impact-num-3" data-target="—">—</span>
+        </div>
+        <p class="impact-label" id="impact-label-3">انخفاض زمن إغلاق ملاحظات المراجعة</p>
+        <p class="impact-source">
+          يُنشر بعد توافر سجلات فتح وإغلاق الملاحظات.
+          <a href="request.html" class="impact-source-link">اطلب عرضًا لمعرفة المنهجية</a>
+        </p>
+        <span class="sr-only">المؤشر: انخفاض زمن إغلاق ملاحظات المراجعة — يُنشر بعد توافر بيانات معتمدة.</span>
+      </div>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     10 أسئلة القرار — إجابات قبل الخطوة التالية
+     ═══════════════════════════════════════════════════════ -->
+<section class="section-compact" id="faq" aria-labelledby="faq-heading">
+  <div class="container faq-layout">
+    <div class="section-intro">
+      <p class="eyebrow">أسئلة القرار</p>
+      <h2 id="faq-heading">ما تحتاج إلى معرفته قبل أن تبدأ.</h2>
+    </div>
+
+    <div class="faq-accordion" id="faq-accordion">
+
+      <div class="faq-item">
+        <button class="faq-question" type="button"
+                aria-expanded="false" aria-controls="faq-ans-name" id="faq-q-name">
+          <span>لماذا الاسم «إتقان»؟ وما علاقته بـ <bdi>SOP</bdi>؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-name" role="region" aria-labelledby="faq-q-name" hidden>
+          <p><b>إتقان</b> اختصار عربي لـ <b>إ</b>جراءات ال&zwj;<b>&zwj;ت&zwj;</b>&zwj;شغيل ال&zwj;<b>&zwj;ق&zwj;</b>&zwj;ياسية ال&zwj;<b>&zwj;ن&zwj;</b>&zwj;شطة — وهو المقابل العربي لـ <bdi>Active SOP</bdi>.
+             «إجراءات التشغيل القياسية» هي الترجمة المستقرّة لـ <bdi>Standard Operating Procedures</bdi> في وثائق الجودة العربية، و«النشطة» هي إضافتنا:
+             إجراء يُلتقط أثناء العمل، ويُسنَد إلى مسؤول، ويُقاس، ويصل إلى من ينفّذه — بدل أن يُكتب مرة ويُحفظ في ملف.</p>
+          <p>وللاسم خمسة حروف بينما العبارة أربع كلمات. الألف التي لا تقابلها كلمة مقصودة:
+             هي الفريق الذي يجعل الإجراء نشطًا — ولهذا هي الحرف الملوّن الوحيد في الشعار.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button"
+                aria-expanded="false" aria-controls="faq-ans-1" id="faq-q-1">
+          <span>هل نحتاج إلى إعادة بناء أدلتنا الحالية؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-1" role="region" aria-labelledby="faq-q-1" hidden>
+          <p>نراجع في العرض شكل أدلتكم الحالية وطريقة تنظيمها، ثم نحدد ما يمكن الاستفادة منه وما يحتاج تهيئة.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button"
+                aria-expanded="false" aria-controls="faq-ans-2" id="faq-q-2">
+          <span>هل إتقان بديل عن الأنظمة الحالية؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-2" role="region" aria-labelledby="faq-q-2" hidden>
+          <p>يعتمد ذلك على نطاق الاستخدام. نوضح في العرض ما يغطيه إتقان وما يبقى ضمن أدواتكم الحالية، وأي تكاملات متاحة فعلًا.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button"
+                aria-expanded="false" aria-controls="faq-ans-3" id="faq-q-3">
+          <span>من أين نبدأ؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-3" role="region" aria-labelledby="faq-q-3" hidden>
+          <p>من نطاق واضح: عملية أو مجموعة متطلبات، مع مسؤولين وأدلة ومعيار نجاح متفق عليه.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button"
+                aria-expanded="false" aria-controls="faq-ans-4" id="faq-q-4">
+          <span>كم يستغرق الإعداد؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-4" role="region" aria-labelledby="faq-q-4" hidden>
+          <p>يتحدد بعد معرفة حجم النطاق، وجاهزية البيانات، وعدد المشاركين. يُقدَّم تقدير خاص بحالتكم بدل مدة عامة غير مضمونة.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button"
+                aria-expanded="false" aria-controls="faq-ans-5" id="faq-q-5">
+          <span>هل يضمن اجتياز التدقيق؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-5" role="region" aria-labelledby="faq-q-5" hidden>
+          <p>لا. التنظيم والتتبّع يدعمان الاستعداد، بينما تعتمد نتيجة التدقيق على استيفاء المتطلبات وجودة التنفيذ وتقييم جهة التدقيق.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" type="button"
+                aria-expanded="false" aria-controls="faq-ans-6" id="faq-q-6">
+          <span>كيف تُحدَّد التكلفة؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-6" role="region" aria-labelledby="faq-q-6" hidden>
+          <p>اطلب عرضًا يوضح النطاق وما يشمله وأي تكاليف إعداد أو خدمات إضافية، وفق العرض التجاري المعتمد.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     11 حجز العرض — ابدأ من واقع إدارتك
+     ═══════════════════════════════════════════════════════ -->
+<section class="section-booking" id="booking" aria-labelledby="booking-heading">
+  <div class="container">
+    <div class="booking-panel textured" id="booking-panel">
+      <!-- النص -->
+      <div class="booking-text" id="booking-text-block">
+        <p class="eyebrow">حجز العرض</p>
+        <h2 id="booking-heading">شاهد المسار على مثال قريب من عملك.</h2>
+        <p class="section-lead">أخبرنا بدورك وما تريد تحسينه؛ لنركّز العرض على الأسئلة التي تهمّك.</p>
+        <ul class="booking-promises">
+          <li>تحديد نطاق مناسب للنقاش.</li>
+          <li>استعراض رحلة المتطلب والدليل والمراجعة.</li>
+          <li>توضيح الخطوة التالية وما تحتاجه من إعداد.</li>
+        </ul>
+      </div>
+
+      <!-- النموذج -->
+      <div class="booking-form-wrap" id="booking-form-wrap">
+        <form class="booking-form" id="booking-form" novalidate>
+          <div class="form-field">
+            <label class="form-label" for="bf-name">الاسم <span aria-hidden="true">*</span></label>
+            <input class="form-input" id="bf-name" name="name" type="text"
+                   autocomplete="name" required aria-required="true">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="bf-email">البريد الإلكتروني للعمل <span aria-hidden="true">*</span></label>
+            <input class="form-input" id="bf-email" name="email" type="email"
+                   autocomplete="email" required aria-required="true"
+                   inputmode="email" spellcheck="false" autocapitalize="off">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="bf-org">الجهة <span aria-hidden="true">*</span></label>
+            <input class="form-input" id="bf-org" name="org" type="text"
+                   autocomplete="organization" required aria-required="true">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="bf-role">الدور <span aria-hidden="true">*</span></label>
+            <select class="form-input form-select" id="bf-role" name="role" required aria-required="true">
+              <option value="" disabled selected>اختر دورك</option>
+              <option value="quality">الجودة والامتثال</option>
+              <option value="leadership">القيادة</option>
+              <option value="owner">مالك العملية</option>
+              <option value="audit">التدقيق الداخلي</option>
+              <option value="other">دور آخر</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="bf-improve">ما الذي تريد تحسينه؟</label>
+            <textarea class="form-input form-textarea" id="bf-improve" name="improve"
+                      rows="4" maxlength="500"
+                      aria-describedby="bf-improve-hint"></textarea>
+            <span class="form-hint" id="bf-improve-hint">اختياري · حد 500 حرف</span>
+          </div>
+
+          <button class="btn btn-primary btn-full btn-submit" id="bf-submit" type="submit">
+            طلب عرض إتقان
+          </button>
+
+          <p class="form-privacy">
+            بياناتك تُستخدم فقط للتواصل بشأن طلب العرض.
+            <a href="security.html">سياسة الخصوصية</a>
+          </p>
+
+          <div class="form-status" id="bf-status" role="status" aria-live="polite" hidden></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════
+     12 التذييل — نهاية واضحة
+     ═══════════════════════════════════════════════════════ -->
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-divider" aria-hidden="true"></div>
+  <div class="container footer-inner">
+
+    <!-- تعريف العلامة -->
+    <div class="footer-brand">
+      <a class="footer-logo" href="index.html" aria-label="إتقان — الرئيسية">
+        <span class="wordmark" aria-label="إتقان">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+      </a>
+      <p class="footer-derivation">
+        <b>إ</b>جراءات ال&zwj;<b>&zwj;ت&zwj;</b>&zwj;شغيل ال&zwj;<b>&zwj;ق&zwj;</b>&zwj;ياسية ال&zwj;<b>&zwj;ن&zwj;</b>&zwj;شطة
+      </p>
+      <p class="footer-tagline">إتقان — المتطلب والمسؤولية والدليل، في سياق واحد.</p>
+      <p class="footer-latin"><bdi>ITQAN</bdi> · <bdi>Active SOP</bdi></p>
+    </div>
+
+    <!-- مجموعات الروابط -->
+    <nav class="footer-nav-group" aria-label="استكشف">
+      <h3 class="footer-nav-title">استكشف</h3>
+      <a href="#how-it-works">كيف يعمل</a>
+      <a href="#change">مواكبة التغيير</a>
+      <a href="#roles">إتقان في إدارتك</a>
+      <a href="#faq">أسئلة القرار</a>
+    </nav>
+
+    <nav class="footer-nav-group" aria-label="تواصل ومعلومات">
+      <h3 class="footer-nav-title">تواصل ومعلومات</h3>
+      <a href="request.html">طلب عرض</a>
+      <a href="standard.html">المعيار الخماسي</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="sop-arabic.html">ما معنى SOP؟</a>
+    </nav>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="container footer-bottom-inner">
+      <span class="footer-copy">© <span id="footer-year">2026</span> إتقان · <bdi>Active SOP</bdi></span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site-v2.js?v=4"></script>
+</body>
+</html>

@@ -133,7 +133,6 @@ describe('S2: زر التعديل انتقل إلى الشريط العلوي ب
     const text = bar().textContent ?? ''
     expect(text).toContain(t('editor.myHome'))
     expect(text).not.toContain(t('settings.title'))
-    expect(text).toContain(t('editor.appendSteps'))
     expect(text).toContain(t('editor.shareOpen'))
     // زر عودة: رابط إلى الرئيسية تحمله أيقونة السهم
     const back = screen.getByRole('link', { name: t('editor.myHome') })
@@ -173,11 +172,13 @@ describe('العمود — كشف تدريجي: المنظار وحده ثم ق�
       'editor.annToolOval',
       'editor.annToolArrow',
       'editor.annToolCurvedArrow',
-      'editor.annToolNumber',
+      // «الترقيم» لم يعد أداة ريشة — صار مبدّل «إظهار الأرقام» في قائمة «المزيد»
       'editor.moveTarget',
     ] as const) {
       expect(screen.getByRole('button', { name: t(key) })).toBeTruthy()
     }
+    // طلب المالك 2026-09-09: زر الترقيم القديم غائب من الريشة
+    expect(screen.queryByRole('button', { name: t('editor.annToolNumber') })).toBeNull()
     expect(document.querySelectorAll('.tool-rail .swatch')).toHaveLength(INK_COLORS.length)
     // القص والطمس والريشة لم تختفِ — «كل الأزرار تظل في مكانها»
     expect(screen.getByRole('button', { name: t('editor.cropImage') })).toBeTruthy()
@@ -192,6 +193,26 @@ describe('العمود — كشف تدريجي: المنظار وحده ثم ق�
     openPen()
     expect(screen.queryByRole('button', { name: t('editor.annToolRect') })).toBeNull()
     expect(document.querySelectorAll('.tool-rail .swatch')).toHaveLength(0)
+  })
+})
+
+describe('طلب المالك 2026-09-09: «إظهار الأرقام» مبدّل في قائمة «المزيد» بآخر الشريط', () => {
+  it('زر ⋮ بلا إطار في آخر الشريط يفتح قائمة فيها مبدّل الأرقام — مفعّل افتراضيًا ويتبدل', async () => {
+    await load3()
+    enterEdit()
+    const trigger = screen.getByRole('button', { name: t('editor.more.aria') })
+    // الزر داخل ركن النهاية (آخر الشريط) لا بجوار «تعديل»
+    expect(trigger.closest('.editor-bar-end')).toBeTruthy()
+    fireEvent.click(trigger)
+    const item = screen.getByRole('menuitemcheckbox', { name: t('editor.more.showNumbers') })
+    // الأرقام مفعّلة افتراضيًا (طلب المالك 2026-09-09)
+    expect(item.getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(item)
+    // القائمة تُغلق بعد الاختيار — إعادة الفتح تكشف الحالة الجديدة
+    fireEvent.click(screen.getByRole('button', { name: t('editor.more.aria') }))
+    expect(
+      screen.getByRole('menuitemcheckbox', { name: t('editor.more.showNumbers') }).getAttribute('aria-checked'),
+    ).toBe('false')
   })
 })
 

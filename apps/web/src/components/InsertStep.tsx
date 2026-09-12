@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n'
 
-/** BLK-01 + BKL-01: أنواع ما يُدرجه زر «+» — الالتقاط يذهب لتدفّق الامتداد، والبقية كتل عميل */
+/**
+ * BKL-01 + قرار المالك 2026-09-10: ما يُدرجه زر «+» كلّه كتل عميل — خطوة يدوية
+ * تُرفق صورتُها ويُكتب تعليقُها هنا. الالتقاط الحقيقي للامتداد وحده، ومن لوحته
+ * الجانبية لا من المحرر.
+ */
 export type InsertKind =
   | 'step'
   | 'tip'
   | 'alert'
   | 'header'
-  | 'capture'
   | 'text'
   | 'embed'
   | 'divider'
@@ -27,7 +30,6 @@ const GUIDE_ITEMS: MenuItem[] = [
   { kind: 'tip', key: 'editor.addTip', glyph: '✦' },
   { kind: 'alert', key: 'editor.addAlert', glyph: '!' },
   { kind: 'header', key: 'editor.addHeader', glyph: 'ع' },
-  { kind: 'capture', key: 'editor.addCaptureItem', glyph: '◉' },
 ]
 
 /** BKL-01: لا «التقاط» في الكرّاسة بقصد — الكرّاسة تجمع الأدلة ولا تلتقطها */
@@ -44,19 +46,20 @@ const BOOKLET_ITEMS: MenuItem[] = [
 ]
 
 /**
- * CAP-17 + BLK-01: موضع إدراج «+» بين الشرائح — صار منبثقةً بأنواع الكتل.
- * الاسم المتاح للزر «أضف كتلة»، والعنوان الكامل يوضح موضع الإدراج.
- * تُغلق المنبثقة بـEsc أو بالنقر خارجها (وصولية شرط قبول).
+ * CAP-17→BKL-01 (قرار المالك 2026-09-10): موضع إدراج «+» بين الشرائح — منبثقة
+ * بأنواع الكتل، وتسميتها حسب نوع المستند: «أضف خطوات» للدليل و«أضف كتلة» للكرّاسة
+ * (الزر نفسه لا نصّان لمقصدين). تُغلق بـEsc أو بالنقر خارجها.
  */
 export function InsertStep({ label, insertAt, onInsert, busy, docKind = 'guide' }: {
   label: string
   insertAt: number
   onInsert: (kind: InsertKind, insertAt: number) => void
   busy?: boolean
-  /** BKL-01: نوع المستند يحدد القائمة — غيابه دليل (المسار القائم بلا تغيير) */
+  /** BKL-01: نوع المستند يحدد القائمة والتسمية — غيابه دليل */
   docKind?: 'guide' | 'booklet'
 }) {
   const ITEMS = docKind === 'booklet' ? BOOKLET_ITEMS : GUIDE_ITEMS
+  const addLabel = docKind === 'booklet' ? t('editor.blockMenuOpen') : t('editor.addStepsShort')
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -79,14 +82,14 @@ export function InsertStep({ label, insertAt, onInsert, busy, docKind = 'guide' 
       <button
         type="button"
         className="insert-step-btn"
-        aria-label={t('editor.blockMenuOpen')}
+        aria-label={addLabel}
         title={label}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         disabled={busy}
       >
-        <span aria-hidden>+</span> {t('editor.addStepsShort')}
+        <span aria-hidden>+</span> {addLabel}
       </button>
       {open && (
         <div className={`insert-menu insert-menu-${docKind}`} role="menu">

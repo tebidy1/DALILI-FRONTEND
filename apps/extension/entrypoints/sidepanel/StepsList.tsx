@@ -1,6 +1,6 @@
 import type { SessionMeta, StepSummary } from '@/lib/protocol'
 import { ChevronIcon, TrashIcon } from './icons'
-import { PreviewShot, kindLabel, voiceBadgeAr } from './parts'
+import { PreviewShot, PendingShot, kindLabel, voiceBadgeAr } from './parts'
 
 /** قائمة خطوات الالتقاط في اللوحة — الاقتطاع من App.tsx لقانون الحجم.
  * VOX-09: شارة 🎙 قابلة للحذف، وحلقة حمراء نابضة حول معاينة الخطوة المدموجة */
@@ -9,6 +9,8 @@ export function StepsList({
   meta,
   lastShot,
   revealed,
+  armedKey,
+  armLeft,
   onReveal,
   onDeleteStep,
   onDeleteMemo,
@@ -17,11 +19,16 @@ export function StepsList({
   meta: SessionMeta
   lastShot: string | undefined
   revealed: Record<number, string>
+  /** المرحلة ٢: مفتاح الزر المسلَّح الآن («s:i» خطوة / «m:i» تعليق) — النقرة الثانية داخل النافذة تحذف */
+  armedKey: string | null
+  /** المرحلة ٤: ثوانٍ التسليح المتبقية — تُرى على الزر بدل تخمينها */
+  armLeft: number
   onReveal: (index: number) => void
   onDeleteStep: (index: number) => void
   onDeleteMemo: (index: number) => void
 }) {
   const stepCount = meta.stepCount
+  const ar = (n: number) => n.toLocaleString('ar-EG')
   return (
     <div>
       {steps.length === 0 && <div className="empty">تفاعل مع الصفحة (نقرة أو كتابة) لتظهر الخطوات هنا</div>}
@@ -33,6 +40,9 @@ export function StepsList({
         const num = (s.i + 1).toLocaleString('ar-EG')
         // VOX-09: التعليق الجاري يضيء حلقة حمراء حول معاينة الخطوة المدموجة
         const memoOnStep = meta.memoLive?.stepIndex === s.i
+        // المرحلة ٢: الحذف خطوتان — الأزرار تتبدل تسميتها وتحمرّ عند التسليح
+        const stepArmed = armedKey === `s:${s.i}`
+        const memoArmed = armedKey === `m:${s.i}`
         return (
           <div key={s.i} className={`step ${isNewest ? 'fresh' : ''} ${s.sensitive ? 'sensitive' : ''} ${expanded ? 'expanded' : ''}`}>
             <div className="step-row">
@@ -43,8 +53,13 @@ export function StepsList({
                 {s.voice && (
                   <span className="voice-badge" title="تعليق صوتي مدموج مع هذه الخطوة">
                     🎙 {voiceBadgeAr(s.voice.durationMs)}
-                    <button className="voice-del" aria-label="حذف التعليق الصوتي" title="حذف التعليق الصوتي" onClick={() => onDeleteMemo(s.i)}>
-                      ✕
+                    <button
+                      className={`voice-del${memoArmed ? ' armed' : ''}`}
+                      aria-label={memoArmed ? 'اضغط مجددًا لتأكيد حذف التعليق الصوتي' : 'حذف التعليق الصوتي'}
+                      title={memoArmed ? `اضغط مجددًا للتأكيد (${ar(armLeft)})` : 'حذف التعليق الصوتي'}
+                      onClick={() => onDeleteMemo(s.i)}
+                    >
+                      {memoArmed ? ar(armLeft) : '✕'}
                     </button>
                   </span>
                 )}
@@ -60,10 +75,18 @@ export function StepsList({
                   <ChevronIcon />
                 </button>
               )}
-              <button className="del" aria-label="حذف الخطوة" title="حذف الخطوة" onClick={() => onDeleteStep(s.i)}>
+              <button
+                className={`del${stepArmed ? ' armed' : ''}`}
+                aria-label={stepArmed ? 'اضغط مجددًا لتأكيد حذف الخطوة' : 'حذف الخطوة'}
+                title={stepArmed ? `اضغط مجددًا للتأكيد (${ar(armLeft)})` : 'حذف الخطوة'}
+                onClick={() => onDeleteStep(s.i)}
+              >
                 <TrashIcon />
+                {stepArmed && <b className="arm-n">{ar(armLeft)}</b>}
               </button>
             </div>
+            {/* نافذة الالتقاط: البطاقة الأحدث تعرض «يرسم التحديد…» حتى تصل لقطتها المكبّرة */}
+            {isNewest && !expanded && !s.missingReason && <PendingShot />}
             {memoOnStep && expanded && shot && <div className="memo-hint">🎙 صوتك يُدمج مع هذه الخطوة</div>}
             {expanded && shot && (
               <div className={memoOnStep ? 'memo-live' : ''}>

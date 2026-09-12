@@ -103,6 +103,52 @@ describe('ANNO-02: منظار اللقطة وإطار الهدف', () => {
   })
 })
 
+/**
+ * طلب المالك 2026-09-11: رقم الخطوة بلا هدف يظهر كشارة HTML على إطار اللقطة
+ * (لا على اللوحة، فلا يقصّه المنظار). الخطوة ذات الهدف تحمل رقمها على اللوحة
+ * بجوار السهم لا في الركن، فلا تحمل الشارة.
+ */
+describe('رقم الخطوة بلا هدف — شارة على الإطار', () => {
+  const mark = { rect: { x: 100, y: 100, w: 80, h: 30 }, color: '#ea580c' as const }
+
+  it('خطوة بلا هدف مع autoNumber ⇒ شارة .shot-step-num بالرقم ولون الدليل', () => {
+    stubIO()
+    const { container } = render(
+      <StepImage src="x.jpg" blurRects={[]} mode="view" autoNumber={1} color="#ea580c" alt="لقطة" />,
+    )
+    const badge = container.querySelector('.shot-step-num') as HTMLElement
+    expect(badge).toBeTruthy()
+    expect(badge.textContent).toBe('1')
+    expect(badge.style.backgroundColor).toBeTruthy()
+  })
+
+  it('خطوة ذات هدف ⇒ لا شارة إطار (الرقم على اللوحة بجوار السهم)', () => {
+    stubIO()
+    const { container } = render(
+      <StepImage src="x.jpg" blurRects={[]} mark={mark} mode="view" autoNumber={2} color="#ea580c" alt="لقطة" />,
+    )
+    expect(container.querySelector('.shot-step-num')).toBeNull()
+  })
+
+  it('بلا autoNumber ⇒ لا شارة إطار', () => {
+    stubIO()
+    const { container } = render(<StepImage src="x.jpg" blurRects={[]} mode="view" alt="لقطة" />)
+    expect(container.querySelector('.shot-step-num')).toBeNull()
+  })
+
+  it('كسول قبل الظهور ⇒ لا شارة (لا محتوى بعد)، وبعد الظهور تظهر', () => {
+    stubIO()
+    const { container } = render(
+      <StepImage src="x.jpg" blurRects={[]} mode="view" autoNumber={1} color="#ea580c" lazy alt="لقطة" />,
+    )
+    expect(container.querySelector('.shot-step-num')).toBeNull()
+    act(() => {
+      makeVisible()
+    })
+    expect(container.querySelector('.shot-step-num')).toBeTruthy()
+  })
+})
+
 /** S3: تحريك الهدف — سحبة واحدة تنقل الإطار لموضع آخر */
 describe('S3: أداة تحريك الهدف', () => {
   const mark = { rect: { x: 100, y: 100, w: 80, h: 30 }, color: '#ea580c' as const }

@@ -6,13 +6,14 @@ import {
   IconBookmark,
   IconFolder,
   IconHome,
+  IconInbox,
   IconSettings,
   IconTrash,
   IconUser,
   IconUsers,
 } from '../ui/icons'
 import { t } from '../i18n'
-import { roleLabelAr } from '../lib/format'
+import { arDigits, roleLabelAr } from '../lib/format'
 import { PathMark } from '../brand/PathMark'
 import { useOverview, OverviewProvider } from './OverviewContext'
 import { FoldersSection } from './FoldersSection'
@@ -54,12 +55,14 @@ function Sidebar() {
 
   const roleLabel = overview ? roleLabelAr(overview.myRole) : ''
 
+  const assignedNew = overview?.assignedNewCount ?? 0
   const navItems = [
-    { to: '/', label: t('home.navHome'), icon: <IconHome size={17} />, exact: true },
-    { to: '/mine', label: t('home.navMine'), icon: <IconUser size={17} /> },
-    { to: '/saved', label: t('home.navSaved'), icon: <IconBookmark size={17} /> },
-    { to: '/team', label: t('home.navTeam'), icon: <IconUsers size={17} /> },
-    { to: '/settings', label: t('home.navSettings'), icon: <IconSettings size={17} /> },
+    { to: '/', label: t('home.navHome'), icon: <IconHome size={17} />, exact: true, badge: 0 },
+    { to: '/mine', label: t('home.navMine'), icon: <IconUser size={17} />, badge: 0 },
+    { to: '/saved', label: t('home.navSaved'), icon: <IconBookmark size={17} />, badge: 0 },
+    { to: '/assigned', label: t('assigned.nav'), icon: <IconInbox size={17} />, badge: assignedNew },
+    { to: '/team', label: t('home.navTeam'), icon: <IconUsers size={17} />, badge: 0 },
+    { to: '/settings', label: t('home.navSettings'), icon: <IconSettings size={17} />, badge: 0 },
   ]
 
   return (
@@ -80,6 +83,7 @@ function Sidebar() {
             <Link key={item.to} className={`side-item${active ? ' sel' : ''}`} aria-current={active ? 'page' : undefined} to={item.to}>
               {item.icon}
               <span>{item.label}</span>
+              {item.badge > 0 && <span className="side-badge">{arDigits(item.badge)}</span>}
             </Link>
           )
         })}

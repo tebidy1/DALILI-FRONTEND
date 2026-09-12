@@ -46,7 +46,8 @@ function guides(n: number): ListGuidesDto {
     commentCount: 0,
     openCommentCount: 0,
     openIssueCount: 0,
-    visibility: 'private' as const,
+    // بوابة النشر قبل الرابط (قرار المالك 2026-09-10): أدلة الاختبار منشورة كي تعمل المشاركة
+    visibility: 'workspace' as const,
     site: '',
     bookmarked: false,
     mine: true,
@@ -75,6 +76,24 @@ async function load(n = 3) {
   return client
 }
 
+/** شاشة السلة — نفس التجهيز على مسار /trash كي يختصر الشريط على الحذف النهائي */
+async function loadTrash(n = 2) {
+  vi.mocked(client.listGuides).mockResolvedValue(guides(n))
+  vi.mocked(client.listFolders).mockResolvedValue(FOLDERS)
+  vi.mocked(client.libraryOverview).mockResolvedValue(OVERVIEW)
+  render(
+    <MemoryRouter initialEntries={['/trash']}>
+      <OverviewProvider>
+        <Routes>
+          <Route path="/trash" element={<HomePage screen="trash" />} />
+        </Routes>
+      </OverviewProvider>
+    </MemoryRouter>,
+  )
+  await screen.findByText('دليل 1')
+  return client
+}
+
 const pick = (title: string) => screen.getByRole('button', { name: t('library.selectGuide', { title }) })
 
 /** LIB-05: العمليات الجماعية — تحديد متعدد → نقل/حذف/مشاركة، Shift+Click، Ctrl+A، Esc */
@@ -93,27 +112,30 @@ describe('LIB-05 العمليات الجماعية في الهوم', () => {
     expect(screen.getByText(t('library.selectedCount', { count: 2 }))).toBeTruthy()
   })
 
-  it('حذف محددَين يسأل تأكيدًا بالعدد ثم يستدعي الحذف الناعم مرتين ويُخلي التحديد', async () => {
+  it('نقل محددَين إلى السلة بلمسة واحدة (القاعدة الموحدة) — حذف ناعم مرتين ثم إخلاء التحديد', async () => {
     const client = await load()
     fireEvent.click(pick('دليل 1'))
     fireEvent.click(pick('دليل 3'))
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     fireEvent.click(screen.getByRole('button', { name: t('library.bulkDelete') }))
     await waitFor(() => expect(client.deleteGuide).toHaveBeenCalledTimes(2))
-    expect(confirmSpy).toHaveBeenCalledWith(t('library.bulkDeleteConfirm', { count: 2 }))
     expect(client.deleteGuide).toHaveBeenCalledWith('g1', { permanent: false })
     expect(client.deleteGuide).toHaveBeenCalledWith('g3', { permanent: false })
     await screen.findByText(t('library.bulkDeleted', { count: 2 }))
     expect(screen.queryByRole('toolbar')).toBeNull()
   })
 
-  it('رفض التأكيد يلغي الحذف الجماعي', async () => {
-    const client = await load()
-    vi.mocked(client.deleteGuide).mockClear()
+  it('السلة: الحذف الجماعي النهائي يمر بنافذة التأكيد الموحدة — والرفض يلغيه', async () => {
+    const client = await loadTrash(2)
+    fireEvent.click(pick('دليل 1'))
     fireEvent.click(pick('دليل 2'))
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
-    fireEvent.click(screen.getByRole('button', { name: t('library.bulkDelete') }))
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    fireEvent.click(screen.getByRole('button', { name: t('library.deleteForever') }))
     expect(client.deleteGuide).not.toHaveBeenCalled()
+    confirmSpy.mockReturnValue(true)
+    fireEvent.click(screen.getByRole('button', { name: t('library.deleteForever') }))
+    await waitFor(() => expect(client.deleteGuide).toHaveBeenCalledTimes(2))
+    expect(client.deleteGuide).toHaveBeenCalledWith('g1', { permanent: true })
+    expect(confirmSpy).toHaveBeenCalled()
   })
 
   it('نقل المحددات إلى مجلد يستدعي updateGuideMeta لكل دليل', async () => {

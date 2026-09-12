@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { GuideDto, StepDto } from '@dalili/shared'
 import { client } from '../api'
 import { t } from '../i18n'
+import { bookletOutline } from '@dalili/core'
 import { InsertStep, type InsertKind } from '../components/InsertStep'
 import { BookletOutline } from '../components/BookletOutline'
 import { BlockBody, type EmbedMeta } from './blocks/BookletBlock'
@@ -20,7 +21,6 @@ function metaOf(guide: GuideDto, deletedAt?: string): EmbedMeta {
 export function BookletBlockList({
   steps,
   editing,
-  busy,
   onPatch,
   onRemove,
   onInsert,
@@ -28,7 +28,6 @@ export function BookletBlockList({
 }: {
   steps: StepDto[]
   editing: boolean
-  busy?: boolean
   onPatch: (index: number, patch: Partial<StepDto>) => void
   onRemove: (index: number) => void
   onInsert: (kind: InsertKind, at: number) => void
@@ -77,7 +76,7 @@ export function BookletBlockList({
 
   return (
     // كيان مستند بعمود قراءة وفهرس — لا نموذج إدخال (طلب المالك 2026-09-07)
-    <div className={`booklet-doc${editing ? ' is-editing' : ''}`}>
+    <div className={`booklet-doc${editing ? ' is-editing' : bookletOutline(steps).length > 0 ? ' has-index' : ''}`}>
       {!editing && <BookletOutline steps={steps} prefix="step-" />}
       <div className="booklet-body">
       {steps.map((s, i) => (
@@ -88,7 +87,6 @@ export function BookletBlockList({
               insertAt={i}
               docKind="booklet"
               onInsert={onInsert}
-              busy={busy}
             />
           )}
           <div id={`step-${s.id}`} className={`booklet-block block-${s.block ?? 'step'}`}>
@@ -115,7 +113,6 @@ export function BookletBlockList({
           insertAt={steps.length}
           docKind="booklet"
           onInsert={onInsert}
-          busy={busy}
         />
       )}
       </div>

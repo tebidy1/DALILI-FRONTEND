@@ -4,6 +4,7 @@ import { client, webShareUrl } from '../api'
 import { t } from '../i18n'
 import { copyToClipboard } from '../lib/format'
 import { emptySelection, type Selection } from '../lib/selection'
+import { useConfirm } from '../components/ConfirmProvider'
 import type { HomeScreen } from './screen'
 
 /**
@@ -29,7 +30,7 @@ interface GuideActionsDeps {
 }
 
 export function useGuideActions(d: GuideActionsDeps) {
-  const [confirming, setConfirming] = useState<string | null>(null)
+  const confirm = useConfirm()
   const [bulkBusy, setBulkBusy] = useState(false)
   const [creating, setCreating] = useState(false)
 
@@ -61,16 +62,15 @@ export function useGuideActions(d: GuideActionsDeps) {
     }
   }
 
+  /**
+   * القاعدة الموحدة (المرحلة ١): النقل الناعم للسلة نقرة واحدة + لافتة (فهو
+   * مستدَدّ بـ30 يومًا)، والحذف النهائي من السلة نافذة التأكيد الموحدة.
+   */
   async function remove(g: GuideSummaryDto) {
-    if (!d.inTrash && confirming !== g.id) {
-      setConfirming(g.id)
-      setTimeout(() => setConfirming((c) => (c === g.id ? null : c)), 3000)
-      return
+    if (d.inTrash) {
+      const ok = await confirm({ title: t('library.deleteForever'), body: t('library.confirmDeleteForever'), confirmLabel: t('library.deleteForever'), danger: true })
+      if (!ok) return
     }
-    if (d.inTrash && confirming !== g.id) {
-      if (!window.confirm(t('library.confirmDeleteForever'))) return
-    }
-    setConfirming(null)
     try {
       await client.deleteGuide(g.id, { permanent: d.inTrash })
       d.setData((prev) => (prev ? { ...prev, items: prev.items.filter((x) => x.id !== g.id), total: prev.total - 1 } : prev))
@@ -151,7 +151,8 @@ export function useGuideActions(d: GuideActionsDeps) {
   }
 
   /** المرحلة ج: مشاركة سريعة — رابط قائم يُنسخ، وإلا وُلِّد ثم نُسخ. البطاقة تُحدَّث موضعيًا
-   *  (لا إعادة جلب تمسح اللافتة لحظة ظهورها)، وحين يمنع المتصفح النسخ يظهر الرابط نفسه */
+   *  (لا إعادة جلب تمسح اللافتة لحظة ظهورها)، وحين يمنع المتصفح النسخ يظهر الرابط نفسه بصدق.
+   *  قرار المالك 2026-09-11: مشاركة الدليل الخاص = رابط سري — يبقى خاصًا خارج بحث المساحة. */
   async function shareCopy(g: GuideSummaryDto) {
     try {
       let url = g.shared && g.shareUrl ? g.shareUrl : null
@@ -162,7 +163,8 @@ export function useGuideActions(d: GuideActionsDeps) {
         )
       }
       const full = webShareUrl(url)
-      if (await copyToClipboard(full)) d.setNotice(t('home.shareCopied'))
+      if (await copyToClipboard(full))
+        d.setNotice(g.visibility === 'private' ? t('home.shareSecretCopied') : t('home.shareCopied'))
       else d.setNotice(t('home.shareManual', { url: full }))
     } catch {
       d.setError(t('home.shareError'))
@@ -172,8 +174,15 @@ export function useGuideActions(d: GuideActionsDeps) {
   async function bulkDelete() {
     if (!d.data || d.sel.ids.length === 0 || bulkBusy) return
     const n = d.sel.ids.length
-    const msg = d.inTrash ? t('library.bulkDeleteForeverConfirm', { count: n }) : t('library.bulkDeleteConfirm', { count: n })
-    if (!window.confirm(msg)) return
+    if (d.inTrash) {
+      const ok = await confirm({
+        title: t('library.deleteForever'),
+        body: t('library.bulkDeleteForeverConfirm', { count: n }),
+        confirmLabel: t('library.deleteForever'),
+        danger: true,
+      })
+      if (!ok) return
+    }
     setBulkBusy(true)
     try {
       for (const id of d.sel.ids) await client.deleteGuide(id, { permanent: d.inTrash })
@@ -208,8 +217,12 @@ export function useGuideActions(d: GuideActionsDeps) {
 
   async function bulkShare() {
     if (!d.data || d.sel.ids.length === 0 || bulkBusy) return
-    const targets = d.data.items.filter((g) => d.sel.ids.includes(g.id) && !g.shared)
-    if (targets.length === 0) return
+    // قرار المالك 2026-09-10: الرابط للمنشور وحده — والصمت عند زر مُضغوط عطَل لا رأي
+    const targets = d.data.items.filter((g) => d.sel.ids.includes(g.id) && !g.shared && g.visibility === 'workspace')
+    if (targets.length === 0) {
+      d.setNotice(t('library.bulkShareNone'))
+      return
+    }
     setBulkBusy(true)
     try {
       for (const g of targets) await client.createShare(g.id)
@@ -224,7 +237,6 @@ export function useGuideActions(d: GuideActionsDeps) {
   }
 
   return {
-    confirming,
     bulkBusy,
     creating,
     newGuide,

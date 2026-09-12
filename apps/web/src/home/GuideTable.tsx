@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import type { FolderDto, GuideSummaryDto } from '@dalili/shared'
 import { t } from '../i18n'
-import { relativeTimeAr } from '../lib/format'
+import { arDigits, relativeTimeAr } from '../lib/format'
 import { Button } from '../ui/Button'
-import { IconTrash } from '../ui/icons'
 import { isPicked, type Selection } from '../lib/selection'
+import { GuideMenuActions } from './GuideMenuActions'
 
 /**
  * عرض «قائمة» على نمط المرجع: جدول حقيقي بأعمدة (العنوان · المجلد · الموقع ·
@@ -17,12 +18,17 @@ export interface GuideTableProps {
   trash: boolean
   sort: string
   sel: Selection
-  confirming: string | null
   onSort: (col: 'title' | 'created' | 'updated', dir: 'asc' | 'desc') => void
   onPick: (id: string, shiftKey: boolean) => void
   onOpen: (g: GuideSummaryDto) => void
   onRestore: (g: GuideSummaryDto) => void
   onRemove: (g: GuideSummaryDto) => void
+  /** المرحلة ٣: تكافؤ الإجراءات — القائمة تحصل على ما تحصل عليه البطاقة */
+  onShare: (g: GuideSummaryDto) => void
+  onBookmark: (g: GuideSummaryDto) => void
+  onPublish: (g: GuideSummaryDto) => void
+  onDuplicate: (g: GuideSummaryDto) => void
+  onMove: (g: GuideSummaryDto, folderId: string | null) => void
 }
 
 function SortHead({ label, col, sort, onSort }: { label: string; col: 'title' | 'created' | 'updated'; sort: string; onSort: GuideTableProps['onSort'] }) {
@@ -38,6 +44,13 @@ function SortHead({ label, col, sort, onSort }: { label: string; col: 'title' | 
 }
 
 export function GuideTable(p: GuideTableProps) {
+  // المرحلة ٣: قائمة «⋯» لكل صف — نفس إجراءات بطاقة الشبكة لا نسخة ناقصة
+  const [menuFor, setMenuFor] = useState<string | null>(null)
+  // كل اختيار من القائمة يُغلقها أولًا ثم ينفّذ فعله — مصدر واحد لسلوك الإغلاق
+  const act = (run: () => void) => {
+    setMenuFor(null)
+    run()
+  }
   return (
     <div className="table-wrap">
       <table className="guide-table">
@@ -56,7 +69,9 @@ export function GuideTable(p: GuideTableProps) {
               <SortHead label={t('home.colEdited')} col="updated" sort={p.sort} onSort={p.onSort} />
             </th>
             <th className="col-views">{t('home.colViews')}</th>
-            {p.trash && <th className="col-actions" aria-label={t('common.delete')} />}
+            {/* عمود إجراءات واحد يتبدّل محتواه: «⋯» خارج السلة، واستعادة/حذف داخلها —
+                فلا يختلّ عدد الأعمدة بين الرأس والصفوف */}
+            <th className="col-actions" aria-label={p.trash ? t('common.delete') : t('library.moreActions')} />
           </tr>
         </thead>
         <tbody>
@@ -88,17 +103,55 @@ export function GuideTable(p: GuideTableProps) {
                 <td className="muted" title={p.trash && g.deletedAt ? g.deletedAt : g.updatedAt}>
                   {relativeTimeAr(p.trash && g.deletedAt ? g.deletedAt : g.updatedAt)}
                 </td>
-                <td className="col-views muted">{g.views}</td>
-                {p.trash && (
-                  <td className="col-actions">
-                    <Button size="sm" onClick={() => p.onRestore(g)}>
-                      {t('library.restore')}
-                    </Button>
-                    <Button size="sm" variant={p.confirming === g.id ? 'danger' : 'ghost'} onClick={() => p.onRemove(g)}>
-                      {p.confirming === g.id ? t('common.confirmDelete') : <IconTrash size={14} />}
-                    </Button>
-                  </td>
-                )}
+                <td className="col-views muted">{g.views > 0 ? arDigits(g.views) : '—'}</td>
+                {/* عمود إجراءات واحد دائمًا (يقابل رأسه الوحيد) — محتواه بحسب الشاشة */}
+                <td className="col-actions">
+                  {p.trash ? (
+                    <>
+                      <Button size="sm" onClick={() => p.onRestore(g)}>
+                        {t('library.restore')}
+                      </Button>
+                      <Button size="sm" variant="danger" onClick={() => p.onRemove(g)}>
+                        {t('library.deleteForever')}
+                      </Button>
+                    </>
+                  ) : (
+                    g.mine && (
+                      <span className="table-menu-wrap">
+                        <button
+                          className={`more-btn${menuFor === g.id ? ' on' : ''}`}
+                          aria-label={t('library.moreActions')}
+                          title={t('library.moreActions')}
+                          aria-expanded={menuFor === g.id}
+                          onClick={() => setMenuFor((v) => (v === g.id ? null : g.id))}
+                        >
+                          ⋯
+                        </button>
+                        {menuFor === g.id && (
+                          <>
+                            <div className="guide-menu-backdrop" onClick={() => setMenuFor(null)} />
+                            <div className="guide-menu table-pop" role="group" aria-label={t('library.cardMenuA11y')}>
+                              {/* كل فعل يُغلق القائمة أولًا ثم ينفّذ — سلوك قوائم موحّد لا مفاجآت */}
+                              <GuideMenuActions
+                                g={g}
+                                folders={p.folders}
+                                inTrash={false}
+                                onOpen={() => act(() => p.onOpen(g))}
+                                onBookmark={() => act(() => p.onBookmark(g))}
+                                onPublish={() => act(() => p.onPublish(g))}
+                                onDuplicate={() => act(() => p.onDuplicate(g))}
+                                onShare={() => act(() => p.onShare(g))}
+                                onMove={(fid) => act(() => p.onMove(g, fid))}
+                                onRemove={() => act(() => p.onRemove(g))}
+                                onRestore={() => act(() => p.onRestore(g))}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </span>
+                    )
+                  )}
+                </td>
               </tr>
             )
           })}

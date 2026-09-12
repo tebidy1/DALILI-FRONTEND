@@ -321,8 +321,8 @@ describe('عرض القائمة = جدول بأعمدة المرجع', () => {
       expect(within(table).getByText(head)).toBeTruthy()
     }
     expect(within(table).getByText('دليل زميلي المنشور')).toBeTruthy()
-    // عمود المشاهدات يعرض رقم المشاركة
-    expect(table.textContent).toContain('7')
+    // عمود المشاهدات يعرض رقم المشاركة بالأرقام الهندية الشرقية كبقية الواجهة
+    expect(table.textContent).toContain('٧')
     expect(localStorage.getItem('home.layout')).toBe('list')
   })
 
@@ -357,5 +357,31 @@ describe('حالات الفراغ لكل شاشة', () => {
     expect(screen.getAllByText(t('home.clearFilters')).length).toBeGreaterThan(0)
     renderHome('/', { ...ADMIN_VIEW, myRole: 'viewer', counts: { all: 0, mine: 0, published: 0, saved: 0 } }, [])
     await screen.findByText(t('home.viewerEmpty'))
+  })
+})
+
+/** المرحلة ٣: فتح الدليل بنقرة واحدة — من عنوان البطاقة ومن قائمة الجدول */
+describe('فتح الدليل بالنقر (المرحلة ٣)', () => {
+  it('عرض الشبكة: النقر على عنوان البطاقة يفتح الدليل مباشرة', async () => {
+    renderHome()
+    const titleBtn = await screen.findByRole('button', { name: 'دليلي الخاص' })
+    fireEvent.click(titleBtn)
+    await waitFor(() => expect(screen.getByTestId('loc').textContent).toBe('/g/g1'))
+  })
+
+  it('عرض القائمة: زر «⋯» يفتح قائمة الإجراءات الكاملة و«فتح المحرر» فيها يفتح الدليل', async () => {
+    renderHome()
+    await screen.findByText('دليلي الخاص')
+    fireEvent.click(screen.getByLabelText(t('home.list')))
+    const menus = await screen.findAllByRole('button', { name: t('library.moreActions') })
+    fireEvent.click(menus[0]!)
+    const openBtn = await screen.findByRole('button', { name: t('common.openEditor') })
+    // تكافؤ الإجراءات: ما للبطاقة للقائمة — نشر وتكرار ونقل ومشاركة ومفضلة
+    expect(screen.getByRole('button', { name: t('home.publish') })).toBeTruthy()
+    expect(screen.getByRole('button', { name: t('library.duplicate') })).toBeTruthy()
+    expect(screen.getByRole('button', { name: t('home.share') })).toBeTruthy()
+    expect(screen.getByLabelText(`${t('library.moveToFolder')} — دليلي الخاص`)).toBeTruthy()
+    fireEvent.click(openBtn)
+    await waitFor(() => expect(screen.getByTestId('loc').textContent).toBe('/g/g1'))
   })
 })

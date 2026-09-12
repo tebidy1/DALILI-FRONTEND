@@ -4,16 +4,15 @@ import { InsertStep } from './InsertStep'
 import { t } from '../i18n'
 
 describe('InsertStep — منبثقة أنواع الكتل', () => {
-  it('النقر على «+» يفتح خمسة خيارات، وكلٌّ يستدعي onInsert بنوعه وموضعه', () => {
+  it('النقر على «+» يفتح أربعة خيارات، وكلٌّ يستدعي onInsert بنوعه وموضعه', () => {
     const onInsert = vi.fn()
     render(<InsertStep label="أضف" insertAt={3} onInsert={onInsert} />)
-    fireEvent.click(screen.getByRole('button', { name: t('editor.blockMenuOpen') }))
+    fireEvent.click(screen.getByRole('button', { name: t('editor.addStepsShort') }))
     for (const name of [
       t('editor.addStepManual'),
       t('editor.addTip'),
       t('editor.addAlert'),
       t('editor.addHeader'),
-      t('editor.addCaptureItem'),
     ]) {
       expect(screen.getByRole('menuitem', { name })).toBeTruthy()
     }
@@ -22,7 +21,7 @@ describe('InsertStep — منبثقة أنواع الكتل', () => {
   })
 
   // BKL-01: القائمة تتبع نوع المستند — الكرّاسة تجمع الأدلة ولا تلتقطها
-  it('قائمة الكرّاسة تعرض كتلها ولا تعرض الالتقاط ولا الخطوة اليدوية', () => {
+  it('قائمة الكرّاسة تعرض كتلها ولا تعرض الخطوة اليدوية، وزرها «أضف كتلة»', () => {
     const onInsert = vi.fn()
     render(<InsertStep label="أضف" insertAt={2} docKind="booklet" onInsert={onInsert} />)
     fireEvent.click(screen.getByRole('button', { name: t('editor.blockMenuOpen') }))
@@ -42,10 +41,11 @@ describe('InsertStep — منبثقة أنواع الكتل', () => {
     expect(onInsert).toHaveBeenCalledWith('embed', 2)
   })
 
-  it('قائمة الدليل لا تعرض كتل الكرّاسة — المسار القائم بلا تغيير', () => {
+  it('قائمة الدليل: خطوة يدوية بلا كتل الكرّاسة — والتقاط الامتداد غاب نهائيًا (قرار المالك 2026-09-10)', () => {
     render(<InsertStep label="أضف" insertAt={0} docKind="guide" onInsert={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: t('editor.blockMenuOpen') }))
-    expect(screen.getByRole('menuitem', { name: t('editor.addCaptureItem') })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: t('editor.addStepsShort') }))
+    expect(screen.getByRole('menuitem', { name: t('editor.addStepManual') })).toBeTruthy()
+    expect(screen.queryByRole('menuitem', { name: t('editor.addCaptureItem') })).toBeNull()
     expect(screen.queryByRole('menuitem', { name: t('editor.addEmbed') })).toBeNull()
   })
 
@@ -64,7 +64,7 @@ describe('InsertStep — منبثقة أنواع الكتل', () => {
 
   it('Esc يغلق المنبثقة', () => {
     render(<InsertStep label="أضف" insertAt={0} onInsert={vi.fn()} />)
-    fireEvent.click(screen.getByRole('button', { name: t('editor.blockMenuOpen') }))
+    fireEvent.click(screen.getByRole('button', { name: t('editor.addStepsShort') }))
     expect(screen.queryByRole('menu')).not.toBeNull()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('menu')).toBeNull()

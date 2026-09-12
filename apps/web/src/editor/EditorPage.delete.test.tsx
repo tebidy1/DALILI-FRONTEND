@@ -64,11 +64,11 @@ describe('VER-02: حذف الدليل من قائمة «المزيد»', () => {
     vi.mocked(client.deleteGuide).mockResolvedValue(undefined)
   })
 
-  it('«حذف» يفتح حوارًا باسم الدليل داخل النص', async () => {
+  it('«نقل إلى السلة» (المزيد) يفتح حوارًا باسم الدليل داخل النص', async () => {
     mountAt()
     await screen.findByText('دليلي')
     fireEvent.click(screen.getByLabelText('المزيد من الخيارات'))
-    fireEvent.click(screen.getByText('حذف'))
+    fireEvent.click(screen.getByText('نقل إلى السلة'))
     const dialog = screen.getByRole('dialog')
     expect(dialog).toBeTruthy()
     expect(dialog.textContent).toContain('نقل الدليل إلى السلة؟')
@@ -81,7 +81,7 @@ describe('VER-02: حذف الدليل من قائمة «المزيد»', () => {
     mountAt()
     await screen.findByText('دليلي')
     fireEvent.click(screen.getByLabelText('المزيد من الخيارات'))
-    fireEvent.click(screen.getByText('حذف'))
+    fireEvent.click(screen.getByText('نقل إلى السلة'))
     fireEvent.click(screen.getByText('إلغاء'))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(client.deleteGuide).not.toHaveBeenCalled()
@@ -91,7 +91,8 @@ describe('VER-02: حذف الدليل من قائمة «المزيد»', () => {
     mountAt()
     await screen.findByText('دليلي')
     fireEvent.click(screen.getByLabelText('المزيد من الخيارات'))
-    fireEvent.click(screen.getByText('حذف'))
+    fireEvent.click(screen.getByText('نقل إلى السلة'))
+    // القائمة أُغلقت عند الاختيار — المتبقي «نقل إلى السلة» في نافذة الحوار وحدها
     fireEvent.click(screen.getByText('نقل إلى السلة'))
     await waitFor(() => expect(client.deleteGuide).toHaveBeenCalledWith('g1', {}))
     await screen.findByText('HOME')
@@ -103,7 +104,7 @@ describe('VER-02: حذف الدليل من قائمة «المزيد»', () => {
     mountAt()
     await screen.findByText('دليلي')
     fireEvent.click(screen.getByLabelText('المزيد من الخيارات'))
-    fireEvent.click(screen.getByText('حذف'))
+    fireEvent.click(screen.getByText('نقل إلى السلة'))
     fireEvent.click(screen.getByText('نقل إلى السلة'))
     await waitFor(() => expect(client.deleteGuide).toHaveBeenCalled())
     expect(screen.queryByRole('dialog')).not.toBeNull()
@@ -118,8 +119,8 @@ describe('VER-02: حذف الدليل من قائمة «المزيد»', () => {
       const el = screen.getByText(label).closest('button')!
       expect(el.getAttribute('aria-disabled')).toBe('true')
     }
-    // «الإصدارات» و«حذف» ليستا معطّلتين
+    // «الإصدارات» و«نقل إلى السلة» ليستا معطّلتين
     expect(screen.getByText('الإصدارات').closest('button')!.getAttribute('aria-disabled')).toBeNull()
-    expect(screen.getByText('حذف').closest('button')!.getAttribute('aria-disabled')).toBeNull()
+    expect(screen.getByText('نقل إلى السلة').closest('button')!.getAttribute('aria-disabled')).toBeNull()
   })
 })

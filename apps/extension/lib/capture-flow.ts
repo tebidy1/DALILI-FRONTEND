@@ -23,6 +23,10 @@ export interface CaptureFlowDeps {
   patchStep: (sessionId: string, i: number, patch: Partial<StoredStep>) => Promise<void>
   /** VOX-09: حذف خطوة يعيد ترقيم تعليقاتها الصوتية كالخطوات نفسها */
   renumberMemos?: (sessionId: string, deletedIndex: number, count: number) => Promise<void>
+  /** VOX-AUTO: بطاقة جديدة وُلدت فعلًا (لا الاستبدال) — سياسة التعليق توقف السابق وتبدأ الجديد */
+  onNewStep?: (sessionId: string, idx: number) => Promise<void>
+  /** زر الجرس: بلوغ حد الخطوات — مرة واحدة عند التعليم، كي لا يضيع مع اللافتة العابرة */
+  onLimitReached?: () => Promise<void>
 }
 
 export function createCaptureFlow(deps: CaptureFlowDeps) {
@@ -49,7 +53,10 @@ export function createCaptureFlow(deps: CaptureFlowDeps) {
     if (fold === 'drop') return
     const replace = fold === 'replace' || shouldReplacePrev(prev, ev)
     if (!replace && meta.stepCount >= MAX_STEPS) {
-      if (!meta.limited) await deps.saveMeta({ limited: true })
+      if (!meta.limited) {
+        await deps.saveMeta({ limited: true })
+        await deps.onLimitReached?.()
+      }
       return
     }
     const idx = replace ? meta.stepCount - 1 : meta.stepCount
@@ -57,6 +64,8 @@ export function createCaptureFlow(deps: CaptureFlowDeps) {
     if (!replace) await deps.saveMeta({ stepCount: idx + 1 })
     else await deps.saveSilently() // عداد بلا تغيير — بث غير ضروري
     scheduleCapture(idx, ev, tab)
+    // VOX-AUTO: الانتقال الصوتي بعد جدولة اللقطة — فتح الميكروفون لا يؤجل لقطة البطاقة
+    if (!replace) await deps.onNewStep?.(meta.sessionId, idx)
   }
 
   /** الخطوة المعلّقة على مؤقّت الخنق — إن وصلت خطوة أخرى نفّذناها قبل استبدالها */

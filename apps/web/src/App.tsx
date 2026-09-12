@@ -5,6 +5,7 @@ import { AuthGate } from './auth/AuthGate'
 import { HomePage } from './home/HomePage'
 import { AppShell } from './shell/AppShell'
 import { SettingsPage } from './settings/SettingsPage'
+import { AssignedPage } from './assigned/AssignedPage'
 import { EditorPage } from './editor/EditorPage'
 import { VersionView } from './editor/VersionView'
 import { ViewerPage } from './viewer/ViewerPage'
@@ -13,6 +14,7 @@ import { SearchPalette } from './search/SearchPalette'
 import { ShortcutsDialog } from './ui/ShortcutsDialog'
 import { TeamPage } from './team/TeamPage'
 import { BrandPage } from './brand/BrandPage'
+import { ConfirmProvider } from './components/ConfirmProvider'
 
 export function App() {
   const [showShortcuts, setShowShortcuts] = useState(false)
@@ -32,7 +34,7 @@ export function App() {
   }, [])
 
   return (
-    <>
+    <ConfirmProvider>
       <SearchPalette />
       {showShortcuts && <ShortcutsDialog onClose={() => setShowShortcuts(false)} />}
       <Routes>
@@ -44,6 +46,7 @@ export function App() {
           <Route path="/" element={<HomePage screen="home" />} />
           <Route path="/mine" element={<HomePage screen="mine" />} />
           <Route path="/saved" element={<HomePage screen="saved" />} />
+          <Route path="/assigned" element={<AssignedPage />} />
           <Route path="/trash" element={<HomePage screen="trash" />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/settings" element={<SettingsPage />} />
@@ -56,6 +59,6 @@ export function App() {
         <Route path="/embed/s/:token" element={<ViewerPage embed />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </ConfirmProvider>
   )
 }

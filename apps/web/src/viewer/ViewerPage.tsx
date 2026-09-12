@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { extractCapturedSites, nearestStepIndexAt, stepAudioMs, stepAudioRanges, stepNumbers } from '@dalili/core'
+import { DEFAULT_MARK_COLOR, extractCapturedSites, nearestStepIndexAt, stepAudioMs, stepAudioRanges, stepNumbers } from '@dalili/core'
 import type { PublicGuideDto, StepCommentDto, StepDto } from '@dalili/shared'
 import { client } from '../api'
 import { StepImage } from '../components/StepImage'
@@ -37,8 +37,13 @@ function ViewerBlock({ step }: { step: StepDto }) {
   )
 }
 
-/** لقطة الخطوة في العارض — النسختان الكاملة والتضمين تتشاركانها فلا تفرّق أنماطهما أبدًا */
-function StepShot({ s }: { s: StepDto }) {
+/**
+ * لقطة الخطوة في العارض — النسختان الكاملة والتضمين تتشاركانها فلا تفرّق أنماطهما أبدًا.
+ * طلب المالك 2026-09-11: الترقيم على اللقطة يظهر في العارض المُشارَك دائمًا (لا في
+ * المحرر وحده) — `autoNumber` يمرّر رقم الخطوة الحقيقي فترسم `StepImage` السهم نحو
+ * الهدف، أو رقمًا عاريًا في الركن للخطوة بلا هدف (كفتح الموقع).
+ */
+function StepShot({ s, autoNumber, color }: { s: StepDto; autoNumber?: number | null; color?: string }) {
   const shot = shotOf(s)
   return shot ? (
     <StepImage
@@ -47,6 +52,8 @@ function StepShot({ s }: { s: StepDto }) {
       crop={shot.crop}
       annotations={shot.annotations}
       mark={shot.mark}
+      autoNumber={autoNumber ?? undefined}
+      color={color}
       mode="view"
       alt={s.alt ?? s.title}
       lazy
@@ -209,6 +216,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
   // VIEW-04: نسخة التضمين — عنوان نحيل بلا أزرار/طباعة/مشغل، جاهزة داخل iframe
   if (embed) {
     const embedNums = stepNumbers(guide.steps)
+    const embedMarkColor = guideMarkColor(guide.steps)
     return (
       <div className={`page embed-page${virtual ? ' cv-steps' : ''}`}>
         <h1 className="embed-title">
@@ -228,7 +236,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
                   <bdi>{s.note}</bdi>
                 </p>
               )}
-              <StepShot s={s} />
+              <StepShot s={s} autoNumber={embedNums[i]} color={embedMarkColor} />
             </div>
           )
         })}
@@ -237,6 +245,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
   }
 
   const nums = stepNumbers(guide.steps)
+  const markColor = guideMarkColor(guide.steps)
   const capturedSites = extractCapturedSites(guide.steps)
 
   return (
@@ -344,7 +353,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
                   <span>{playing === i ? t('viewer.pauseStep') : t('viewer.playStep')}</span>
                 </button>
               )}
-              <StepShot s={s} />
+              <StepShot s={s} autoNumber={nums[i]} color={markColor} />
             </div>
           )
         })}
@@ -357,5 +366,17 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
 
 function shotOf(s: StepDto) {
   return s.screenshot && !('missing' in s.screenshot) ? s.screenshot : null
+}
+
+/**
+ * لون موحّد لأرقام الدليل: لون أول علامة هدف في الدليل (فتتّسق شارة الركن مع بقية
+ * الشارات)، وإلا لون العلامة الافتراضي حين لا هدف في الدليل كلّه.
+ */
+function guideMarkColor(steps: StepDto[]): string {
+  for (const s of steps) {
+    const shot = shotOf(s)
+    if (shot?.mark?.color) return shot.mark.color
+  }
+  return DEFAULT_MARK_COLOR
 }
 
