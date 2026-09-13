@@ -33,6 +33,15 @@ export const ZOOM_MAX = 4
 /** نسبة ملء العنصر من البُعد الأضيق للنافذة قبل التقييد — يترك سياقًا مريحًا حوله */
 const TARGET_FILL = 0.55
 
+/** PNL-01: حدود التكبير قابلة للضبط — الالتقاط يؤكّد العنصر (قريب)، والقارئ يقارن الصفحة (سياق أوسع) */
+export interface ZoomLimits {
+  min: number
+  max: number
+  fill: number
+}
+
+export const CAPTURE_ZOOM: ZoomLimits = { min: ZOOM_MIN, max: ZOOM_MAX, fill: TARGET_FILL }
+
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v))
 }
@@ -48,6 +57,7 @@ export function zoomFrame(
   natH: number,
   viewW: number,
   viewH: number,
+  limits: ZoomLimits = CAPTURE_ZOOM,
 ): ZoomFrame | null {
   if (natW <= 0 || natH <= 0 || viewW <= 0 || viewH <= 0) return null
   if (mark.w <= 0 || mark.h <= 0) return null
@@ -59,8 +69,8 @@ export function zoomFrame(
   const cx = (mark.x + mark.w / 2) * s // مركز العنصر في الطبقة
   const cy = (mark.y + mark.h / 2) * s
 
-  const fit = Math.min((TARGET_FILL * viewW) / mw, (TARGET_FILL * viewH) / mh)
-  const scale = clamp(fit, ZOOM_MIN, ZOOM_MAX)
+  const fit = Math.min((limits.fill * viewW) / mw, (limits.fill * viewH) / mh)
+  const scale = clamp(fit, limits.min, limits.max)
 
   // توسيط مركز العنصر في مركز النافذة
   let translateX = viewW / 2 - scale * cx

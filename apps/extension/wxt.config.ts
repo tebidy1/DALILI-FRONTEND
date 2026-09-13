@@ -3,7 +3,7 @@ import { defineConfig } from 'wxt'
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    name: 'دليلي — مسجّل خطوات الشاشة',
+    name: 'إتقان — مسجّل خطوات الشاشة',
     description: 'سجّل خطوات أي مهمة في المتصفح وحوّلها إلى دليل عربي قابل للمشاركة بخطوة واحدة',
     // OPS-06: إصدار دلالي — يُرفع مع كل إرسال للمتجر
     version: '0.2.0',
@@ -20,7 +20,7 @@ export default defineConfig({
       '128': 'icons/128.png',
     },
     action: {
-      default_title: 'دليلي — افتح اللوحة الجانبية',
+      default_title: 'إتقان — افتح اللوحة الجانبية',
       default_icon: {
         '16': 'icons/16.png',
         '32': 'icons/32.png',

@@ -10,11 +10,45 @@ body {
 #root { height: 100%; }
 .wrap { display: flex; flex-direction: column; min-height: 100%; }
 
+/* ——— علامة «إتقان» ————————————————————————————————————————
+   الألف هي الحرف الوحيد الملوّن في الشعار. الطينيّ #8A5447 يعمل على الورق،
+   ويُستبدل بأفتح منه في الليل وإلا هبط تبايُنه تحت 4.5:1 على أرضية داكنة. */
+:root { --itqan-alif: #8A5447; }
+@media (prefers-color-scheme: dark) { :root { --itqan-alif: #C9877A; } }
+
+/* القفل: خطّان رفيعان يبتلعان ما تبقّى من عرض الشعار، فيصير المجموع = عرضه بالضبط.
+   كل المقادير مشتقّة من --lk-w (عرض الشعار) كما في الموقع — نسبة واحدة عند أي مقاس. */
+.itqan-lockup { display: flex; flex-direction: column; align-items: center; color: var(--dl-ink); }
+.itqan-lk-row {
+  width: 100%; display: flex; align-items: center; justify-content: center;
+  /* ١٠٫٥٪ من عرض الشعار — نفس الإيقاع المقيس في الموقع بين الشعار وقفله */
+  gap: calc(var(--lk-w) * .032); margin-top: calc(var(--lk-w) * .105);
+}
+.itqan-lk-rule { flex: 1 1 0; min-width: 0; height: 1px; background: var(--dl-line); }
+.itqan-lk-line {
+  flex: 0 0 auto; direction: ltr; unicode-bidi: isolate; white-space: nowrap;
+  /* النسبة .0425 هي نسبة الموقع، لكن للوحة الجانبية أرضية: تحت ١٠px لا يُقرأ السطر
+     مهما كانت النسبة صحيحة — والخطّان هما اللذان يتنازلان عن العرض، لا الحروف */
+  font-size: max(10px, calc(var(--lk-w) * .0425)); font-weight: 500;
+  letter-spacing: .3em; margin-inline-end: -.3em;   /* يلغي فراغ التراك المعلّق فيتوسّط الحبر */
+}
+.itqan-lk-line b { font-weight: 500; color: var(--itqan-alif); }
+.itqan-lk-line i { font-style: normal; color: var(--dl-ink); margin-inline-start: .55em; }
+
 /* ——— الترويسة ——— */
-.head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; }
-.brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; }
-/* هوية البراند: درج المسار بدل شارة الحرف — يرث لون الثيم من currentColor */
-.brand .brand-mark { color: var(--dl-ink); flex: none; display: block; }
+.head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; }
+.brand { display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; }
+.brand > svg { color: var(--dl-ink); flex: none; display: block; }
+/* السطر اللاتيني المضغوط تحت الشعار في الترويسة — 7.5px بتراك .18em كي يلائم
+   عرض الشعار المصغّر 65px (نِسب القفل الرسمية .0425/.3em تُقرأ فقط من 110px
+   فأكثر، ولهذا لا يُستعمل القفل كاملًا هنا). محاذاة للوسط تحت حبر الشعار كما في القفل. */
+.brand-latin {
+  direction: ltr; unicode-bidi: isolate; white-space: nowrap; line-height: 1;
+  font-size: 7.5px; font-weight: 500; letter-spacing: .18em; margin-inline-end: -.18em;
+  color: var(--dl-muted);
+}
+.brand-latin b { font-weight: 500; color: var(--itqan-alif); }
+.brand-latin i { font-style: normal; color: var(--dl-muted); margin-inline-start: .55em; }
 .chip { font-size: .72rem; font-weight: 500; border: 1px solid var(--dl-line); background: var(--dl-surface2); border-radius: 999px; padding: 4px 11px; color: var(--dl-muted); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .chip.rec { color: var(--dl-danger); border-color: color-mix(in srgb, var(--dl-danger) 28%, transparent); background: color-mix(in srgb, var(--dl-danger) 7%, transparent); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dl-danger); animation: pulse 1.3s infinite; }
@@ -118,7 +152,7 @@ button.ghost.danger-text.armed { border-color: var(--dl-danger); background: col
   text-decoration: none; color: inherit; font-weight: 400;
   transition: background .14s ease;
 }
-.recent .doc + .doc, .discover .doc + .doc { border-top: 1px solid var(--dl-line); }
+.recent .doc-row + .doc-row, .discover .doc-row + .doc-row { border-top: 1px solid var(--dl-line); }
 .doc:hover { background: var(--dl-surface2); text-decoration: none; }
 .doc-ic {
   width: 30px; height: 30px; border-radius: 9px; flex: none; display: grid; place-items: center;
@@ -129,8 +163,27 @@ button.ghost.danger-text.armed { border-color: var(--dl-danger); background: col
 .doc-tx bdi { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dl-ink); }
 .doc-tx small { display: block; color: var(--dl-muted); font-size: .74rem; margin-top: 3px; }
 
+/* PNL-01: زر ↵ «اعرضه هنا» — يظهر بالمرور وبالتركيز، ودائمًا على اللمس */
+.doc-row { position: relative; }
+.doc-row .doc { padding-inline-end: 44px; }
+.doc-row:hover .doc { background: var(--dl-surface2); }
+.doc-enter {
+  position: absolute; inset-inline-end: 6px; top: 50%; margin-top: -15px;
+  width: 30px; height: 30px; padding: 0; display: grid; place-items: center;
+  border-radius: 8px; background: var(--dl-surface); color: var(--dl-ink); border: 1px solid var(--dl-line);
+  opacity: 0; transition: opacity .12s ease, background .12s ease;
+}
+.doc-enter svg { width: 15px; height: 15px; }
+.doc-enter:hover { filter: none; background: var(--dl-brand); color: #fff; border-color: var(--dl-brand); }
+.doc-row:hover .doc-enter, .doc-row:focus-within .doc-enter { opacity: 1; }
+@media (hover: none) { .doc-enter { opacity: 1; } }
+
 /* حالة عدم الدخول */
 .signin { display: flex; flex-direction: column; gap: 11px; }
+/* أول لقاء بالعلامة: القفل يتنفّس، ثم العبارة بحروفها الأربعة بارزةً بالحبر */
+.signin-brand { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 26px 0 18px; }
+.signin-phrase { margin: 0; text-align: center; font-size: .84rem; line-height: 1.9; color: var(--dl-muted); font-weight: 500; }
+.signin-phrase b { font-weight: 700; color: var(--dl-ink); box-shadow: 0 2px 0 var(--dl-muted); }
 button {
   font: inherit; font-weight: 500; cursor: pointer;
   background: var(--dl-brand); color: #fff; border: 1px solid var(--dl-brand);
@@ -235,6 +288,24 @@ a:hover { text-decoration: underline; }
 /* الطبقة تُحرّك ككل — لا نقطع رسم الصورة على حواف النافذة بزوايا مستديرة داخلية */
 .step-shot.zoom .shot-zoom img { border-radius: 0; }
 
+/* PNL-01: طبقة اللقطة موحّدة — نسبية خارج التكبير (تحتضن الإطار والطمس)، مطلقة داخله (القاعدة أعلاه) */
+.step-shot .shot-zoom { position: relative; }
+/* القصّ: الطبقة تأخذ نسبة القصّ والصورة مُزاحة فيزيائيًا (left/top) — فخّ RTL موثّق */
+.step-shot .shot-zoom.cropped { overflow: hidden; }
+.step-shot .shot-zoom.cropped img { position: absolute; max-width: none; height: auto; }
+/* الطمس معتم إلزاميًا: الملف المخزَّن غير مطموس — لا نعتمد backdrop-filter وحده */
+.step-shot .shot-blur {
+  position: absolute; border-radius: 3px; pointer-events: none;
+  background: repeating-linear-gradient(45deg, var(--dl-surface2) 0 6px, var(--dl-line) 6px 12px);
+}
+.shot-toggle {
+  position: absolute; bottom: 8px; inset-inline-start: 8px;
+  padding: 4px 10px; font-size: .72rem; border-radius: 999px;
+  background: color-mix(in srgb, var(--dl-surface) 92%, transparent); color: var(--dl-ink);
+  border: 1px solid var(--dl-line);
+}
+.shot-toggle:hover { filter: none; background: var(--dl-surface); }
+
 /* العنصر النائب «يرسم التحديد…»: يملأ نفس نافذة التكبير كي لا يقفز التخطيط عند
    وصول اللقطة، بوميض قطري خافت يوحي بأن التطبيق يرسم التحديد ويفكّر. */
 .step-shot.pending {
@@ -333,4 +404,70 @@ a:hover { text-decoration: underline; }
 .bell-act a, .bell-act button { font-size: .78rem; font-weight: 600; color: var(--dl-accent, var(--dl-ink)); background: none; border: none; padding: 0; cursor: pointer; }
 .bell-act a:hover, .bell-act button:hover { text-decoration: underline; }
 
-@media (prefers-reduced-motion: reduce) { .spin, .dot, .step.fresh, .tool.armed, .tool.mic-tool.live, .memo-live .step-shot, .del.armed, .voice-del.armed, button.danger.armed, .step-shot.pending .pending-sheen, .step-shot.pending .pending-cap { animation: none } .step, .del, .doc, .tool { transition: none } }
+/* ——— PNL-01: قارئ الدليل داخل اللوحة ——— */
+.reader { display: flex; flex-direction: column; min-height: 0; }
+.reader-bar {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--dl-bg, var(--dl-surface)); border-bottom: 1px solid var(--dl-line);
+  padding: 10px 14px;
+}
+.reader-bar-row { display: flex; align-items: center; gap: 8px; }
+.reader-bar-gap { flex: 1; }
+.reader-back {
+  width: 34px; height: 34px; padding: 0; display: grid; place-items: center;
+  background: transparent; color: var(--dl-ink); border: 1px solid transparent; border-radius: 9px;
+}
+.reader-back:hover { filter: none; background: var(--dl-surface2); }
+.reader-back svg, .reader-train svg, .reader-copy svg { width: 16px; height: 16px; }
+.reader-train {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: .84rem;
+  background: transparent; color: var(--dl-ink); border-color: transparent;
+}
+.reader-train:hover { filter: none; background: var(--dl-surface2); }
+.reader-copy {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; font-size: .84rem; font-weight: 600;
+  background: var(--dl-ink); border-color: var(--dl-ink); color: var(--dl-surface);
+}
+.reader-msg { margin-top: 8px; font-size: .78rem; color: var(--dl-accent); }
+
+.reader-body { padding: 16px 16px 28px; display: flex; flex-direction: column; gap: 14px; }
+.reader-head { display: flex; flex-direction: column; gap: 8px; }
+.reader-title { margin: 0; font-size: 1.15rem; line-height: 1.45; color: var(--dl-ink); }
+.reader-desc { margin: 0; font-size: .86rem; line-height: 1.7; color: var(--dl-ink); }
+.reader-desc.clamped { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.reader-more { align-self: flex-start; padding: 0; background: none; border: 0; color: var(--dl-ink); font-size: .8rem; font-weight: 600; }
+.reader-more:hover { filter: none; text-decoration: underline; }
+.reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: .78rem; color: var(--dl-muted); }
+.reader-web { padding: 0; background: none; border: 0; color: var(--dl-brand); font-size: .78rem; }
+.reader-web:hover { filter: none; text-decoration: underline; }
+
+.reader-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.rcard {
+  background: var(--dl-surface); border: 1px solid var(--dl-line); border-radius: 14px;
+  padding: 12px; display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--dl-ink) 6%, transparent);
+}
+.rcard-head { display: flex; align-items: flex-start; gap: 10px; }
+.rcard-n {
+  flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--dl-brand) 12%, transparent); color: var(--dl-brand);
+  font-size: .8rem; font-weight: 700;
+}
+.rcard-title { font-size: .9rem; line-height: 1.6; color: var(--dl-ink); padding-top: 2px; }
+.rcard-note { margin: 0; font-size: .82rem; line-height: 1.7; color: var(--dl-muted); white-space: pre-line; }
+/* القارئ: نافذة أعرض من بطاقة الالتقاط — سياق كافٍ للمقارنة مع الصفحة */
+.rcard .step-shot.zoom { aspect-ratio: 16 / 10; }
+.reader-section { margin: 6px 2px 0; font-size: .92rem; color: var(--dl-ink); }
+.reader-callout { border-radius: 10px; padding: 9px 12px; font-size: .84rem; line-height: 1.6; }
+.reader-callout.tip { background: color-mix(in srgb, var(--dl-brand) 9%, transparent); color: var(--dl-ink); }
+.reader-callout.alert { background: color-mix(in srgb, var(--dl-accent) 12%, transparent); color: var(--dl-ink); }
+.reader-text { margin: 0; font-size: .86rem; line-height: 1.7; }
+.reader-divider { border: 0; border-top: 1px solid var(--dl-line); margin: 4px 0; }
+.reader-external { border: 1px dashed var(--dl-line); border-radius: 10px; padding: 9px 12px; }
+
+.reader-skeleton { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.rcard.sk .sk-line { display: block; height: 12px; width: 70%; border-radius: 6px; background: var(--dl-surface2); }
+.rcard.sk .sk-shot { display: block; aspect-ratio: 16 / 10; border-radius: 10px; background: var(--dl-surface2); animation: dl-sk 1.2s ease-in-out infinite; }
+@keyframes dl-sk { 50% { opacity: .55 } }
+
+@media (prefers-reduced-motion: reduce) { .spin, .dot, .step.fresh, .tool.armed, .tool.mic-tool.live, .memo-live .step-shot, .del.armed, .voice-del.armed, button.danger.armed, .step-shot.pending .pending-sheen, .step-shot.pending .pending-cap, .rcard.sk .sk-shot { animation: none } .step, .del, .doc, .doc-enter, .tool { transition: none } }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { zoomFrame, ZOOM_MIN, ZOOM_MAX } from './zoom-frame'
+import { zoomFrame, ZOOM_MIN, ZOOM_MAX, CAPTURE_ZOOM } from './zoom-frame'
 
 describe('zoomFrame — تكبير تكيّفي يوسّط العنصر المحدَّد داخل نافذة البطاقة', () => {
   it('عنصر صغير في وسط اللقطة يبلغ سقف التكبير ويُوسَّط مركزه في النافذة', () => {
@@ -41,5 +41,20 @@ describe('zoomFrame — تكبير تكيّفي يوسّط العنصر المح
     expect(zoomFrame({ x: 10, y: 10, w: 10, h: 10 }, 0, 500, 400, 300)).toBeNull()
     expect(zoomFrame({ x: 10, y: 10, w: 10, h: 10 }, 1000, 500, 0, 300)).toBeNull()
     expect(zoomFrame({ x: 10, y: 10, w: 0, h: 10 }, 1000, 500, 400, 300)).toBeNull()
+  })
+})
+
+describe('zoomFrame — حدود مخصّصة (PNL-01)', () => {
+  it('الافتراضي هو حدود الالتقاط حرفيًا', () => {
+    const mark = { x: 480, y: 280, w: 40, h: 40 }
+    expect(zoomFrame(mark, 1000, 600, 300, 225)).toEqual(zoomFrame(mark, 1000, 600, 300, 225, CAPTURE_ZOOM))
+  })
+  it('يحترم سقفًا أدنى — عنصر صغير جدًا لا يتجاوز max القارئ', () => {
+    const f = zoomFrame({ x: 495, y: 295, w: 10, h: 10 }, 1000, 600, 300, 187.5, { min: 1.5, max: 2.5, fill: 0.4 })
+    expect(f?.scale).toBe(2.5)
+  })
+  it('يحترم الحد الأدنى — عنصر ضخم لا ينزل تحت min القارئ', () => {
+    const f = zoomFrame({ x: 0, y: 0, w: 1000, h: 600 }, 1000, 600, 300, 187.5, { min: 1.5, max: 2.5, fill: 0.4 })
+    expect(f?.scale).toBe(1.5)
   })
 })

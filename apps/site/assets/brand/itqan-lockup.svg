@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="176 48 421 250" width="421" height="250"
+     role="img" aria-label="إتقان — Active. SOP">
+  <title>إتقان · ACTIVE. SOP</title>
+  <desc>القفل الكامل: الشعار، وتحته السطر اللاتيني بتراك واحد، والخطّان الرفيعان يجعلان مجموع العرض = عرض الشعار تمامًا. السطر اللاتيني نصّ حيّ — يحتاج IBM Plex Sans Arabic أو أي sans بديل.</desc>
+
+  <g fill="none" stroke="#2B2A26" stroke-linecap="round" stroke-linejoin="round" stroke-width="6">
+    <path d="M 574 66 C 570 102, 575 144, 572 185"/>
+    <path stroke-width="5" d="M 579 207 C 567 199, 558 208, 565 216 L 578 216 L 560 226"/>
+    <path d="M 540 148 C 546 169, 531 185, 508 185 L 449 185"/>
+    <path stroke-width="8" d="M 519 124 L 518 126"/>
+    <path stroke-width="8" d="M 502 124 L 501 126"/>
+    <path d="M 449 185 C 466 175, 466 145, 449 143 C 430 140, 428 168, 445 174 C 449 176, 453 177, 457 176"/>
+    <path stroke-width="8" d="M 452 116 L 451 118"/>
+    <path stroke-width="8" d="M 435 116 L 434 118"/>
+    <path d="M 312 148 C 319 175, 317 205, 295 220 C 270 239, 222 239, 203 215 C 191 200, 192 183, 198 168"/>
+    <path stroke-width="8" d="M 257 151 L 256 153"/>
+    <path d="M 449 185 C 428 186, 400 186, 376 184"/>
+  </g>
+  <path fill="none" stroke="#8A5447" stroke-width="7" stroke-linecap="round"
+        d="M 373 66 C 371 103, 374 142, 376 184"/>
+
+  <!-- القفل: خطّ + سطر + خطّ = عرض الشعار (421) بالضبط -->
+  <line x1="176" y1="281" x2="290" y2="281" stroke="#B9B3A6" stroke-width="1.4"/>
+  <line x1="483" y1="281" x2="597" y2="281" stroke="#B9B3A6" stroke-width="1.4"/>
+  <text x="386.5" y="287.2" text-anchor="middle" direction="ltr"
+        font-family="'IBM Plex Sans Arabic','Helvetica Neue',Arial,sans-serif"
+        font-size="17.9" font-weight="500" letter-spacing="5.37">
+    <tspan fill="#8A5447">ACTIVE.</tspan><tspan fill="#2B2A26" xml:space="preserve"> SOP</tspan>
+  </text>
+</svg>

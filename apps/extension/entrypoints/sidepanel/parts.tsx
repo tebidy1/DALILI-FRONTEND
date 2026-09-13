@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
-import { markBoxStyle } from '@/lib/mark-box'
-import { zoomFrame } from '@/lib/zoom-frame'
+import { useEffect, useState } from 'react'
 import { toArabicDigits } from '@/lib/ar-digits'
-import { PathMark } from '@/lib/path-mark'
+import { ItqanMark } from '@/lib/itqan-mark'
 import type { SessionMeta, StepSummary } from '@/lib/protocol'
-import { ChevronIcon, TrashIcon, MicIcon, PauseIcon, PlayIcon, BlurIcon, CheckIcon, GearIcon, BellIcon } from './icons'
+import { TrashIcon, MicIcon, PauseIcon, PlayIcon, BlurIcon, CheckIcon, GearIcon, BellIcon } from './icons'
 
 /** أجزاء اللوحة الجانبية المشتركة — اقتطاع من App.tsx لقانون الحجم */
 
@@ -16,9 +14,16 @@ export function HeadBar({ meta, unread, onBell, onSettings }: { meta: SessionMet
   const capturing = state === 'capturing' || state === 'paused'
   return (
     <div className="head">
-      <span className="brand">
-        <PathMark size={18} /> دليلي
-      </span>
+      {/* الشعار مصغّر ٢٥٪ بطلب المالك (٦٥px، كان ٨٦px) والعبارة سطر صغير تحته —
+          نمط الترويسة الاحترافي المضغوط. الخطّان الجانبيان للقفل يستحيلان هنا:
+          عرض ٦٥px يبتلعهما فيصيران عرقًا، فالعبارة وحدها هي البديل المضغوط.
+          القفل الرسمي كاملًا يبقى مكانه الصحيح: شاشة الدخول وشاشة الإقلاع. */}
+      <div className="brand">
+        <ItqanMark width={65} stroke={13} />
+        <span className="brand-latin" aria-label="ACTIVE SOP">
+          <b aria-hidden>ACTIVE.</b> <i aria-hidden>SOP</i>
+        </span>
+      </div>
       <div className="head-side">
         <span className={`chip ${capturing ? 'rec' : ''}`}>
           {state === 'idle' && '● جاهز'}
@@ -136,85 +141,6 @@ export function CaptureBar({
       <button className="cap-finish" aria-label="إنهاء ونشر الدليل" onClick={onFinishPress}>
         <CheckIcon /> إنهاء الالتقاط
       </button>
-    </div>
-  )
-}
-
-export function PreviewShot({
-  src,
-  mark,
-  alt,
-}: {
-  src: string
-  mark?: { x: number; y: number; w: number; h: number }
-  alt: string
-}) {
-  const [nat, setNat] = useState<{ w: number; h: number } | null>(null)
-  // نافذة العرض بالبكسل — تُقاس في مسار التكبير وحده لحساب إطار zoomFrame
-  const [view, setView] = useState<{ w: number; h: number } | null>(null)
-  const boxRef = useRef<HTMLDivElement | null>(null)
-  // علة «التحديد لا يظهر في المعاينة أبدًا»: الاعتماد على onLoad وحده يسقط حين
-  // تُفكّ صورة data:URL متزامنةً قبل ربط المستمع، فلا يُضبط nat فلا يُحسب الإطار.
-  // نقرأ الأبعاد فور توفر العنصر (complete) عبر callback ref، وonLoad يبقى للحالة
-  // غير المتزامنة. reset عند تبدّل المصدر كي لا تُستعمل أبعاد لقطة سابقة.
-  const readNat = (img: HTMLImageElement | null) => {
-    if (img && img.complete && img.naturalWidth > 0) {
-      setNat((prev) =>
-        prev && prev.w === img.naturalWidth && prev.h === img.naturalHeight
-          ? prev
-          : { w: img.naturalWidth, h: img.naturalHeight },
-      )
-    }
-  }
-  useEffect(() => setNat(null), [src])
-  // قياس نافذة التكبير ومتابعة تغيّر عرض اللوحة — ResizeObserver يطلق نداءً أوليًا بالمقاس الحالي
-  useEffect(() => {
-    const el = boxRef.current
-    if (!el || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(() => setView({ w: el.clientWidth, h: el.clientHeight }))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
-  const img = (
-    <img
-      ref={readNat}
-      src={src}
-      alt={alt}
-      onLoad={(e) => setNat({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
-    />
-  )
-
-  // بلا إطار (تنقّل / مستطيل ضامر): اللقطة كاملةً كما اليوم — لا عنصر لتأكيده فلا تكبير
-  if (!mark) return <div className="step-shot">{img}</div>
-
-  // مسار التكبير: نافذة بنسبة ثابتة تقصّ، وطبقة مكبّرة تضمّ الصورة والإطار معًا
-  // فيبقى الإطار الأحمر منطبقًا على العنصر بعد التحويل (طلب المالك 2026-09-11).
-  const box = nat ? markBoxStyle(mark, nat.w, nat.h) : null
-  const frame = nat && view ? zoomFrame(mark, nat.w, nat.h, view.w, view.h) : null
-  const layerStyle = frame
-    ? {
-        transform: `translate(${frame.translateX}px, ${frame.translateY}px) scale(${frame.scale})`,
-        transformOrigin: '0 0',
-      }
-    : undefined
-  return (
-    <div className="step-shot zoom" ref={boxRef}>
-      <div className="shot-zoom" style={layerStyle}>
-        {img}
-        {box && <span className="shot-mark" style={box} aria-hidden="true" />}
-      </div>
-    </div>
-  )
-}
-
-/** عنصر نائب «يرسم التحديد…» — يملأ نافذة البطاقة الأحدث أثناء انتظار وصول اللقطة
- *  المكبّرة (نافذة الثانية بين ظهور صف الخطوة وانتهاء الالتقاط). طلب المالك 2026-09-11. */
-export function PendingShot() {
-  return (
-    <div className="step-shot pending" role="img" aria-label="يجري رسم التحديد">
-      <span className="pending-sheen" aria-hidden="true" />
-      <span className="pending-cap">يرسم التحديد…</span>
     </div>
   )
 }

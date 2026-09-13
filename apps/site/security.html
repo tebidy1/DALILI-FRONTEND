@@ -9,37 +9,127 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/site.css?v=2">
+<link rel="stylesheet" href="assets/site.css?v=5">
+<link rel="stylesheet" href="assets/site-v2.css?v=13">
+<link rel="stylesheet" href="assets/site-pages.css?v=1">
 </head>
 <body>
 
-<nav class="nav">
-  <a class="logo" href="index.html" aria-label="إتقان — الرئيسية">
-    <span class="wordmark">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
-  </a>
-  <a href="standard.html">المعيار</a>
-  <a href="security.html" class="active">الأمن والسرية</a>
-  <a href="sop-arabic.html">SOP بالعربي</a>
-  <a class="btn btn-sm" href="request.html">اطلب عرضًا</a>
-</nav>
+<a class="skip-link" href="#main">تجاوز إلى المحتوى</a>
 
-<a class="skip" href="#main">تجاوز إلى المحتوى</a>
+<!-- ═══════════════ الترويسة ═══════════════ -->
+<header class="site-header" id="site-header" role="banner">
+  <div class="header-inner container">
+    <a class="header-logo" href="index.html" aria-label="إتقان — الرئيسية">
+      <span class="wordmark" aria-label="إتقان">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+      <span class="header-tagline">Active SOP</span>
+    </a>
+    <nav class="header-nav" aria-label="التنقل الرئيسي">
+      <a href="standard.html">المعيار</a>
+      <a href="security.html" aria-current="page">الأمن والسرية</a>
+      <a href="sop-arabic.html">SOP بالعربي</a>
+    </nav>
+    <div class="header-action">
+      <a class="btn btn-primary" href="request.html">احجز عرضًا</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" type="button"
+            aria-expanded="false" aria-controls="mobile-menu"
+            aria-label="فتح القائمة">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobile-menu" hidden>
+    <nav aria-label="قائمة الجوال">
+      <a href="standard.html">المعيار</a>
+      <a href="security.html" aria-current="page">الأمن والسرية</a>
+      <a href="sop-arabic.html">SOP بالعربي</a>
+      <a class="btn btn-primary btn-full" href="request.html">احجز عرضًا</a>
+    </nav>
+  </div>
+</header>
+
 <main id="main">
 
-<div class="wrap narrow">
-  <section style="padding-top:72px">
-    <h1 class="doc-h">شاشات موظفيكم لا تغادر بنيتكم — لأننا لا نريدها.</h1>
-    <p class="doc-p">إتقان يعمل داخل نطاق شركتكم. لا نطلب رفع شاشات الموظفين إلى سحابتنا — السرية هنا معمار، لا بند في عقد.</p>
+<!-- ═══════════════ الافتتاحية ═══════════════ -->
+<section class="page-hero" aria-labelledby="sec-heading">
+  <div class="container">
+    <p class="eyebrow">الأمن والسرية</p>
+    <h1 id="sec-heading">شاشات موظفيكم لا تغادر بنيتكم — لأننا لا نريدها.</h1>
+    <p class="page-lead">إتقان يعمل داخل نطاق شركتكم. لا نطلب رفع شاشات الموظفين إلى سحابتنا — السرية هنا معمار، لا بند في عقد.</p>
+    <div class="page-chips">
+      <span><i></i>طمس قبل المغادرة</span>
+      <span><i></i>نشر داخل نطاقكم</span>
+      <span><i></i>بحث محلي بلا مفتاح سحابي</span>
+    </div>
+  </div>
+  <div class="section-divider" style="margin-top:56px" aria-hidden="true"></div>
+</section>
 
-    <ul class="controls" style="margin-top:44px">
-      <li><b>الطمس قبل المغادرة</b><span>حقول كلمات المرور والبطاقات تُطمس تلقائيًا وقت الالتقاط — قبل أن تغادر البيانات الجهاز، لا بعدها. هذا في التصميم لا في الإعداد.</span></li>
-      <li><b>عزل الجلسات وتهيئة أمنية مكتملة</b><span><span class="mono">SEC-01 · 02 · 03 · 05 · 07</span> — منجزة وموثقة.</span></li>
-      <li><b>نشر داخل نطاقكم</b><span>نشر موثق على سيرفر العميل، ونسخ واستعادة مُجرَّبة على ٥٤٠ دليلًا.</span></li>
-      <li><b>بحث محلي بلا مفتاح سحابي</b><span>بحث دلالي بالمعنى يعمل على بنيتكم — أبطأ لحظة فيه <span class="mono">p95 = ٢٦</span> ملّي ثانية، ولا مفتاح يغادر الجهاز.</span></li>
-      <li><b>سجل إصدارات بالعربية</b><span>كل تغيير له مؤلفه ووقته ونسخته — ما كُتب لا يُمحى بصمت.</span></li>
-    </ul>
+<!-- ═══════════════ الضوابط الخمسة ═══════════════ -->
+<section class="section-standard" aria-labelledby="controls-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:42rem">
+      <p class="eyebrow">ضوابط البناء</p>
+      <h2 id="controls-heading">خمسة ضوابط مبنية في المعمار نفسه.</h2>
+      <p class="section-lead">ليست إعدادات تُضبط وتُنسى — بل قرارات معمارية جاءت مع المنتج من أول يوم.</p>
+    </div>
 
-    <div class="redact" role="img" aria-label="تشبيه الطمس: الحقل الحساس في اللقطة يُطمس على جهاز الخبير، وما يصل سيرفر شركتكم هو النسخة المطمّسة">
+    <div class="control-cards">
+      <div class="control-card">
+        <div class="cc-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 3v6c0 4.4-3.4 7.6-8 9-4.6-1.4-8-4.6-8-9V6l8-3z" stroke="#405B50" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="#405B50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3>الطمس قبل المغادرة</h3>
+        <p>حقول كلمات المرور والبطاقات تُطمس تلقائيًا وقت الالتقاط — قبل أن تغادر البيانات الجهاز، لا بعده. هذا في التصميم لا في الإعداد.</p>
+      </div>
+
+      <div class="control-card">
+        <div class="cc-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="11" rx="2" stroke="#405B50" stroke-width="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="#405B50" stroke-width="1.5"/></svg>
+        </div>
+        <h3>عزل الجلسات وتهيئة أمنية مكتملة</h3>
+        <p>عزل جلسات الالتقاط، وتهيئة أمنية منجزة وموثقة على مستوى بنية المنتج.</p>
+        <span class="mono">SEC-01 · 02 · 03 · 05 · 07</span>
+      </div>
+
+      <div class="control-card">
+        <div class="cc-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="7" rx="2" stroke="#405B50" stroke-width="1.5"/><rect x="3" y="13" width="18" height="7" rx="2" stroke="#405B50" stroke-width="1.5"/><path d="M7 7.5h.01M7 16.5h.01" stroke="#405B50" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h3>نشر داخل نطاقكم</h3>
+        <p>نشر موثق على سيرفر العميل، ونسخ واستعادة مُجرَّبة على ٥٤٠ دليلًا.</p>
+      </div>
+
+      <div class="control-card span-2">
+        <div class="cc-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#405B50" stroke-width="1.5"/><path d="m20 20-3.8-3.8" stroke="#405B50" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3>بحث محلي بلا مفتاح سحابي</h3>
+        <p>بحث دلالي بالمعنى يعمل على بنيتكم أنتم — أبطأ لحظة فيه <span class="mono">p95 = ٢٦</span> ملّي ثانية، ولا مفتاح API يغادر الجهاز. الاستعلام نفسه لا يُرسل إلى أحد.</p>
+      </div>
+
+      <div class="control-card">
+        <div class="cc-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="#405B50" stroke-width="1.5"/><path d="M14 2v6h6M8 13h8M8 17h5" stroke="#405B50" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3>سجل إصدارات بالعربية</h3>
+        <p>كل تغيير له مؤلفه ووقته ونسخته — ما كُتب لا يُمحى بصمت.</p>
+      </div>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════ مشهد الطمس ═══════════════ -->
+<section class="section-compact" aria-labelledby="redact-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:42rem">
+      <p class="eyebrow">كيف يعمل الطمس</p>
+      <h2 id="redact-heading">ما يصل سيرفر شركتكم هو النسخة المطمّسة.</h2>
+    </div>
+    <div class="redact textured" role="img" aria-label="تشبيه الطمس: الحقل الحساس في اللقطة يُطمس على جهاز الخبير، وما يصل سيرفر شركتكم هو النسخة المطمّسة">
       <div class="rd-grid" aria-hidden="true">
         <div class="rd-shot">
           <span class="rd-lbl"></span>
@@ -51,55 +141,120 @@
         <span class="rd-arr">←</span>
         <div class="rd-scope">نطاق شبكتكم<span class="rd-server"></span></div>
       </div>
-      <p class="rd-cap">ما يصل سيرفر شركتكم هو النسخة المطمّسة — الحقل الأصلي لم يغادر جهاز الخبير أصلًا.</p>
+      <p class="rd-cap">الحقل الأصلي لم يغادر جهاز الخبير أصلًا — الطمس يقع قبل أن تُحزَم اللقطة، لا بعد وصولها.</p>
     </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
 
-    <div class="honest">
-      <h3>السياق التنظيمي</h3>
-      <p>نظام حماية البيانات الشخصية في المملكة في مرحلة إنفاذ فعلي، وضوابط الحوسبة السحابية الوطنية تدفع البيانات الحساسة للبقاء داخل المملكة. معماريتنا — البقاء داخل نطاقكم — تجعل هذا الالتزام افتراضيًا لا مشروعًا.</p>
+<!-- ═══════════════ التصريح الداكن: لا نملك بياناتكم أصلًا ═══════════════ -->
+<section class="section-standard section-dark textured" aria-labelledby="no-own-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:44rem">
+      <p class="eyebrow">ما لا نفعله</p>
+      <h2 id="no-own-heading">لا نبيع البيانات — لا نملكها أصلًا.</h2>
+      <p class="section-lead">السرية حين تصير معمارًا تُلغي أسئلة كثيرة قبل أن تُطرح.</p>
     </div>
+    <ul class="no-own-list">
+      <li>
+        <b>لا تجارب على بياناتكم</b>
+        <span>لا نطلب نسخة من بياناتكم للتجارب أو للتطوير — العمل كله داخل نطاقكم.</span>
+      </li>
+      <li>
+        <b>لا شاشاتكم في تسويقنا</b>
+        <span>لا ندرج شاشاتكم في موادنا التسويقية دون إذن مكتوب منكم.</span>
+      </li>
+      <li>
+        <b>لا بيع ولا ملكية</b>
+        <span>لا نبيع البيانات — لا نملكها أصلًا. تسكن على سيرفراتكم.</span>
+      </li>
+    </ul>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
 
-    <div class="honest">
-      <h3>دفتر السرية</h3>
-      <p>وثيقة من ٦–٨ صفحات تجيب: أين تسكن البيانات، ماذا يُطمس ومتى، من يصل، ماذا يُسجَّل، كيف يُحذف. تُرسل قبل الاجتماع الأول لا بعده — اطلبوها مباشرة في <a href="request.html">نموذج العرض</a>.</p>
+<!-- ═══════════════ السياق التنظيمي + دفتر السرية ═══════════════ -->
+<section class="section-standard" aria-labelledby="reg-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:42rem">
+      <p class="eyebrow">السياق والوثيقة</p>
+      <h2 id="reg-heading">الالتزام افتراضي في معماريتنا… ومكتوب في دفترنا.</h2>
     </div>
+    <div class="pair-cards">
+      <div class="pair-card">
+        <h3>السياق التنظيمي</h3>
+        <p>نظام حماية البيانات الشخصية في المملكة في مرحلة إنفاذ فعلي، وضوابط الحوسبة السحابية الوطنية تدفع البيانات الحساسة للبقاء داخل المملكة. معماريتنا — البقاء داخل نطاقكم — تجعل هذا الالتزام افتراضيًا لا مشروعًا.</p>
+      </div>
+      <div class="pair-card">
+        <h3>دفتر السرية</h3>
+        <p>وثيقة من ٦–٨ صفحات تجيب مباشرة:</p>
+        <ul>
+          <li>أين تسكن البيانات</li>
+          <li>ماذا يُطمس ومتى</li>
+          <li>من يصل، وماذا يُسجَّل</li>
+          <li>كيف يُحذف</li>
+        </ul>
+        <a class="link-arrow" href="request.html">اطلبوه مع أول رد — قبل الاجتماع لا بعده</a>
+      </div>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
 
-    <div class="honest">
-      <h3>ما لا نفعله</h3>
-      <p>لا نطلب نسخة من بياناتكم للتجارب. لا ندرج شاشاتكم في موادنا التسويقية دون إذن مكتوب. لا نبيع البيانات — لا نملكها أصلًا.</p>
+<!-- ═══════════════ الخطوة التالية ═══════════════ -->
+<section class="section-compact" aria-label="الخطوة التالية">
+  <div class="container">
+    <div class="next-cta textured">
+      <div>
+        <h2>اسألنا عن كل سطر في هذه الصفحة.</h2>
+        <p>السرية تُناقش وتُفحص، لا تُؤخذ على الاثقة. في العرض نفتح بنية النشر والطمس للأسئلة الصعبة.</p>
+      </div>
+      <div class="cta-actions">
+        <a class="btn btn-primary" href="request.html">احجز عرضًا</a>
+        <a class="link-arrow" href="standard.html">المعيار الخماسي</a>
+      </div>
     </div>
-  </section>
-</div>
+  </div>
+</section>
+
 </main>
 
-<footer>
-  <div class="foot-grid">
-    <div class="foot-brand">
-      <span class="wordmark">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
-      <p>إجراءات التشغيل القياسية النشطة — تُلتقط أثناء العمل، وتُفرَّغ بالعربي، وتنشر على بنيتكم أنتم.</p>
-      <span class="badge">مبني على متطلبات ISO 9001:2015 البند ٧٫٥</span>
+<!-- ═══════════════ التذييل ═══════════════ -->
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-divider" aria-hidden="true"></div>
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <a class="footer-logo" href="index.html" aria-label="إتقان — الرئيسية">
+        <span class="wordmark" aria-label="إتقان">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+      </a>
+      <p class="footer-derivation">
+        <b>إ</b>جراءات ال&zwj;<b>&zwj;ت&zwj;</b>&zwj;شغيل ال&zwj;<b>&zwj;ق&zwj;</b>&zwj;ياسية ال&zwj;<b>&zwj;ن&zwj;</b>&zwj;شطة
+      </p>
+      <p class="footer-tagline">إتقان — المتطلب والمسؤولية والدليل، في سياق واحد.</p>
+      <p class="footer-latin"><bdi>ITQAN</bdi> · <bdi>Active SOP</bdi></p>
     </div>
-    <div class="foot-col">
-      <b>الموقع</b>
+    <nav class="footer-nav-group" aria-label="استكشف">
+      <h3 class="footer-nav-title">استكشف</h3>
       <a href="index.html">الرئيسية</a>
+      <a href="index.html#how-it-works">كيف يعمل</a>
+      <a href="index.html#roles">إتقان في إدارتك</a>
+      <a href="index.html#faq">أسئلة القرار</a>
+    </nav>
+    <nav class="footer-nav-group" aria-label="تواصل ومعلومات">
+      <h3 class="footer-nav-title">تواصل ومعلومات</h3>
+      <a href="request.html">طلب عرض</a>
       <a href="standard.html">المعيار الخماسي</a>
       <a href="security.html">الأمن والسرية</a>
       <a href="sop-arabic.html">ما معنى SOP؟</a>
-      <a href="request.html">اطلب عرضًا</a>
-    </div>
-    <div class="foot-col">
-      <b>قريبًا</b>
-      <span class="foot-soon">معرض القوالب <span class="soon">قريبًا</span></span>
-      <span class="foot-soon">دراسات حالة العملاء <span class="soon">قريبًا</span></span>
-      <span class="foot-soon">دليل البدء خلال ساعة <span class="soon">قريبًا</span></span>
-    </div>
+    </nav>
   </div>
-  <div class="foot-base">
-    <span>إتقان (Active SOP) · ٢٠٢٦</span>
-    <span class="latin-lockup">ITQAN · Active SOP</span>
+  <div class="footer-bottom">
+    <div class="container footer-bottom-inner">
+      <span class="footer-copy">© <span id="footer-year">2026</span> إتقان · <bdi>Active SOP</bdi></span>
+    </div>
   </div>
 </footer>
 
-<script src="assets/site.js?v=2"></script>
+<script src="assets/site-v2.js?v=7"></script>
 </body>
 </html>

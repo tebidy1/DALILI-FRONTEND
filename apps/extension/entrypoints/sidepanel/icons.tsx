@@ -93,3 +93,33 @@ export const CloseIcon = () => (
     <path d="M6 6l12 12M18 6L6 18" />
   </svg>
 )
+
+/** PNL-01: ↵ «اعرضه هنا» — شكل مفتاح الإدخال: الدليل يدخل إلى اللوحة */
+export const EnterIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 4v7a4 4 0 0 1-4 4H4" />
+    <path d="M9 10l-5 5 5 5" />
+  </svg>
+)
+
+/** PNL-01: رجوع — السهم يشير لبداية السطر في RTL (يمينًا) */
+export const BackIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+)
+
+/** PNL-01: «دربني» — سهم ملاحة */
+export const GuideMeIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+    <path d="M3 11l19-9-9 19-2-8-8-2z" />
+  </svg>
+)
+
+/** PNL-01: نسخ الرابط */
+export const LinkIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5" />
+    <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5" />
+  </svg>
+)

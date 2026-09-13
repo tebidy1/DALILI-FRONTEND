@@ -9,107 +9,173 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/site.css?v=2">
+<link rel="stylesheet" href="assets/site.css?v=5">
+<link rel="stylesheet" href="assets/site-v2.css?v=13">
+<link rel="stylesheet" href="assets/site-pages.css?v=1">
 </head>
 <body>
 
-<nav class="nav">
-  <a class="logo" href="index.html" aria-label="إتقان — الرئيسية">
-    <span class="wordmark">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
-  </a>
-  <a href="standard.html">المعيار</a>
-  <a href="security.html">الأمن والسرية</a>
-  <a href="sop-arabic.html">SOP بالعربي</a>
-  <a class="btn btn-sm" href="request.html">اطلب عرضًا</a>
-</nav>
+<a class="skip-link" href="#main">تجاوز إلى المحتوى</a>
 
-<a class="skip" href="#main">تجاوز إلى المحتوى</a>
+<!-- ═══════════════ الترويسة ═══════════════ -->
+<header class="site-header" id="site-header" role="banner">
+  <div class="header-inner container">
+    <a class="header-logo" href="index.html" aria-label="إتقان — الرئيسية">
+      <span class="wordmark" aria-label="إتقان">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+      <span class="header-tagline">Active SOP</span>
+    </a>
+    <nav class="header-nav" aria-label="التنقل الرئيسي">
+      <a href="standard.html">المعيار</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="sop-arabic.html">SOP بالعربي</a>
+    </nav>
+    <div class="header-action">
+      <a class="btn btn-primary" href="request.html" aria-current="page">احجز عرضًا</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" type="button"
+            aria-expanded="false" aria-controls="mobile-menu"
+            aria-label="فتح القائمة">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobile-menu" hidden>
+    <nav aria-label="قائمة الجوال">
+      <a href="standard.html">المعيار</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="sop-arabic.html">SOP بالعربي</a>
+      <a class="btn btn-primary btn-full" href="request.html">احجز عرضًا</a>
+    </nav>
+  </div>
+</header>
+
 <main id="main">
 
-<div class="wrap" style="max-width:960px">
-  <section style="padding-top:72px;padding-bottom:40px">
-    <h1 class="doc-h">عرض لشركتكم — لا عرضًا عامًّا.</h1>
-    <p class="doc-p">اشرحها مرة… تكفِ الجميع. نرد في يوم عمل واحد، ونصل الاجتماع بأجندة مكتوبة تُرسل قبلها، ونرسل ملخصًا خلال ساعتين بعده.</p>
+<!-- ═══════════════ الافتتاحية ═══════════════ -->
+<section class="page-hero" aria-labelledby="req-heading">
+  <div class="container">
+    <p class="eyebrow">طلب عرض</p>
+    <h1 id="req-heading">عرض لشركتكم — لا عرضًا عامًّا.</h1>
+    <p class="page-lead">اشرحها مرة… تكفِ الجميع. نرد في يوم عمل واحد، ونصل الاجتماع بأجندة مكتوبة تُرسل قبلها، ونرسل ملخصًا خلال ساعتين بعده.</p>
+  </div>
+  <div class="section-divider" style="margin-top:56px" aria-hidden="true"></div>
+</section>
 
-    <div class="req-grid">
-      <form class="req" id="req-form" data-endpoint="">
-        <label for="org">اسم العمل</label>
-        <input id="org" name="org" type="text" autocomplete="organization" required>
-        <label for="email">بريد العمل</label>
-        <input id="email" name="email" type="email" autocomplete="email" spellcheck="false" autocapitalize="off" required>
-        <label for="size">نطاق الموظفين</label>
-        <select id="size" name="size">
-          <option>٢٠٠ – ٥٠٠</option>
-          <option>٥٠٠ – ٢٠٠٠</option>
-          <option>٢٠٠٠+</option>
-        </select>
-        <label for="branches">عدد الفروع</label>
-        <select id="branches" name="branches">
-          <option>فرع واحد (المقر)</option>
-          <option>٢ – ٥ فروع</option>
-          <option>٦ – ١٥ فرعًا</option>
-          <option>أكثر من ١٥ فرعًا</option>
-        </select>
-        <label for="msg">أكبر تحدٍّ تشغيلي تواجهونه (اختياري)</label>
-        <textarea id="msg" name="msg" rows="3" placeholder="مثال: كل فرع يُقفل يومه بطريقة مختلفة"></textarea>
-        <button class="btn" type="submit">أرسل الطلب</button>
-        <p class="req-note">دفتر السرية يصلكم مع أول رد — قبل الاجتماع، لا بعده.</p>
-        <div class="form-msg" id="form-msg" role="status"></div>
-      </form>
+<!-- ═══════════════ لوحة الطلب ═══════════════ -->
+<section class="section-booking" aria-labelledby="req-panel-heading">
+  <div class="container">
+    <div class="booking-panel textured">
+      <div class="booking-text">
+        <p class="eyebrow">كيف يسير الأمر</p>
+        <h2 id="req-panel-heading">ثلاثة وعود قبل أن نسألكم عن أي شيء.</h2>
+        <ul class="booking-promises">
+          <li><b>نرد في يوم عمل واحد</b> — برسالة بشرية تقرأها كتبها من فهم طلبكم، لا نموذج آلي.</li>
+          <li><b>جلسة ٣٠ دقيقة بأجندة مرسلة سلفًا</b> — نعرض المنتج على إجراء من إجراءاتكم أنتم، لا على عرض تجريبي عام.</li>
+          <li><b>عرض بنطاق الشركة لا بالمقعد</b> — فاتورة إبقاء الإجراء حيًّا، ومداها معلن لا مخفي.</li>
+        </ul>
+      </div>
 
-      <ol class="steps-ol">
-        <li><b>نرد في يوم عمل واحد</b><span>برسالة بشرية تقرأها كتبها من فهم طلبكم — لا نموذج آلي.</span></li>
-        <li><b>جلسة ٣٠ دقيقة بأجندة مرسلة سلفًا</b><span>نعرض المنتج على إجراء من إجراءاتكم أنتم، لا على عرض تجريبي عام.</span></li>
-        <li><b>عرض بنطاق الشركة لا بالمقعد</b><span>فاتورة إبقاء الإجراء حيًّا — ومداها معلن لا مخفي.</span></li>
-      </ol>
+      <div class="booking-form-wrap">
+        <form class="booking-form" id="booking-form" novalidate>
+          <div class="form-field">
+            <label class="form-label" for="bf-org">اسم العمل <span aria-hidden="true">*</span></label>
+            <input class="form-input" id="bf-org" name="org" type="text"
+                   autocomplete="organization" required aria-required="true">
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="bf-email">بريد العمل <span aria-hidden="true">*</span></label>
+            <input class="form-input" id="bf-email" name="email" type="email"
+                   autocomplete="email" required aria-required="true"
+                   inputmode="email" spellcheck="false" autocapitalize="off">
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="form-label" for="bf-size">نطاق الموظفين</label>
+              <select class="form-input" id="bf-size" name="size">
+                <option>٢٠٠ – ٥٠٠</option>
+                <option>٥٠٠ – ٢٠٠٠</option>
+                <option>٢٠٠٠+</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="bf-branches">عدد الفروع</label>
+              <select class="form-input" id="bf-branches" name="branches">
+                <option>فرع واحد (المقر)</option>
+                <option>٢ – ٥ فروع</option>
+                <option>٦ – ١٥ فرعًا</option>
+                <option>أكثر من ١٥ فرعًا</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="bf-msg">أكبر تحدٍّ تشغيلي تواجهونه</label>
+            <textarea class="form-input form-textarea" id="bf-msg" name="msg"
+                      rows="3" maxlength="500"
+                      placeholder="مثال: كل فرع يُقفل يومه بطريقة مختلفة"
+                      aria-describedby="bf-msg-hint"></textarea>
+            <span class="form-hint" id="bf-msg-hint">اختياري · حد 500 حرف</span>
+          </div>
+
+          <button class="btn btn-primary btn-full btn-submit" id="bf-submit" type="submit">
+            أرسل الطلب
+          </button>
+
+          <p class="form-privacy">
+            دفتر السرية يصلكم مع أول رد — قبل الاجتماع، لا بعده.
+            <a href="security.html">سياسة الأمن والسرية</a>
+          </p>
+
+          <div class="form-status" id="bf-status" role="status" aria-live="polite" hidden></div>
+        </form>
+      </div>
     </div>
 
-    <p class="refuse" style="padding-bottom:0">إتقان لا يناسب الفرق دون ٢٠٠ موظف — وهذا مقصود.</p>
-  </section>
-</div>
+    <p class="req-refuse">إتقان لا يناسب الفرق دون ٢٠٠ موظف — وهذا مقصود: نطاق أصغر يعني أن التوثيق التقليدي يكفي، ولا نبيع أكثر مما تحتاجون.</p>
+  </div>
+</section>
+
 </main>
 
-<footer>
-  <div class="foot-grid">
-    <div class="foot-brand">
-      <span class="wordmark">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
-      <p>إجراءات التشغيل القياسية النشطة — تُلتقط أثناء العمل، وتُفرَّغ بالعربي، وتنشر على بنيتكم أنتم.</p>
-      <span class="badge">مبني على متطلبات ISO 9001:2015 البند ٧٫٥</span>
+<!-- ═══════════════ التذييل ═══════════════ -->
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-divider" aria-hidden="true"></div>
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <a class="footer-logo" href="index.html" aria-label="إتقان — الرئيسية">
+        <span class="wordmark" aria-label="إتقان">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+      </a>
+      <p class="footer-derivation">
+        <b>إ</b>جراءات ال&zwj;<b>&zwj;ت&zwj;</b>&zwj;شغيل ال&zwj;<b>&zwj;ق&zwj;</b>&zwj;ياسية ال&zwj;<b>&zwj;ن&zwj;</b>&zwj;شطة
+      </p>
+      <p class="footer-tagline">إتقان — المتطلب والمسؤولية والدليل، في سياق واحد.</p>
+      <p class="footer-latin"><bdi>ITQAN</bdi> · <bdi>Active SOP</bdi></p>
     </div>
-    <div class="foot-col">
-      <b>الموقع</b>
+    <nav class="footer-nav-group" aria-label="استكشف">
+      <h3 class="footer-nav-title">استكشف</h3>
       <a href="index.html">الرئيسية</a>
+      <a href="index.html#how-it-works">كيف يعمل</a>
+      <a href="index.html#roles">إتقان في إدارتك</a>
+      <a href="index.html#faq">أسئلة القرار</a>
+    </nav>
+    <nav class="footer-nav-group" aria-label="تواصل ومعلومات">
+      <h3 class="footer-nav-title">تواصل ومعلومات</h3>
+      <a href="request.html">طلب عرض</a>
       <a href="standard.html">المعيار الخماسي</a>
       <a href="security.html">الأمن والسرية</a>
       <a href="sop-arabic.html">ما معنى SOP؟</a>
-      <a href="request.html">اطلب عرضًا</a>
-    </div>
-    <div class="foot-col">
-      <b>قريبًا</b>
-      <span class="foot-soon">معرض القوالب <span class="soon">قريبًا</span></span>
-      <span class="foot-soon">دراسات حالة العملاء <span class="soon">قريبًا</span></span>
-      <span class="foot-soon">دليل البدء خلال ساعة <span class="soon">قريبًا</span></span>
-    </div>
+    </nav>
   </div>
-  <div class="foot-base">
-    <span>إتقان (Active SOP) · ٢٠٢٦</span>
-    <span class="latin-lockup">ITQAN · Active SOP</span>
+  <div class="footer-bottom">
+    <div class="container footer-bottom-inner">
+      <span class="footer-copy">© <span id="footer-year">2026</span> إتقان · <bdi>Active SOP</bdi></span>
+    </div>
   </div>
 </footer>
 
-<script>
-  // النموذج غير موصول بخدمة استقبال بعد — يُربط قبل النشر (data-endpoint).
-  document.getElementById('req-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const msg = document.getElementById('form-msg');
-    const endpoint = this.dataset.endpoint;
-    msg.textContent = endpoint
-      ? 'وصلنا طلبكم — سنجيب خلال يوم عمل واحد.'
-      : 'نسخة معاينة: النموذج غير موصول بخدمة الاستقبال بعد — يُربط قبل النشر.';
-    msg.classList.add('show');
-  });
-</script>
-
-<script src="assets/site.js?v=2"></script>
+<script src="assets/site-v2.js?v=7"></script>
 </body>
 </html>

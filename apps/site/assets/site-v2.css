@@ -184,10 +184,13 @@ h1, h2, h3 { letter-spacing: -.005em; }
 .header-inner { display: flex; align-items: center; gap: 36px; min-height: 72px; }
 .header-logo { display: flex; align-items: baseline; gap: 12px; text-decoration: none; color: var(--ink); }
 .header-logo .wordmark { font-family: 'Amiri', serif; font-size: 27px; font-weight: 700; }
+/* نفس قفل الهيرو مصغَّرًا: ACTIVE. بلون الألف، SOP بالحبر، تراك واحد */
 .header-tagline {
-  font-size: 11px; font-weight: 600; color: var(--muted);
-  letter-spacing: .1em; text-transform: uppercase;
+  font-size: 11px; font-weight: 500; color: var(--ink);
+  letter-spacing: .22em; text-transform: uppercase;
+  white-space: nowrap;
 }
+.header-tagline b { font-weight: 500; color: var(--clay); margin-inline-end: .16em; }
 .header-nav { display: flex; gap: 30px; margin-inline-start: auto; }
 .header-nav a {
   color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 500;
@@ -222,11 +225,23 @@ h1, h2, h3 { letter-spacing: -.005em; }
    01 الواجهة الافتتاحية — هادئة نصًّا، لوحة مرمرية ملمسية تحتضن بطاقة حية
    ============================================================ */
 .hero-section { padding-block: 96px 0; }
+/* صفّ العلامة: الشعار وعبارات الاشتقاق في وسط الشاشة، بعرض ثلثي الشاشة */
+.hero-brand-row {
+  max-width: 66vw;
+  margin-inline: auto;
+  padding-inline: 2rem;
+}
 .hero-inner {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 56px; align-items: center;
+  margin-top: 0;
 }
-.hero-text { padding-block: 24px; }
+/* لوحة المحاكاة: القسم السفلي بعد الفيلم — العنوان بجانبها */
+.panel-section { padding-block: 96px 100px; }
+.panel-section .hero-panel {
+  min-height: 540px; padding: 48px 40px;
+}
+.hero-text { padding-block: 0; }
 .hero-text .eyebrow { margin-bottom: 28px; }
 
 /* ——— تكوين العلامة في الهيرو: الاشتقاق —————————————————————
@@ -235,21 +250,23 @@ h1, h2, h3 { letter-spacing: -.005em; }
    اللون: الحبر للحروف الأربعة المأخوذة من العبارة،
    والطيني (clay) محجوز للألف الخامسة وحدها — الحرف الذي لا تقابله كلمة. */
 .hero-brand {
-  display: grid; justify-items: start; gap: 14px;
-  margin-bottom: 34px;
+  display: grid; justify-items: center; text-align: center; gap: 18px;
+  margin-bottom: 0;
 }
 .brand-eyebrow {
-  font-size: 13px; font-weight: 500; color: var(--sage);
+  font-size: 14.5px; font-weight: 500; color: var(--sage);
   letter-spacing: .005em;
 }
 .brand-eyebrow .lat {
   direction: ltr; unicode-bidi: isolate;
   font-weight: 600; letter-spacing: .14em;
 }
+/* عرض الشعار هو وحدة القياس: كل ما تحته يُشتقّ منه، فيبقى القفل ثابتًا في كل المقاسات */
+.hero-brand { --markW: clamp(212px, 21.5vw, 344px); }
 .hero-brand-mark {
-  inline-size: clamp(176px, 17vw, 224px); block-size: auto;
+  inline-size: var(--markW); block-size: auto;
   overflow: visible; color: var(--ink);
-  margin-block: 2px 4px;
+  margin-block: 4px 0;
 }
 .hero-brand-mark .ink {
   fill: none; stroke: currentColor;
@@ -269,9 +286,9 @@ h1, h2, h3 { letter-spacing: -.005em; }
 
 /* العبارة: الكلمات تظهر واحدة تلو الأخرى، ثم يشتدّ حرفها المصدر ويُسطَّر */
 .brand-phrase {
-  font-size: clamp(19px, 1.85vw, 25px);
+  font-size: clamp(23px, 2.7vw, 38px);
   font-weight: 500; line-height: 1.95;
-  color: var(--muted); max-width: 30rem;
+  color: var(--muted); max-width: 44rem;
   margin: 0;
 }
 .brand-phrase .w {
@@ -302,27 +319,79 @@ h1, h2, h3 { letter-spacing: -.005em; }
   to   { transform: scaleX(1); }
 }
 
-/* السؤال الذي يطرحه الاشتقاق نفسه: أربع كلمات وخمسة حروف */
-.brand-alif-note {
-  font-size: 13.5px; line-height: 1.75; color: var(--muted);
-  max-width: 27rem; margin: 2px 0 0;
-  animation: brand-tail 560ms var(--ease-settle) 2750ms both;
+/* ——— اللوك اللاتيني الحي: الاسم الكامل يولد أسفل العبارة، ينبض، يُختصر، ثم يستقر تحت الشعار ———
+   اللون: الطيني (لون الألف) حصرًا لـ ACTIVE والنقطة — الاستثناء الوحيد. */
+/* القفل: صندوق بعرض الشعار تمامًا، السطر في وسطه وخطّان رفيعان يملآن ما تبقّى */
+.latin-lockup {
+  inline-size: var(--markW);
+  display: flex; align-items: center; justify-content: center;
+  gap: calc(var(--markW) * .032);
+  margin-block-start: calc(var(--markW) * .05);
 }
-.brand-alif-note b { color: var(--clay); font-weight: 700; }
-
-/* الإنجليزي حاضر — وآخرًا */
-.brand-latin {
+.lk-rule {
+  flex: 1 1 0; min-inline-size: 0; block-size: 1px;
+  background: var(--line-strong);
+  opacity: 0; transform: scaleX(.4);
+  transition: opacity 620ms var(--ease-settle) 260ms,
+              transform 720ms var(--ease-settle) 260ms;
+}
+.latin-lockup:has(.latin-lockup-line.is-settled) .lk-rule {
+  opacity: 1; transform: none;
+}
+.latin-lockup-line {
+  flex: 0 0 auto; margin: 0;
+  display: inline-flex; align-items: baseline; gap: .55em;
   direction: ltr; unicode-bidi: isolate;
-  font-size: 11px; font-weight: 500;
-  letter-spacing: .34em; text-indent: .34em;
-  color: var(--muted); margin: 4px 0 0;
-  animation: brand-tail 560ms var(--ease-settle) 3050ms both;
+  /* الحجم مشتقّ من عرض الشعار، فالنسبة بينهما ثابتة عند كل عرض شاشة */
+  font-size: clamp(12px, calc(var(--markW) * .0425), 18.5px);
+  font-weight: 500; letter-spacing: .3em;
+  color: var(--muted);
+  white-space: nowrap;
+  transform: translateY(0);
+  transition: transform 720ms var(--ease-settle), gap 620ms var(--ease-settle);
+  will-change: transform;
 }
-@keyframes brand-tail {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: none; }
-}
+.latin-lockup-line .lw { display: inline-grid; justify-items: center; transition: width 620ms var(--ease-settle); }
+.latin-lockup-line .lw-full, .latin-lockup-line .lw-ini { grid-area: 1 / 1; }
+.latin-lockup-line .lw-full { opacity: 0; transition: opacity 300ms ease; }
+.latin-lockup-line .lw-ini { opacity: 0; transition: opacity 240ms ease 260ms; }
+/* المشهد ١: الكلمات تتصاعد بتتابع (التأخير عبر JS) */
+.latin-lockup-line.is-in .lw-full { opacity: 1; }
+/* ACTIVE والنقطة: لون الألف */
+.latin-lockup-line .lw-a { color: var(--clay); }
+.latin-lockup-line .lw-a .dot { opacity: 0; transition: opacity 260ms ease; }
+.latin-lockup-line.is-settled .lw-a .dot { opacity: 1; transition-delay: 200ms; }
+/* المشهد ٢: النبض قبل الحركة — اللون يشتد ثم ينفض */
+@keyframes lw-pulse { 0%, 100% { color: var(--muted); } 45% { color: var(--ink); } }
+.latin-lockup-line .lw.pulse .lw-full { animation: lw-pulse 430ms ease both; }
+/* المشهد ٣: الاختصار — الجسد يخرج من التدفق (كي ينكمش مسار الشبكة) والأولى تثبت بالحبر،
+   وACTIVE. وحدها تبقى بلون الألف الطيني */
+/* في الاستقرار: تراك واحد يسري على الحروف كلها (لا فجوة بين S و O و P)،
+   والفصل الوحيد هو مسافة كلمة واحدة بعد النقطة — كما يُصفّ أي اسم مطبوع. */
+.latin-lockup-line.is-condensed { gap: 0; }
+.latin-lockup-line.is-condensed .lw-first { margin-inline-start: .55em; }
+.latin-lockup-line.is-condensed .lw-full { display: none; }
+.latin-lockup-line.is-condensed .lw-ini { opacity: 1; }
+.latin-lockup-line.is-condensed .lw:not(.lw-a) .lw-ini { color: var(--ink); }
+/* إلغاء فراغ التراك المعلّق بعد آخر حرف، كي يتوسّط الحبر لا الصندوق */
+.latin-lockup-line.is-condensed { margin-inline-end: -.3em; }
+/* مسرح الولادة: سطر محجوز أسفل العبارة العربية */
+.latin-stage { block-size: 1.7em; }
 
+/* حركة مخفّضة: اللوك النهائي فورًا في خانته تحت الشعار */
+@media (prefers-reduced-motion: reduce) {
+  .latin-stage { display: none; }
+  .latin-lockup-line { transform: none !important; transition: none; }
+  .latin-lockup-line .lw { transition: none; }
+  .latin-lockup-line .lw-full { display: none; animation: none !important; }
+  .latin-lockup-line .lw-ini { opacity: 1 !important; }
+  .latin-lockup-line .lw:not(.lw-a) .lw-ini { color: var(--ink); }
+  .latin-lockup-line { gap: 0; margin-inline-end: -.3em; }
+  .latin-lockup-line .lw-first { margin-inline-start: .55em; }
+  .latin-lockup-line .lw-a { color: var(--clay); }
+  .latin-lockup-line .lw-a .dot { opacity: 1; }
+  .lk-rule { opacity: 1 !important; transform: none !important; transition: none; }
+}
 @media (prefers-reduced-motion: reduce) {
   .hero-brand-mark .ink {
     animation: none !important;
@@ -330,9 +399,7 @@ h1, h2, h3 { letter-spacing: -.005em; }
     opacity: 1 !important;
   }
   .brand-phrase .w,
-  .brand-phrase .src,
-  .brand-alif-note,
-  .brand-latin { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .brand-phrase .src { animation: none !important; opacity: 1 !important; transform: none !important; }
   .brand-phrase .src { color: var(--ink); }
   .brand-phrase .src::after { animation: none !important; transform: scaleX(1) !important; }
 }
@@ -392,7 +459,7 @@ h1, h2, h3 { letter-spacing: -.005em; }
   font-size: 11.5px; color: var(--muted); letter-spacing: .04em;
 }
 
-.hero-divider { padding-block: 88px 0; }
+.hero-divider { padding-block: 28px 0; }
 .hero-divider-line {
   display: block; height: 1px; max-width: 75rem; margin-inline: auto;
   background: var(--ink); opacity: .7;
@@ -403,7 +470,7 @@ h1, h2, h3 { letter-spacing: -.005em; }
 /* ============================================================
    01-ب فيلم الهيرو — إطار سينمائي 21:9 هادئ على الورق
    ============================================================ */
-.hero-film { padding-block: 76px 0; }
+.hero-film { padding-block: 28px 0; }
 .film-frame {
   position: relative; margin: 0;
   border-radius: var(--r-lg); overflow: hidden;
@@ -1098,13 +1165,18 @@ h1, h2, h3 { letter-spacing: -.005em; }
   .hero-section { padding-block: 56px 0; }
   .hero-inner { grid-template-columns: 1fr; gap: 40px; }
   .hero-text { padding-block: 0; }
+  .hero-brand-row { max-width: 100%; padding-inline: 2rem; }
+  .hero-inner { margin-top: 48px; }
+  /* نغيّر وحدة القياس نفسها لا عرض الشعار وحده، كي يبقى السطر اللاتيني مقفولًا عليه */
+  .hero-brand { --markW: clamp(210px, 56vw, 310px); }
   .hero-heading { font-size: clamp(38px, 10vw, 52px); }
   .hero-panel { order: 2; min-height: 0; padding: 56px 20px 48px; border-radius: var(--r-lg); }
   .hero-divider { padding-block: 56px 0; }
 
   .inspect-layout { grid-template-columns: 1fr; gap: 28px; }
   .choice-btn { padding: 18px 8px 18px 32px; }
-  .inspect-panel { min-height: 0; padding: 24px 20px; }
+  .inspect-panel { min-height: 0; padding: 0; }
+  .iv-views { padding: 24px 20px; }
   .panel-title { font-size: 24px; }
 
   .gap-intro h2 { font-size: clamp(34px, 9vw, 48px); }

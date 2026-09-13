@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { DaliliClient, type MeDto } from '@dalili/shared'
 import { META_KEY, type SessionMeta, type StepSummary } from '@/lib/protocol'
 import type { MemoToggleAck } from '@/lib/protocol'
@@ -17,8 +17,13 @@ import { IdleScreen } from './IdleScreen'
 import { StepsList } from './StepsList'
 import { SettingsSheet, BellSheet } from './Sheets'
 import { usePrefs, panelActivity } from './usePrefs'
+import { READER_KEY } from '@/lib/reader'
+import { GuideReader } from './reader/GuideReader'
+import { makeReaderDeps } from './reader/deps'
 
 const client = new DaliliClient(API_BASE)
+// PNL-01: تبعيات القارئ ثابتة على مستوى الوحدة — load ثابت المرجع فلا يعيد الجلب في كل رسم
+const readerDeps = makeReaderDeps(client)
 const IDLE: SessionMeta = { state: 'idle', sessionId: '', startedAt: 0, stepCount: 0 }
 const getKeys = (keys: string[]) => chrome.storage.local.get(keys)
 
@@ -70,6 +75,40 @@ export function App() {
   // كشف يدوي للقطات خطوات سابقة (فهرس→dataURL) — الأحدث تُعرض دائمًا عبر lastShot
   const [revealed, setRevealed] = useState<Record<number, string>>({})
   const stepsRef = useRef<HTMLDivElement>(null)
+
+  // PNL-01: الدليل المفتوح داخل اللوحة — ومن أين فُتح (موضع التمرير وزر ↵) ليعود الرجوع إليه
+  const [readerId, setReaderId] = useState<string | null>(null)
+  const readerReturn = useRef<{ scrollTop: number; guideId: string } | null>(null)
+  const openReader = useCallback((id: string) => {
+    readerReturn.current = { scrollTop: document.scrollingElement?.scrollTop ?? 0, guideId: id }
+    setReaderId(id)
+    document.scrollingElement?.scrollTo(0, 0)
+    void chrome.storage.session?.set({ [READER_KEY]: id }).catch(() => {})
+  }, [])
+  const closeReader = useCallback(() => {
+    setReaderId(null)
+    void chrome.storage.session?.remove(READER_KEY).catch(() => {})
+  }, [])
+  // الرجوع: نفس موضع التمرير، والتركيز على زر ↵ الذي فُتح منه الدليل
+  useEffect(() => {
+    const back = readerReturn.current
+    if (readerId !== null || !back) return
+    readerReturn.current = null
+    requestAnimationFrame(() => {
+      document.scrollingElement?.scrollTo(0, back.scrollTop)
+      document.querySelector<HTMLButtonElement>(`.doc-enter[data-guide="${back.guideId}"]`)?.focus()
+    })
+  }, [readerId])
+  // استعادة القارئ بعد إغلاق اللوحة وفتحها (الجلسة تُمسح بإغلاق المتصفح)
+  useEffect(() => {
+    chrome.storage.session
+      ?.get(READER_KEY)
+      .then((r) => {
+        const id = r[READER_KEY]
+        if (typeof id === 'string') setReaderId(id)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     let live = true
@@ -409,13 +448,26 @@ export function App() {
   const capturing = state === 'capturing' || state === 'paused'
   const paused = state === 'paused'
 
+  // PNL-01: بدء التقاط جديد يغلق القارئ — شاشة واحدة لكل حالة
+  useEffect(() => {
+    if (meta.state !== 'idle' && readerId !== null) closeReader()
+  }, [meta.state, readerId, closeReader])
+  // الرجوع من القارئ محجوب أثناء فتح لوحة منزلقة كي لا يبتلع Esc إغلاقها
+  const onReaderBack = useCallback(() => {
+    if (sheet === 'none') closeReader()
+  }, [sheet, closeReader])
+
   return (
     <div className="wrap">
       <HeadBar meta={meta} unread={prefs.unread} onBell={() => void openBell()} onSettings={() => setSheet('settings')} />
 
       {error && <div className="body" style={{ paddingBottom: 0 }}><div className="err">{error}</div></div>}
 
-      {state === 'idle' && (
+      {state === 'idle' && readerId !== null && (
+        <GuideReader guideId={readerId} deps={readerDeps} onBack={onReaderBack} />
+      )}
+
+      {state === 'idle' && readerId === null && (
         <>
           {/* المرحلة ٣: لحظة النجاح — النشر أكمل اللحظة المُكافئة فتُرى ولا تمرّ صامتة */}
           {showSuccess && lastPub && (
@@ -436,7 +488,7 @@ export function App() {
               </div>
             </div>
           )}
-          <IdleScreen send={send} me={me} query={query} setQuery={setQuery} discover={discover} recent={recent} recentErr={recentErr} preferredStart={prefs.settings.preferredStart} />
+          <IdleScreen send={send} me={me} query={query} setQuery={setQuery} discover={discover} recent={recent} recentErr={recentErr} preferredStart={prefs.settings.preferredStart} onOpenHere={openReader} />
         </>
       )}
 

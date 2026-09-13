@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css?v=5">
-<link rel="stylesheet" href="assets/site-v2.css?v=5">
+<link rel="stylesheet" href="assets/site-v2.css?v=13">
 
 <!-- بيانات منظّمة: تثبيت العبارة العربية كاسم بديل للعلامة -->
 <script type="application/ld+json">
@@ -35,7 +35,7 @@
     <!-- الشعار -->
     <a class="header-logo" href="index.html" aria-label="إتقان — الرئيسية">
       <span class="wordmark" aria-label="إتقان">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
-      <span class="header-tagline">Active SOP</span>
+      <span class="header-tagline"><b>Active.</b> SOP</span>
     </a>
 
     <!-- التنقل الرئيسي -->
@@ -78,66 +78,113 @@
 
 
 <!-- ═══════════════════════════════════════════════════════
-     01 الواجهة الافتتاحية — الأثر الذي يستقر
+     01 الواجهة الافتتاحية — صفّ العلامة أولًا (ثلثا الشاشة)،
+     ثم مساحة العنوان النظيفة مع لوحة المنتج
      ═══════════════════════════════════════════════════════ -->
 <section class="hero-section" id="hero" aria-labelledby="hero-heading">
+  <!-- صفّ العلامة: الشعار والعبارات التي اشتُقّ منها — يملأ ثلثي عرض الشاشة -->
+  <div class="container hero-brand-row" id="hero-text-block">
+    <div class="hero-brand" id="hero-brand">
+
+      <!-- الشعار: أربعة حروف تأتي من الكلمات الأربع، والألف الخامسة تأتي آخرًا بلون العلامة -->
+      <!-- الإطار مضبوط على حبر الحروف نفسه (لا على مربع فضفاض): الحروف تملأ العرض
+           وتتوسّط رأسيًّا، فيصير أي شيء تحتها مقفولًا على حافتَي الكلمة لا على فراغ. -->
+      <svg class="hero-brand-mark" viewBox="176 48 421 204" role="img"
+           aria-label="شعار إتقان — إجراءات التشغيل القياسية النشطة">
+        <!-- إ: الألف اليمنى — من «إجراءات» -->
+        <path class="ink" pathLength="1" style="--del:940ms; --dur:520ms"
+          d="M 574 66 C 570 102, 575 144, 572 185"/>
+        <!-- الهمزة تحت الألف -->
+        <path class="ink detail" pathLength="1" style="--del:1380ms; --dur:200ms"
+          d="M 579 207 C 567 199, 558 208, 565 216 L 578 216 L 560 226"/>
+        <!-- ت: جسم التاء واتصالها بالقاف — من «التشغيل» -->
+        <path class="ink" pathLength="1" style="--del:1190ms; --dur:560ms"
+          d="M 540 148 C 546 169, 531 185, 508 185 L 449 185"/>
+        <!-- نقطتا التاء -->
+        <path class="ink dot" pathLength="1" style="--del:1620ms; --dur:150ms" d="M 519 124 L 518 126"/>
+        <path class="ink dot" pathLength="1" style="--del:1690ms; --dur:150ms" d="M 502 124 L 501 126"/>
+        <!-- ق: حلقة القاف — من «القياسية» -->
+        <path class="ink" pathLength="1" style="--del:1440ms; --dur:460ms"
+          d="M 449 185 C 466 175, 466 145, 449 143 C 430 140, 428 168, 445 174 C 449 176, 453 177, 457 176"/>
+        <!-- ن: النون النهائية — من «النشطة» -->
+        <path class="ink" pathLength="1" style="--del:1690ms; --dur:540ms"
+          d="M 312 148 C 319 175, 317 205, 295 220 C 270 239, 222 239, 203 215 C 191 200, 192 183, 198 168"/>
+        <!-- نقطتا القاف -->
+        <path class="ink dot" pathLength="1" style="--del:1900ms; --dur:150ms" d="M 452 116 L 451 118"/>
+        <path class="ink dot" pathLength="1" style="--del:1970ms; --dur:150ms" d="M 435 116 L 434 118"/>
+        <!-- نقطة النون -->
+        <path class="ink dot" pathLength="1" style="--del:2100ms; --dur:180ms" d="M 257 151 L 256 153"/>
+        <!-- امتداد القاف: يترك مقعدًا فارغًا تنتظره الألف -->
+        <path class="ink" pathLength="1" style="--del:1830ms; --dur:300ms"
+          d="M 449 185 C 428 186, 400 186, 376 184"/>
+        <!-- ا: الألف التي لا تقابلها كلمة — تأتي أخيرًا وبلون العلامة وحدها -->
+        <path class="ink alif" pathLength="1" style="--del:2320ms; --dur:520ms"
+          d="M 373 66 C 371 103, 374 142, 376 184"/>
+      </svg>
+
+      <!-- اللوك اللاتيني الحي: يولد اسمًا كاملًا أسفل العبارة، ينبض، يُختصر إلى SOP، ثم يستقر تحت الشعار.
+           الخطّان الرفيعان يقفلان السطر على عرض الشعار تمامًا — ولا يظهران إلا بعد الاستقرار. -->
+      <div class="latin-lockup">
+        <span class="lk-rule" aria-hidden="true"></span>
+        <p class="latin-lockup-line" id="latinLine" aria-label="ACTIVE SOP">
+          <span class="lw lw-a" aria-hidden="true"><span class="lw-full">ACTIVE<b class="dot">.</b></span><span class="lw-ini">ACTIVE.</span></span>
+          <span class="lw lw-first" aria-hidden="true"><span class="lw-full">STANDARD</span><span class="lw-ini">S</span></span>
+          <span class="lw" aria-hidden="true"><span class="lw-full">OPERATIONAL</span><span class="lw-ini">O</span></span>
+          <span class="lw" aria-hidden="true"><span class="lw-full">PROCEDURE</span><span class="lw-ini">P</span></span>
+        </p>
+        <span class="lk-rule" aria-hidden="true"></span>
+      </div>
+
+      <!-- العبارة التي يختصرها الاسم: الحروف الأربعة بالحبر، وبقية الكلمات أخفت -->
+      <p class="brand-phrase">
+        <span class="w" style="--wd:320ms"><b class="src" style="--sd:900ms">إ</b>جراءات</span>
+        <span class="w" style="--wd:460ms">ال&zwj;<b class="src" style="--sd:1150ms">&zwj;ت&zwj;</b>&zwj;شغيل</span>
+        <span class="w" style="--wd:600ms">ال&zwj;<b class="src" style="--sd:1400ms">&zwj;ق&zwj;</b>&zwj;ياسية</span>
+        <span class="w" style="--wd:740ms">ال&zwj;<b class="src" style="--sd:1650ms">&zwj;ن&zwj;</b>&zwj;شطة</span>
+      </p>
+
+      <!-- مسرح الولادة: هنا يظهر الاسم الكامل قبل أن يصعد إلى خانته تحت الشعار -->
+      <div class="latin-stage" id="latinStage" aria-hidden="true"></div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     01-ب فيلم الهيرو — الإجراء يُنفَّذ، والأثر يستقر
+     ثلاث لقطات صامتة بلا وجوه ولا نص: يد تُنفِّذ، مسؤولية تنتقل، مكتب يستقر.
+     ═══════════════════════════════════════════════════════ -->
+<section class="hero-film" id="film" aria-labelledby="film-cap">
+  <div class="container">
+    <figure class="film-frame" id="film-frame">
+      <video class="film-video" id="film-video"
+             muted playsinline autoplay preload="metadata"
+             poster="assets/film/film-poster.webp"
+             aria-describedby="film-cap">
+        <source src="assets/film/hero-film.webm" type="video/webm">
+        <source src="assets/film/hero-film.mp4" type="video/mp4">
+      </video>
+      <!-- العنوان فوق الإطار المستقر -->
+      <div class="film-overlay" aria-hidden="true">
+        <p class="film-line">الإجراء الذي يُنفَّذ.</p>
+        <p class="film-line film-line-2">والأثر الذي يستقر.</p>
+      </div>
+      <figcaption class="film-cap" id="film-cap">
+        مشهد توضيحي · بلا صوت — الإجراء يُنفَّذ، والمسؤولية تنتقل، والأثر يستقر في مكانه.
+      </figcaption>
+    </figure>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     01-ج العنوان + لوحة المحاكاة — أسفل الفيلم مباشرة
+     ═══════════════════════════════════════════════════════ -->
+<section class="panel-section" aria-label="محاكاة الالتقاط في إتقان">
   <div class="container hero-inner">
 
-    <!-- كتلة النص -->
-    <div class="hero-text" id="hero-text-block">
-      <!-- كتلة العلامة: الكلام قبل الحركة، ثم الشعار، ثم العبارة التي اشتُقّ منها، والإنجليزي آخرًا -->
-      <div class="hero-brand" id="hero-brand">
-
-        <p class="brand-eyebrow">المقابل العربي لـ <span class="lat">SOP</span></p>
-
-        <!-- الشعار: أربعة حروف تأتي من الكلمات الأربع، والألف الخامسة تأتي آخرًا بلون العلامة -->
-        <svg class="hero-brand-mark" viewBox="100 35 520 245" role="img"
-             aria-label="شعار إتقان — إجراءات التشغيل القياسية النشطة">
-          <!-- إ: الألف اليمنى — من «إجراءات» -->
-          <path class="ink" pathLength="1" style="--del:940ms; --dur:520ms"
-            d="M 574 66 C 570 102, 575 144, 572 185"/>
-          <!-- الهمزة تحت الألف -->
-          <path class="ink detail" pathLength="1" style="--del:1380ms; --dur:200ms"
-            d="M 579 207 C 567 199, 558 208, 565 216 L 578 216 L 560 226"/>
-          <!-- ت: جسم التاء واتصالها بالقاف — من «التشغيل» -->
-          <path class="ink" pathLength="1" style="--del:1190ms; --dur:560ms"
-            d="M 540 148 C 546 169, 531 185, 508 185 L 449 185"/>
-          <!-- نقطتا التاء -->
-          <path class="ink dot" pathLength="1" style="--del:1620ms; --dur:150ms" d="M 519 124 L 518 126"/>
-          <path class="ink dot" pathLength="1" style="--del:1690ms; --dur:150ms" d="M 502 124 L 501 126"/>
-          <!-- ق: حلقة القاف — من «القياسية» -->
-          <path class="ink" pathLength="1" style="--del:1440ms; --dur:460ms"
-            d="M 449 185 C 466 175, 466 145, 449 143 C 430 140, 428 168, 445 174 C 449 176, 453 177, 457 176"/>
-          <!-- ن: النون النهائية — من «النشطة» -->
-          <path class="ink" pathLength="1" style="--del:1690ms; --dur:540ms"
-            d="M 312 148 C 319 175, 317 205, 295 220 C 270 239, 222 239, 203 215 C 191 200, 192 183, 198 168"/>
-          <!-- نقطتا القاف -->
-          <path class="ink dot" pathLength="1" style="--del:1900ms; --dur:150ms" d="M 452 116 L 451 118"/>
-          <path class="ink dot" pathLength="1" style="--del:1970ms; --dur:150ms" d="M 435 116 L 434 118"/>
-          <!-- نقطة النون -->
-          <path class="ink dot" pathLength="1" style="--del:2100ms; --dur:180ms" d="M 257 151 L 256 153"/>
-          <!-- امتداد القاف: يترك مقعدًا فارغًا تنتظره الألف -->
-          <path class="ink" pathLength="1" style="--del:1830ms; --dur:300ms"
-            d="M 449 185 C 428 186, 400 186, 376 184"/>
-          <!-- ا: الألف التي لا تقابلها كلمة — تأتي أخيرًا وبلون العلامة وحدها -->
-          <path class="ink alif" pathLength="1" style="--del:2320ms; --dur:520ms"
-            d="M 373 66 C 371 103, 374 142, 376 184"/>
-        </svg>
-
-        <!-- العبارة التي يختصرها الاسم: الحروف الأربعة بالحبر، وبقية الكلمات أخفت -->
-        <p class="brand-phrase">
-          <span class="w" style="--wd:320ms"><b class="src" style="--sd:900ms">إ</b>جراءات</span>
-          <span class="w" style="--wd:460ms">ال&zwj;<b class="src" style="--sd:1150ms">&zwj;ت&zwj;</b>&zwj;شغيل</span>
-          <span class="w" style="--wd:600ms">ال&zwj;<b class="src" style="--sd:1400ms">&zwj;ق&zwj;</b>&zwj;ياسية</span>
-          <span class="w" style="--wd:740ms">ال&zwj;<b class="src" style="--sd:1650ms">&zwj;ن&zwj;</b>&zwj;شطة</span>
-        </p>
-
-        <p class="brand-alif-note">
-          أربع كلمات… وخمسة حروف. <b>الألف</b> التي بلا كلمة هي فريقكم: من يجعل الإجراء نشطًا.
-        </p>
-
-        <p class="brand-latin"><bdi>ITQAN</bdi> · <bdi>Active SOP</bdi></p>
-      </div>
+    <!-- مساحة العنوان: العنوان وجملته وزرا الحركتين، بجانبهما انميشن المحاكاة -->
+    <div class="hero-text" id="hero-heading-block">
       <h1 class="hero-heading" id="hero-heading">
         الإجراء الذي يُنفَّذ.<br>والأثر الذي يستقر.
       </h1>
@@ -246,38 +293,6 @@
       </div>
     </div>
   </div>
-
-  <!-- الفاصل: خيط أخضر -->
-  <div class="hero-divider" aria-hidden="true">
-    <span class="hero-divider-line"></span>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════
-     01-ب فيلم الهيرو — الإجراء يُنفَّذ، والأثر يستقر
-     ثلاث لقطات صامتة بلا وجوه ولا نص: يد تُنفِّذ، مسؤولية تنتقل، مكتب يستقر.
-     ═══════════════════════════════════════════════════════ -->
-<section class="hero-film" id="film" aria-labelledby="film-cap">
-  <div class="container">
-    <figure class="film-frame" id="film-frame">
-      <video class="film-video" id="film-video"
-             muted playsinline autoplay preload="metadata"
-             poster="assets/film/film-poster.webp"
-             aria-describedby="film-cap">
-        <source src="assets/film/hero-film.webm" type="video/webm">
-        <source src="assets/film/hero-film.mp4" type="video/mp4">
-      </video>
-      <!-- العنوان فوق الإطار المستقر -->
-      <div class="film-overlay" aria-hidden="true">
-        <p class="film-line">الإجراء الذي يُنفَّذ.</p>
-        <p class="film-line film-line-2">والأثر الذي يستقر.</p>
-      </div>
-      <figcaption class="film-cap" id="film-cap">
-        مشهد توضيحي · بلا صوت — الإجراء يُنفَّذ، والمسؤولية تنتقل، والأثر يستقر في مكانه.
-      </figcaption>
-    </figure>
-  </div>
-  <div class="section-divider" aria-hidden="true"></div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════
@@ -317,8 +332,17 @@
         </button>
       </div>
 
-      <!-- لوحة العرض -->
+      <!-- لوحة العرض: شريط هوية ثابت + ثلاثة أوجه تدور حول محور واحد -->
       <div class="inspect-panel" id="inspect-panel" role="tabpanel" aria-labelledby="choice-step">
+        <div class="iv-object">
+          <span class="iv-object-name" id="iv-object-name">مراجعة صلاحيات الوصول</span>
+          <span class="iv-object-id"><bdi>PRC-012</bdi></span>
+          <div class="iv-facets" aria-hidden="true">
+            <span class="iv-facet"></span><span class="iv-facet"></span><span class="iv-facet"></span>
+            <span class="iv-facet-marker" id="iv-marker"></span>
+          </div>
+        </div>
+        <div class="iv-views" id="iv-views">
         <!-- محتوى: الخطوة -->
         <div class="panel-content panel-visible" id="panel-step">
           <h3 class="panel-title">مراجعة صلاحيات الوصول</h3>
@@ -374,6 +398,7 @@
             <span class="panel-preview-label">حالة الدليل</span>
             <span class="panel-preview-name">مكتمل · بانتظار الاعتماد</span>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -1067,6 +1092,6 @@
   </div>
 </footer>
 
-<script src="assets/site-v2.js?v=4"></script>
+<script src="assets/site-v2.js?v=7"></script>
 </body>
 </html>

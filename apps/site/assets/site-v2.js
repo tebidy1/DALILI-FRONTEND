@@ -102,6 +102,82 @@
     }
   }
 
+  /* ——— 01-ج اللوك اللاتيني الحي: يولد اسمًا كاملًا، ينبض، يُختصر إلى SOP، ثم يستقر تحت الشعار ——— */
+  var latinLine = document.getElementById("latinLine");
+  var latinStage = document.getElementById("latinStage");
+  if (latinLine && latinStage) {
+    var latinWords = latinLine.querySelectorAll(".lw");
+    var latinLong = latinLine.querySelectorAll(".lw:not(.lw-a)");
+    var latinDone = false;
+
+    // الإزاحة: من خانته تحت الشعار إلى سطر الولادة أسفل العبارة العربية
+    function latinShift() {
+      var a = latinLine.getBoundingClientRect();
+      var b = latinStage.getBoundingClientRect();
+      latinLine.style.transform = "translateY(" + Math.round(b.top - a.top) + "px)";
+    }
+
+    function latinRun() {
+      if (latinDone) return;
+      latinDone = true;
+      if (reducedMotion.matches) {
+        latinLine.classList.add("is-in", "is-condensed", "is-settled");
+        return;
+      }
+      // انتظار اكتمال الاشتقاق العربي (العبارة تستقر نحو ٢٫٢ث)
+      setTimeout(function () {
+        // انتقل إلى مسرح الولادة قبل أن تُرى (بلا حركة)
+        latinLine.style.transition = "none";
+        latinShift();
+        void latinLine.offsetWidth;
+        latinLine.style.transition = "";
+
+        // المشهد ١: الولادة — كلمات تتصاعد بتتابع
+        Array.prototype.forEach.call(latinWords, function (w, i) {
+          var full = w.querySelector(".lw-full");
+          full.style.transitionDelay = (i * 130) + "ms";
+        });
+        latinLine.classList.add("is-in");
+
+        // المشهد ٢: النبض — كل كلمة طويلة تتنفس مرة بترتيب القراءة
+        setTimeout(function () {
+          Array.prototype.forEach.call(latinLong, function (w, i) {
+            setTimeout(function () { w.classList.add("pulse"); }, i * 170);
+          });
+        }, 1150);
+
+        // المشهد ٣: الاختصار — تتساقط الأجساد وتثبت الأحرف الأولى
+        setTimeout(function () {
+          Array.prototype.forEach.call(latinLong, function (w) {
+            var full = w.querySelector(".lw-full");
+            var ini = w.querySelector(".lw-ini");
+            var w0 = w.getBoundingClientRect().width;
+            w.style.transition = "none";
+            w.style.width = w0 + "px";
+            void w.offsetWidth;
+            w.style.transition = "";
+            full.style.transitionDelay = "0ms";
+            w.style.width = ini.getBoundingClientRect().width + "px";
+          });
+          latinLine.classList.add("is-condensed");
+        }, 2150);
+
+        // المشهد ٤: الصعود والاستقرار تحت الشعار — وعند الهبوط تولد النقطة
+        setTimeout(function () {
+          latinLine.style.transform = "";
+          latinLine.classList.add("is-settled");
+        }, 3050);
+      }, 1300);
+    }
+    if (document.readyState === "complete") latinRun();
+    else on(window, "load", latinRun);
+
+    // إعادة قياس الإزاحة إذا غيّر النافذة حجمها قبل اكتمال المشهد
+    window.addEventListener("resize", function () {
+      if (latinDone && !latinLine.classList.contains("is-settled")) latinShift();
+    });
+  }
+
   /* ——— 01-ب فيلم الهيرو: كشف العنوان + ضبط الحركة المخفَّضة ——— */
   var heroFilm = document.getElementById("film");
   var filmVideo = document.getElementById("film-video");
@@ -125,20 +201,62 @@
     }
   }
 
-  /* ——— 02 الدليل أمامك: تبويبات الفحص ——— */
+  /* ——— 02 الدليل أمامك: تبويبات الفحص + دوران الأوجه حول محور واحد ——— */
   var choiceBtns = document.querySelectorAll(".choice-btn");
   var panels = document.querySelectorAll(".panel-content");
+  var ivViews = document.getElementById("iv-views");
+  var ivMarker = document.getElementById("iv-marker");
+
+  // اتجاه الدوران: التالي يتقدم، السابق يتأخر (RTL: نفس إشارة translateX)
+  function btnIndex(btn) {
+    return Array.prototype.indexOf.call(choiceBtns, btn);
+  }
+  function leavePanel(p, dir) {
+    p.style.setProperty("--dir", dir);
+    p.classList.remove("panel-visible");
+    p.classList.add("is-leaving");
+    setTimeout(function () {
+      p.classList.remove("is-leaving");
+    }, 500);
+  }
+  function enterPanel(p, dir) {
+    p.style.setProperty("--dir", dir);
+    p.classList.add("is-enter-from");
+    void p.offsetWidth; // اربط حالة البداية قبل الانتقال
+    p.classList.add("panel-visible");
+    p.classList.remove("panel-hidden", "is-enter-from");
+  }
   Array.prototype.forEach.call(choiceBtns, function (btn) {
     on(btn, "click", function () {
+      var prev = document.querySelector(".choice-btn.choice-active");
+      var from = prev ? btnIndex(prev) : 0;
+      var to = btnIndex(btn);
+      if (from === to) return;
+      var dir = to > from ? 1 : -1;
+
       Array.prototype.forEach.call(choiceBtns, function (b) {
         b.classList.toggle("choice-active", b === btn);
         b.setAttribute("aria-selected", b === btn ? "true" : "false");
       });
       Array.prototype.forEach.call(panels, function (p) {
         var show = p.id === "panel-" + btn.dataset.panel;
-        p.classList.toggle("panel-visible", show);
-        p.classList.toggle("panel-hidden", !show);
+        var isShown = p.classList.contains("panel-visible");
+        if (show && !isShown) {
+          if (reducedMotion.matches) {
+            p.classList.add("panel-visible");
+            p.classList.remove("panel-hidden");
+          } else {
+            enterPanel(p, dir);
+          }
+        } else if (!show && isShown) {
+          if (reducedMotion.matches) {
+            p.classList.remove("panel-visible");
+          } else {
+            leavePanel(p, dir);
+          }
+        }
       });
+      if (ivMarker) ivMarker.style.setProperty("--i", String(to));
       document.getElementById("inspect-panel").setAttribute("aria-labelledby", btn.id);
     });
   });

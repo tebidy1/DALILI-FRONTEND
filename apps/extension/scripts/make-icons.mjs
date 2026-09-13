@@ -1,54 +1,70 @@
-// مولّد أيقونات دليلي — PNG خالص بلا اعتماديات (PLAT-01)
-// الرسم: مربع دائري الزوايا بلون العلامة #0F766E + إبرة بوصلة ثنائية اللون تشير للشمال الشرقي.
-// كل مقاس يُرسم مباشرة بتفريط 4×4 لكل بكسل — لا تصغير من مقاس أكبر فلا تهشّش.
+// مولّد أيقونات «إتقان» — PNG خالص بلا اعتماديات (PLAT-01)
+//
+// الرسم: مربع دائري الزوايا بلون الحبر #2B2A26، وفوقه شذرة من الشعار نفسه:
+// **الألف** قائمةً على **امتداد القاف**، ونقطتا القاف فوقه. أي: «ـقا» مصغّرة.
+//
+// لماذا شذرة لا الكلمة كاملة: «إتقان» نسبتها 2.06:1 — تصير في 16px شخبطة.
+// ولماذا ليست «ألف المعيار» (خمس نقاط): خمس نقاط وأربع فجوات في 16px = ١٫٨px
+// لكل معلَم، فتذوب في عمود مصمت. الشذرة تُقرأ في 16px وتبقى هي هي في 128px —
+// أيقونة واحدة بفكرة واحدة، وهذا أصدق من أيقونتين مختلفتين حسب المقاس.
+//
+// اللون: الألف وحدها ملوّنة — كما في الشعار. طينيّ فاتح كي يبقى تبايُنه على الحبر
+// فوق 4.5:1 (الطينيّ الأصلي #8A5447 يختفي على أرضية داكنة).
 import { deflateSync } from 'node:zlib'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
-const BRAND = { r: 15, g: 118, b: 110 } // #0F766E
-const WHITE = { r: 255, g: 255, b: 255 }
+const INK = { r: 43, g: 42, b: 38 } // #2B2A26 — أرضية المربع
+const PAPER = { r: 246, g: 245, b: 242 } // #F6F5F2
+const CLAY_LIGHT = { r: 201, g: 135, b: 122 } // #C9877A — الألف وحدها
 const SIZES = [16, 32, 48, 128]
 const SS = 4 // عينات فرعية لكل بُعد
 
+/** هندسة الشذرة بإحداثيات وحدية 0..1 — مُصدَّرة كي تُختبر بلا رسم */
+export const GLYPH = {
+  corner: 0.22, // نصف قطر زوايا المربع
+  kashida: { x0: 0.305, x1: 0.745, y: 0.665, w: 0.095 }, // امتداد القاف
+  alif: { x: 0.33, y0: 0.25, y1: 0.665, w: 0.11 }, // الألف — قائمة على طرف الامتداد
+  dots: [
+    { x: 0.545, y: 0.395, h: 0.056 },
+    { x: 0.665, y: 0.395, h: 0.056 },
+  ],
+}
+
 function insideRoundedSquare(x, y) {
-  // إحداثيات وحدية 0..1، هامش 0 ونصف قطر 22%
   if (x < 0 || x > 1 || y < 0 || y > 1) return false
-  const r = 0.22
+  const r = GLYPH.corner
   const cx = Math.min(Math.max(x, r), 1 - r)
   const cy = Math.min(Math.max(y, r), 1 - r)
-  const dx = x - cx
-  const dy = y - cy
-  return dx * dx + dy * dy <= r * r
+  return (x - cx) ** 2 + (y - cy) ** 2 <= r * r
 }
 
-function inTriangle(px, py, a, b, c) {
-  const s = (p, q, r2) => (q.x - p.x) * (r2.y - p.y) - (q.y - p.y) * (r2.x - p.x)
-  const d1 = s(a, b, { x: px, y: py })
-  const d2 = s(b, c, { x: px, y: py })
-  const d3 = s(c, a, { x: px, y: py })
-  const neg = d1 < 0 || d2 < 0 || d3 < 0
-  const pos = d1 > 0 || d2 > 0 || d3 > 0
-  return !(neg && pos)
+/** قضيب بنهايات مستديرة: المسافة إلى القطعة ≤ نصف العرض */
+function inCapsule(px, py, ax, ay, bx, by, w) {
+  const dx = bx - ax
+  const dy = by - ay
+  const len2 = dx * dx + dy * dy
+  let t = len2 === 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2
+  t = Math.min(1, Math.max(0, t))
+  const qx = ax + dx * t
+  const qy = ay + dy * t
+  return (px - qx) ** 2 + (py - qy) ** 2 <= (w / 2) ** 2
 }
 
-/** لون البكسل عند نقطة وحدية — طبقات: خلفية → ذيل الإبرة → رأسها → ثقب المركز */
-function sample(x, y) {
+function inDiamond(px, py, cx, cy, h) {
+  return Math.abs(px - cx) / h + Math.abs(py - cy) / h <= 1
+}
+
+/** لون البكسل عند نقطة وحدية — الأرضية ثم الامتداد ثم النقطتان ثم الألف فوقها */
+export function sample(x, y) {
   if (!insideRoundedSquare(x, y)) return null
-  let color = BRAND
-  const cx = 0.5
-  const cy = 0.5
-  const ux = 0.7071
-  const uy = -0.7071 // الشمال الشرقي (y للأسفل)
-  const vx = 0.7071
-  const vy = 0.7071
-  const tip = { x: cx + ux * 0.28, y: cy + uy * 0.28 }
-  const tail = { x: cx - ux * 0.28, y: cy - uy * 0.28 }
-  const p1 = { x: cx + vx * 0.085, y: cy + vy * 0.085 }
-  const p2 = { x: cx - vx * 0.085, y: cy - vy * 0.085 }
-  // الذيل أوضح (72%) كي لا يذوب في المقاسات الصغيرة — والحكم البصري أثبت أن الثقب المركزي يختفي في 16px فحُذف
-  if (inTriangle(x, y, tail, p1, p2)) color = { ...WHITE, a: 0.72 }
-  if (inTriangle(x, y, tip, p1, p2)) color = WHITE // الرأس: أبيض صلب
-  return color.a === undefined ? { ...color, a: 1 } : color
+  let color = INK
+  const k = GLYPH.kashida
+  if (inCapsule(x, y, k.x0, k.y, k.x1, k.y, k.w)) color = PAPER
+  for (const d of GLYPH.dots) if (inDiamond(x, y, d.x, d.y, d.h)) color = PAPER
+  const a = GLYPH.alif
+  if (inCapsule(x, y, a.x, a.y0, a.x, a.y1, a.w)) color = CLAY_LIGHT
+  return { ...color, a: 1 }
 }
 
 /** متوسط العينات بضرب مسبق بالشفافية ثم فكّه — حواف ناعمة صادقة */
@@ -118,13 +134,20 @@ function encodePng(size, pixels) {
   ])
 }
 
-const outDir = path.resolve(process.cwd(), 'public', 'icons')
-mkdirSync(outDir, { recursive: true })
-for (const size of SIZES) {
+export function buildIcon(size) {
   const pixels = Array.from({ length: size }, (_, y) =>
     Array.from({ length: size }, (_, x) => pixel(x, y, size)),
   )
-  const png = encodePng(size, pixels)
-  writeFileSync(path.join(outDir, `${size}.png`), png)
-  console.log(`icon ${size}x${size}: ${png.length} bytes`)
+  return encodePng(size, pixels)
+}
+
+// التنفيذ المباشر فقط — الاستيراد من الاختبارات لا يكتب ملفات
+if (process.argv[1] && process.argv[1].endsWith('make-icons.mjs')) {
+  const outDir = path.resolve(process.cwd(), 'public', 'icons')
+  mkdirSync(outDir, { recursive: true })
+  for (const size of SIZES) {
+    const png = buildIcon(size)
+    writeFileSync(path.join(outDir, `${size}.png`), png)
+    console.log(`icon ${size}x${size}: ${png.length} bytes`)
+  }
 }

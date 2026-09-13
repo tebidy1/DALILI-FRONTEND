@@ -7,11 +7,40 @@ import { guidesCountAr } from '@/lib/discover'
 import { capabilities, CAPS_PANEL } from '@/lib/capabilities'
 import { WEB_BASE } from '@/lib/config'
 import type { PreferredStart } from '@/lib/settings-store'
-import { RecordIcon, MicIcon, SearchIcon, DocIcon } from './icons'
+import { RecordIcon, MicIcon, SearchIcon } from './icons'
+import { ItqanLockup } from '@/lib/itqan-mark'
+import { GuideRow } from './GuideRow'
 
 /** شاشة الخمول في اللوحة الجانبية — الاقتطاع من App.tsx لقانون الحجم (المكوّن ≤250) */
 
 type SendMsg = 'start' | 'start-with-audio' | 'finish' | 'pause' | 'resume' | 'cancel'
+
+const ZWJ = '‍'
+
+/**
+ * العبارة التي يختصرها الاسم — الحروف الأربعة المأخوذة منها تبرز بالحبر.
+ * تمييز حرف داخل كلمة عربية يكسر وصل الحروف، فيُحاط كل حدّ عنصر بـ ZWJ
+ * ليبقى الشكل السياقي صحيحًا (التقنية نفسها المستعملة في الموقع).
+ */
+function BrandPhrase() {
+  const w = (before: string, src: string, after: string) => (
+    <>
+      {before}
+      {before ? ZWJ : ''}
+      <b>{before ? ZWJ : ''}{src}{ZWJ}</b>
+      {ZWJ}
+      {after}
+    </>
+  )
+  return (
+    <p className="signin-phrase">
+      <span>{w('', 'إ', 'جراءات')}</span>{' '}
+      <span>{w('ال', 'ت', 'شغيل')}</span>{' '}
+      <span>{w('ال', 'ق', 'ياسية')}</span>{' '}
+      <span>{w('ال', 'ن', 'شطة')}</span>
+    </p>
+  )
+}
 
 export function IdleScreen({
   send,
@@ -22,6 +51,7 @@ export function IdleScreen({
   recent,
   recentErr,
   preferredStart = 'plain',
+  onOpenHere,
 }: {
   send: (t: SendMsg) => void
   me: MeDto | null
@@ -32,6 +62,8 @@ export function IdleScreen({
   recentErr: string
   /** الإعدادات: طريقة البدء المفضّلة — تقود أيّ الزرّين يكون الأساسي (النصوص والترتيب ثابتان) */
   preferredStart?: PreferredStart
+  /** PNL-01: زر ↵ — يفتح الدليل داخل اللوحة */
+  onOpenHere?: (id: string) => void
 }) {
   const audioFirst = preferredStart === 'audio'
   return (
@@ -79,13 +111,7 @@ export function IdleScreen({
                     <span>على هذه الشاشة</span>
                   </div>
                   {discover.onScreen.map((g) => (
-                    <a key={g.id} className="doc" href={`${WEB_BASE}/g/${g.id}`} target="_blank" rel="noreferrer">
-                      <span className="doc-ic"><DocIcon /></span>
-                      <span className="doc-tx">
-                        <bdi>{g.title}</bdi>
-                        <small>{relativeTimeAr(g.updatedAt)}</small>
-                      </span>
-                    </a>
+                    <GuideRow key={g.id} id={g.id} title={g.title} sub={relativeTimeAr(g.updatedAt)} onOpenHere={onOpenHere} />
                   ))}
                 </>
               )}
@@ -96,13 +122,7 @@ export function IdleScreen({
                     <span>على هذا الموقع</span>
                   </div>
                   {discover.onSite.map((g) => (
-                    <a key={g.id} className="doc" href={`${WEB_BASE}/g/${g.id}`} target="_blank" rel="noreferrer">
-                      <span className="doc-ic"><DocIcon /></span>
-                      <span className="doc-tx">
-                        <bdi>{g.title}</bdi>
-                        <small>{relativeTimeAr(g.updatedAt)}</small>
-                      </span>
-                    </a>
+                    <GuideRow key={g.id} id={g.id} title={g.title} sub={relativeTimeAr(g.updatedAt)} onOpenHere={onOpenHere} />
                   ))}
                 </>
               )}
@@ -121,18 +141,23 @@ export function IdleScreen({
               </div>
             )}
             {filterByTitle(recent, query).map((g) => (
-              <a key={g.id} className="doc" href={`${WEB_BASE}/g/${g.id}`} target="_blank" rel="noreferrer">
-                <span className="doc-ic"><DocIcon /></span>
-                <span className="doc-tx">
-                  <bdi>{g.title}</bdi>
-                  <small>{relativeTimeAr(g.updatedAt)} · {g.stepCount.toLocaleString('ar-EG')} خطوة</small>
-                </span>
-              </a>
+              <GuideRow
+                key={g.id}
+                id={g.id}
+                title={g.title}
+                sub={`${relativeTimeAr(g.updatedAt)} · ${g.stepCount.toLocaleString('ar-EG')} خطوة`}
+                onOpenHere={onOpenHere}
+              />
             ))}
           </div>
         </>
       ) : (
         <div className="signin">
+          {/* شاشة الدخول هي أول لقاء بالعلامة — القفل كاملًا ثم العبارة التي اشتُقّ منها الاسم */}
+          <div className="signin-brand">
+            <ItqanLockup width={220} stroke={7} />
+            <BrandPhrase />
+          </div>
           <div className="muted center small">غير مسجّل الدخول — الالتقاط يعمل، والنشر وعرض أدلتك يحتاجان دخولًا</div>
           <button className="ghost" onClick={() => window.open(`${WEB_BASE}/login?return=extension`, '_blank')}>
             تسجيل الدخول

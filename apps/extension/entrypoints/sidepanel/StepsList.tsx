@@ -1,6 +1,7 @@
 import type { SessionMeta, StepSummary } from '@/lib/protocol'
 import { ChevronIcon, TrashIcon } from './icons'
-import { PreviewShot, PendingShot, kindLabel, voiceBadgeAr } from './parts'
+import { kindLabel, voiceBadgeAr } from './parts'
+import { PreviewShot, PendingShot } from './Shot'
 
 /** قائمة خطوات الالتقاط في اللوحة — الاقتطاع من App.tsx لقانون الحجم.
  * VOX-09: شارة 🎙 قابلة للحذف، وحلقة حمراء نابضة حول معاينة الخطوة المدموجة */

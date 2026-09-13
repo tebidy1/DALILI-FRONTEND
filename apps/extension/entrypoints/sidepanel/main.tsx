@@ -4,8 +4,12 @@ import { DaliliClient } from '@dalili/shared'
 import { API_BASE } from '@/lib/config'
 import { THEME_STORAGE_KEY, normalizeChoice, reconcileChoice } from '@/lib/theme-choice'
 import { injectTheme } from '@/lib/theme-apply'
+import { dismissSplash } from '@/lib/splash'
 import './sidepanel.css'
 import { App } from './App'
+
+// لحظة بدء الرسمة في index.html — منها يُحسب ما تبقّى من حدّها الأدنى
+const bootAt = Date.now()
 
 // مزامنة الثيم (2026-09-06): الكاش المحلي يحقن فورًا للعرض بلا وميض، ثم قيمة
 // الخادم (من overview) هي الحقيقة — اختلفت أُعيد الحقن وحُفظت. فشل النداء
@@ -23,6 +27,9 @@ async function boot() {
       <App />
     </React.StrictMode>,
   )
+
+  // الشاشة تُرفع بعد أن يُركَّب React — ولا تؤخّره: إن طال الإقلاع صار الباقي صفرًا
+  void dismissSplash(document, Date.now() - bootAt)
 
   try {
     const ov = await new DaliliClient(API_BASE).libraryOverview()

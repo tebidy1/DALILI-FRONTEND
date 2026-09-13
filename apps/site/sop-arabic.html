@@ -9,99 +9,297 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/site.css?v=2">
+<link rel="stylesheet" href="assets/site.css?v=5">
+<link rel="stylesheet" href="assets/site-v2.css?v=13">
+<link rel="stylesheet" href="assets/site-pages.css?v=1">
 </head>
 <body>
 
-<nav class="nav">
-  <a class="logo" href="index.html" aria-label="إتقان — الرئيسية">
-    <span class="wordmark">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
-  </a>
-  <a href="standard.html">المعيار</a>
-  <a href="security.html">الأمن والسرية</a>
-  <a href="sop-arabic.html" class="active">SOP بالعربي</a>
-  <a class="btn btn-sm" href="request.html">اطلب عرضًا</a>
-</nav>
+<a class="skip-link" href="#main">تجاوز إلى المحتوى</a>
 
-<a class="skip" href="#main">تجاوز إلى المحتوى</a>
+<!-- ═══════════════ الترويسة ═══════════════ -->
+<header class="site-header" id="site-header" role="banner">
+  <div class="header-inner container">
+    <a class="header-logo" href="index.html" aria-label="إتقان — الرئيسية">
+      <span class="wordmark" aria-label="إتقان">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+      <span class="header-tagline">Active SOP</span>
+    </a>
+    <nav class="header-nav" aria-label="التنقل الرئيسي">
+      <a href="standard.html">المعيار</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="sop-arabic.html" aria-current="page">SOP بالعربي</a>
+    </nav>
+    <div class="header-action">
+      <a class="btn btn-primary" href="request.html">احجز عرضًا</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" type="button"
+            aria-expanded="false" aria-controls="mobile-menu"
+            aria-label="فتح القائمة">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobile-menu" hidden>
+    <nav aria-label="قائمة الجوال">
+      <a href="standard.html">المعيار</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="sop-arabic.html" aria-current="page">SOP بالعربي</a>
+      <a class="btn btn-primary btn-full" href="request.html">احجز عرضًا</a>
+    </nav>
+  </div>
+</header>
+
 <main id="main">
 
-<div class="wrap narrow">
-  <section style="padding-top:72px">
-    <h1 class="doc-h">SOP بالعربي</h1>
-    <div class="def-quote">
-      <p><span class="mono">SOP</span> بالعربي: <b>إجراءات التشغيل القياسية النشطة</b> — وثيقة الطريقة التي لا تُكتب مرة وتُنسى، بل تعيش: تتحدّث مع تغيّر الأنظمة، وتصل إلى من ينفّذ، ويوقّعها امتثال المؤسسة.</p>
+<!-- ═══════════════ الافتتاحية ═══════════════ -->
+<section class="page-hero" aria-labelledby="sop-heading">
+  <div class="container">
+    <p class="eyebrow">SOP بالعربي</p>
+    <h1 id="sop-heading">ما معنى <bdi>SOP</bdi>؟ والمقابل العربي الذي يضيف «النشطة».</h1>
+    <p class="page-lead">المصطلح مستقر في وثائق الجودة العربية منذ عقود. هنا نشرحه كما هو — ثم نوضح الفرق الذي تصنعه كلمة واحدة.</p>
+  </div>
+  <div class="section-divider" style="margin-top:56px" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════ التعريف ═══════════════ -->
+<section class="section-compact" aria-label="التعريف">
+  <div class="container">
+    <div class="define-panel textured">
+      <p class="dp-term"><span class="mono">SOP</span> بالعربي: <b>إجراءات التشغيل القياسية النشطة</b></p>
+      <p>وثيقة الطريقة التي لا تُكتب مرة وتُنسى، بل تعيش: تتحدّث مع تغيّر الأنظمة، وتصل إلى من ينفّذ، ويوقّعها امتثال المؤسسة.</p>
     </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
 
-    <section style="padding-top:56px;padding-bottom:0">
-      <h2 style="font-size:clamp(24px,3vw,30px);margin-bottom:10px">الأصل</h2>
-      <p class="doc-p"><span class="mono">SOP</span> اختصار Standard Operating Procedures — إجراءات التشغيل القياسية، والمصطلح المستقر في وثائق الجودة العربية. «إتقان (Active SOP)» هو الاسم التجاري للفئة التي تضيف على القياسية صفة <b>النشطة</b>.</p>
-    </section>
+<!-- ═══════════════ الأصل ═══════════════ -->
+<section class="section-compact" aria-labelledby="origin-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:42rem">
+      <p class="eyebrow">الأصل</p>
+      <h2 id="origin-heading">من أين جاء المصطلح؟</h2>
+    </div>
+    <div class="gloss-grid">
+      <div class="mono-lat">
+        <bdi>Standard Operating Procedures</bdi>
+        <small>المصطلح الإنجليزي المستقر · يُختصر <bdi>SOP</bdi></small>
+      </div>
+      <div class="gloss-body">
+        <p>الترجمة المستقرّة في وثائق الجودة العربية: <b>إجراءات التشغيل القياسية</b> — وثيقة رسمية تصف كيف تُنفَّذ مهمة بشكل صحيح وموحّد، لتؤديها الفرق المختلفة بالطريقة نفسها وتُدرَّب عليها الأجيال الجديدة.</p>
+        <p>«إتقان (Active SOP)» هو الاسم التجاري للفئة التي تضيف على القياسية صفة <b>النشطة</b>: الإجراء لا يُحفظ في ملف، بل يُلتقط أثناء العمل ويُسنَد ويُقاس ويصل إلى من ينفّذه.</p>
+      </div>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
 
-    <table class="vs">
-      <tr><th></th><th>الإجراء القياسي</th><th>الإجراء النشط</th></tr>
-      <tr><td><b>الكتابة</b></td><td>تُكتب مرة، وتُقرأ كثيرًا</td><td>تُلتقط أثناء التنفيذ، وتتحدّث مع النظام</td></tr>
-      <tr><td><b>المقياس</b></td><td>عدد الوثائق</td><td>دورة الحياة: تحدّث · وصول · توقيع</td></tr>
-      <tr><td><b>التقادم</b></td><td>بصمت — تُقرأ بثقة وهي تكذب</td><td>مُعلن — نقطة تنطفئ أمام الجميع</td></tr>
-      <tr><td><b>الشهادة</b></td><td>ملف في مجلد</td><td>توقيع امتثال قابل للإثبات</td></tr>
+<!-- ═══════════════ القياسي مقابل النشط ═══════════════ -->
+<section class="section-standard" aria-labelledby="vs-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:42rem">
+      <p class="eyebrow">الفرق</p>
+      <h2 id="vs-heading">الإجراء القياسي والإجراء النشط.</h2>
+      <p class="section-lead">القياسية توثّق الطريقة. النشطة تجعلها تعيش في العمل اليومي.</p>
+    </div>
+    <table class="v2-table">
+      <tr>
+        <th scope="col"></th>
+        <th scope="col">الإجراء القياسي</th>
+        <th scope="col">الإجراء النشط</th>
+      </tr>
+      <tr>
+        <td>الكتابة</td>
+        <td>تُكتب مرة، وتُقرأ كثيرًا</td>
+        <td>تُلتقط أثناء التنفيذ، وتتحدّث مع النظام</td>
+      </tr>
+      <tr>
+        <td>المقياس</td>
+        <td>عدد الوثائق</td>
+        <td>دورة الحياة: تحدّث · وصول · توقيع</td>
+      </tr>
+      <tr>
+        <td>التقادم</td>
+        <td>بصمت — تُقرأ بثقة وهي تكذب</td>
+        <td>مُعلن — نقطة تنطفئ أمام الجميع</td>
+      </tr>
+      <tr>
+        <td>الشهادة</td>
+        <td>ملف في مجلد</td>
+        <td>توقيع امتثال قابل للإثبات</td>
+      </tr>
     </table>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
 
-    <section style="padding-top:56px;padding-bottom:0">
-      <h2 style="font-size:clamp(24px,3vw,30px);margin-bottom:10px">التوثيق التقليدي والتوثيق النشط</h2>
-      <p class="doc-p">معظم الشركات توثّق لتضع ملفًا في رفّ. الفرق حين يصير التوثيق جزءًا من التنفيذ نفسه:</p>
-      <table class="vs">
-        <tr><th>التوثيق التقليدي</th><th>مع إتقان</th></tr>
-        <tr><td>كتابة الخطوات يدويًا وتصويرها واحدًا واحدًا</td><td>التقاط تلقائي أثناء التنفيذ العادي</td></tr>
-        <tr><td>ملفات موزعة بين المجلدات والرسائل</td><td>مكتبة مركزية يُبحث فيها بالمعنى</td></tr>
-        <tr><td>صعوبة معرفة أحدث نسخة</td><td>ألف المعيار تقرأ حالة الدليل للجميع</td></tr>
-        <tr><td>شرح متكرر لكل موظف جديد</td><td>دليل يتابعه الموظف من يومه الأول</td></tr>
-        <tr><td>لا أحد يعرف من قرأ ومن طبّق</td><td>سجل نسخ معلن، ومتابعة الاعتماد قيد التصميم</td></tr>
-      </table>
-      <p class="vs-close">النتيجة: وقت أقل في الشرح، وأخطاء أقل، وتشغيل أكثر اتساقًا.</p>
-    </section>
-
-    <section style="padding-top:56px;padding-bottom:0">
-      <h2 style="font-size:clamp(24px,3vw,30px);margin-bottom:14px">معيار إتقان الخماسي</h2>
-      <p class="doc-p">إسناد · تحديث · قياس · اعتماد · نشر — مبنية على متطلبات ISO 9001:2015 البند ٧٫٥. <a href="standard.html">اقرأ المعيار كاملًا ←</a></p>
-    </section>
-
-    <div class="faq">
-      <h3>ما معنى SOP؟</h3><p>إجراءات التشغيل القياسية — وثيقة رسمية تصف كيف تُنفَّذ مهمة بشكل صحيح وموحّد.</p>
-      <h3>ما المقابل العربي لـ SOP؟</h3><p>إجراءات التشغيل القياسية. و«إتقان» هو الاسم التجاري للفئة النشطة منها.</p>
-      <h3>ما الفرق بين الإجراء القياسي والإجراء النشط؟</h3><p>القياسي يُكتب مرة ويتقادم بصمت. النشط يتحدّث مع تغيّر الأنظمة، ويصل إلى من ينفّذ، ويوقّعه امتثال المؤسسة.</p>
+<!-- ═══════════════ التوثيق التقليدي ومع إتقان ═══════════════ -->
+<section class="section-standard" aria-labelledby="trad-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:42rem">
+      <p class="eyebrow">على أرض الواقع</p>
+      <h2 id="trad-heading">التوثيق التقليدي… ومع إتقان.</h2>
+      <p class="section-lead">معظم الشركات توثّق لتضع ملفًا في رفّ. الفرق حين يصير التوثيق جزءًا من التنفيذ نفسه:</p>
     </div>
-  </section>
-</div>
+    <table class="v2-table">
+      <tr>
+        <th scope="col">التوثيق التقليدي</th>
+        <th scope="col">مع إتقان</th>
+      </tr>
+      <tr>
+        <td>كتابة الخطوات يدويًا وتصويرها واحدًا واحدًا</td>
+        <td>التقاط تلقائي أثناء التنفيذ العادي</td>
+      </tr>
+      <tr>
+        <td>ملفات موزعة بين المجلدات والرسائل</td>
+        <td>مكتبة مركزية يُبحث فيها بالمعنى</td>
+      </tr>
+      <tr>
+        <td>صعوبة معرفة أحدث نسخة</td>
+        <td>ألف المعيار تقرأ حالة الدليل للجميع</td>
+      </tr>
+      <tr>
+        <td>شرح متكرر لكل موظف جديد</td>
+        <td>دليل يتابعه الموظف من يومه الأول</td>
+      </tr>
+      <tr>
+        <td>لا أحد يعرف من قرأ ومن طبّق</td>
+        <td>سجل نسخ معلن، ومتابعة الاعتماد قيد التصميم</td>
+      </tr>
+    </table>
+    <p class="vs-close" style="margin-top:32px">النتيجة: وقت أقل في الشرح، وأخطاء أقل، وتشغيل أكثر اتساقًا.</p>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════ مأخذ المعيار الخماسي ═══════════════ -->
+<section class="section-compact" aria-labelledby="five-heading">
+  <div class="container">
+    <div class="section-intro" style="max-width:42rem">
+      <p class="eyebrow">ما بعد التعريف</p>
+      <h2 id="five-heading">متى يكون الإجراء «نشطًا» فعلًا؟</h2>
+    </div>
+    <div class="five-teaser">
+      <span class="alif" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>
+      <p>حين يجتاز <b>معيار إتقان الخماسي</b>: إسناد · تحديث · قياس · اعتماد · نشر — مبنية على متطلبات ISO 9001:2015 البند ٧٫٥، بحالة معلنة لكل شرط.</p>
+      <a class="btn btn-secondary" href="standard.html">اقرأ المعيار كاملًا</a>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════ الأسئلة الشائعة ═══════════════ -->
+<section class="section-compact" aria-labelledby="sop-faq-heading">
+  <div class="container faq-layout">
+    <div class="section-intro">
+      <p class="eyebrow">أسئلة شائعة</p>
+      <h2 id="sop-faq-heading">ما يسأله من يواجه المصطلح أول مرة.</h2>
+    </div>
+    <div class="faq-accordion" id="faq-accordion">
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-ans-1" id="faq-q-1">
+          <span>ما معنى SOP؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-1" role="region" aria-labelledby="faq-q-1" hidden>
+          <p>إجراءات التشغيل القياسية — وثيقة رسمية تصف كيف تُنفَّذ مهمة بشكل صحيح وموحّد، حتى تؤديها الفرق المختلفة بالطريقة نفسها.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-ans-2" id="faq-q-2">
+          <span>ما المقابل العربي لـ SOP؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-2" role="region" aria-labelledby="faq-q-2" hidden>
+          <p>إجراءات التشغيل القياسية. و«إتقان» هو الاسم التجاري للفئة النشطة منها — إجراء يُلتقط أثناء العمل ويُسنَد ويُقاس ويصل إلى من ينفّذه.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-ans-3" id="faq-q-3">
+          <span>ما الفرق بين الإجراء القياسي والإجراء النشط؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-3" role="region" aria-labelledby="faq-q-3" hidden>
+          <p>القياسي يُكتب مرة ويتقادم بصمت. النشط يتحدّث مع تغيّر الأنظمة، ويصل إلى من ينفّذ، ويوقّعه امتثال المؤسسة.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-ans-4" id="faq-q-4">
+          <span>هل يكفي أن يكون الإجراء مكتوبًا؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-4" role="region" aria-labelledby="faq-q-4" hidden>
+          <p>الكتابة شرط ضروري لا كافٍ. الإجراء المكتوب الذي لا يصل إلى من ينفّذ، ولا يُحدَّث مع تغيّر الأنظمة، يصير وثيقة يتقادم بصمت — وهذا ما تحلّه صفة «النشطة».</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question" type="button" aria-expanded="false" aria-controls="faq-ans-5" id="faq-q-5">
+          <span>أين يُستخدم SOP عادة؟</span>
+          <span class="faq-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="faq-answer" id="faq-ans-5" role="region" aria-labelledby="faq-q-5" hidden>
+          <p>في أي عملية تتكرر وتحتاج اتساقًا: التشغيل والمشتريات وخدمة العملاء والامتثال — خصوصًا في المؤسسات متعددة الفروع حيث يصعب توحيد الأداء بالشرح الشفهي.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════ الخطوة التالية ═══════════════ -->
+<section class="section-compact" aria-label="الخطوة التالية">
+  <div class="container">
+    <div class="next-cta textured">
+      <div>
+        <h2>حوّلوا إجراءاتكم المكتوبة إلى نشطة.</h2>
+        <p>في العرض نأخذ إجراءً مكتوبًا من إجراءاتكم ونريكم كيف يبدو نشطًا: مُلتقطًا، مُسنَدًا، وقابلًا للقياس.</p>
+      </div>
+      <div class="cta-actions">
+        <a class="btn btn-primary" href="request.html">احجز عرضًا</a>
+        <a class="link-arrow" href="standard.html">المعيار الخماسي</a>
+      </div>
+    </div>
+  </div>
+</section>
+
 </main>
 
-<footer>
-  <div class="foot-grid">
-    <div class="foot-brand">
-      <span class="wordmark">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
-      <p>إجراءات التشغيل القياسية النشطة — تُلتقط أثناء العمل، وتُفرَّغ بالعربي، وتنشر على بنيتكم أنتم.</p>
-      <span class="badge">مبني على متطلبات ISO 9001:2015 البند ٧٫٥</span>
+<!-- ═══════════════ التذييل ═══════════════ -->
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-divider" aria-hidden="true"></div>
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <a class="footer-logo" href="index.html" aria-label="إتقان — الرئيسية">
+        <span class="wordmark" aria-label="إتقان">إتق<span class="alif-col" aria-hidden="true"><i></i><i></i><i></i><i class="off"></i><i></i></span>ن</span>
+      </a>
+      <p class="footer-derivation">
+        <b>إ</b>جراءات ال&zwj;<b>&zwj;ت&zwj;</b>&zwj;شغيل ال&zwj;<b>&zwj;ق&zwj;</b>&zwj;ياسية ال&zwj;<b>&zwj;ن&zwj;</b>&zwj;شطة
+      </p>
+      <p class="footer-tagline">إتقان — المتطلب والمسؤولية والدليل، في سياق واحد.</p>
+      <p class="footer-latin"><bdi>ITQAN</bdi> · <bdi>Active SOP</bdi></p>
     </div>
-    <div class="foot-col">
-      <b>الموقع</b>
+    <nav class="footer-nav-group" aria-label="استكشف">
+      <h3 class="footer-nav-title">استكشف</h3>
       <a href="index.html">الرئيسية</a>
+      <a href="index.html#how-it-works">كيف يعمل</a>
+      <a href="index.html#roles">إتقان في إدارتك</a>
+      <a href="index.html#faq">أسئلة القرار</a>
+    </nav>
+    <nav class="footer-nav-group" aria-label="تواصل ومعلومات">
+      <h3 class="footer-nav-title">تواصل ومعلومات</h3>
+      <a href="request.html">طلب عرض</a>
       <a href="standard.html">المعيار الخماسي</a>
       <a href="security.html">الأمن والسرية</a>
       <a href="sop-arabic.html">ما معنى SOP؟</a>
-      <a href="request.html">اطلب عرضًا</a>
-    </div>
-    <div class="foot-col">
-      <b>قريبًا</b>
-      <span class="foot-soon">معرض القوالب <span class="soon">قريبًا</span></span>
-      <span class="foot-soon">دراسات حالة العملاء <span class="soon">قريبًا</span></span>
-      <span class="foot-soon">دليل البدء خلال ساعة <span class="soon">قريبًا</span></span>
-    </div>
+    </nav>
   </div>
-  <div class="foot-base">
-    <span>إتقان (Active SOP) · ٢٠٢٦</span>
-    <span class="latin-lockup">ITQAN · Active SOP</span>
+  <div class="footer-bottom">
+    <div class="container footer-bottom-inner">
+      <span class="footer-copy">© <span id="footer-year">2026</span> إتقان · <bdi>Active SOP</bdi></span>
+    </div>
   </div>
 </footer>
 
-<script src="assets/site.js?v=2"></script>
+<script src="assets/site-v2.js?v=7"></script>
 </body>
 </html>
