@@ -2079,6 +2079,46 @@ textarea.guide-desc-input:focus {
   contain-intrinsic-size: auto 560px;
 }
 
+/* — ٣و (قرار المالك 2026-09-17): خطوة الانتقال بين النوافذ شريط فاصل رفيع بين
+   البطاقات — بلا مساحة صورة إطلاقًا (لا لقطة لها بحكم التصميم فلا يظهر «لا
+   توجد لقطة» وكأنه فشل)، رقمها شارة مصغّرة تُحفظ بالتسلسل، وتمييز «الحالي»
+   (الصوت/التمرير) كالخطوات — */
+.viewer-navigate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 784px;
+  width: 100%;
+  margin: -18px auto 34px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--brand) 4%, transparent);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-lg);
+  font-size: 14px;
+}
+
+.viewer-navigate .viewer-navigate-num {
+  flex: none;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.viewer-navigate .viewer-navigate-title {
+  font-weight: 600;
+}
+
+.viewer-navigate.current {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
 /* — VOX-03 موزّعًا (قرار المالك 2026-08-30): زر استماع داخل كل خطوة — الصوت في مكانه — */
 .step-audio {
   display: inline-flex;

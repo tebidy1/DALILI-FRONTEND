@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  bottomRightPosition,
   PLACEMENT_KEY,
   restorePlacement,
   trackPlacement,
@@ -153,5 +154,37 @@ describe('٣هـ-٣ — ثبات موضع الودجة (try/catch شامل)', ()
     sched.runAll()
     await Promise.resolve()
     expect(store.getItem(PLACEMENT_KEY)).toBe('9,9')
+  })
+})
+
+describe('الموضع الطبيعي — الركن السفلي الأيمن (طلب المالك ٢٠٢٦-٠٩-١٧)', () => {
+  it('(أ) شاشة ١٩٢٠×١٠٨٠ عند ٩٦dpi: فجوة ١٤ يمينًا و٦٢ أسفل (فوق شريط المهام)', () => {
+    const mon = { position: { x: 0, y: 0 }, size: { width: 1920, height: 1080 }, scaleFactor: 1 }
+    expect(bottomRightPosition(mon, { width: 320, height: 72 })).toEqual({
+      x: 1920 - 320 - 14,
+      y: 1080 - 72 - (48 + 14),
+    })
+  })
+
+  it('(ب) ١٥٠٪: الفجوات تتدرّج مع مقياس DPI فلا تختلط بالشريط', () => {
+    const mon = { position: { x: 0, y: 0 }, size: { width: 2880, height: 1620 }, scaleFactor: 1.5 }
+    // فجوة 14⇒21 و(شريط+فجوة) 62⇒93 بالفيزيائيّ
+    expect(bottomRightPosition(mon, { width: 480, height: 108 })).toEqual({
+      x: 2880 - 480 - 21,
+      y: 1620 - 108 - 93,
+    })
+  })
+
+  it('(ج) شاشة أضيق من الودجة ⇒ التثبيت على أصل الشاشة لا مواضع سالبة', () => {
+    const tiny = { position: { x: 100, y: 50 }, size: { width: 200, height: 80 }, scaleFactor: 1 }
+    expect(bottomRightPosition(tiny, { width: 320, height: 72 })).toEqual({ x: 100, y: 50 })
+  })
+
+  it('(د) شاشة ثانية يسار الأصل تُحترم إزاحتها — الحساب نسبة إلى الشاشة نفسها', () => {
+    const second = { position: { x: 1920, y: 0 }, size: { width: 1920, height: 1080 }, scaleFactor: 1 }
+    expect(bottomRightPosition(second, { width: 320, height: 72 })).toEqual({
+      x: 1920 + 1920 - 320 - 14,
+      y: 1080 - 72 - 62,
+    })
   })
 })

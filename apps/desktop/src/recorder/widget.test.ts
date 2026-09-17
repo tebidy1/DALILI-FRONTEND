@@ -81,6 +81,17 @@ describe('٣هـ-٢ — مُصغِّر حالة الودجة النقيّ', () =
     expect(reduceWidget(finished, 'start')).toEqual({ mode: 'recording', steps: 0 })
   })
 
+  it('(و) الإلغاء (قرار المالك): recording/paused ⇐ صفر جديد، وغيرهما بلا أثر', () => {
+    const recording = drive(['start', 'tick', 'tick'])
+    expect(reduceWidget(recording, 'cancel')).toEqual({ mode: 'idle', steps: 0 })
+    const paused = drive(['start', 'tick', 'pause'])
+    expect(reduceWidget(paused, 'cancel')).toEqual({ mode: 'idle', steps: 0 })
+    // الإلغاء في غير أوضاعه لا يفعل شيء — كباقي الأفعال المنضبطة
+    expect(reduceWidget(initialWidgetState, 'cancel')).toEqual(initialWidgetState)
+    const building = drive(['start', 'tick', 'stop'])
+    expect(reduceWidget(building, 'cancel')).toEqual(building)
+  })
+
   it('(هـ) مزامنة العدّاد من حقيقة الجلسة (count): يضبط العدد ولا يغيّر الوضع', () => {
     const recording = drive(['start', 'tick', 'tick'])
     expect(reduceWidget(recording, { t: 'count', steps: 5 })).toEqual({ mode: 'recording', steps: 5 })

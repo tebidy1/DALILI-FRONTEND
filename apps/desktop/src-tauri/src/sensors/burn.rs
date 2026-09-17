@@ -59,17 +59,67 @@ pub fn box_blur_region(pixels: &mut [u8], w: u32, h: u32, rect: BurnRect) {
     }
 }
 
-/// حارس المسار: ‏localId من إنتاجنا حصرًا «f-<أرقام>» — لا اجتياح مجلدات من IPC
-fn local_frame_path(local_id: &str) -> Result<String, String> {
+/// جذر مخزن الإطارات المؤقّت — مصدر وحيد للمسار في هذا الملفّ (الحرق والمصغّرة)
+fn frames_dir() -> std::path::PathBuf {
+    std::env::temp_dir().join("itqan-frames")
+}
+
+/// حارس المعرّف: ‏localId من إنتاجنا حصرًا «f-<أرقام>» — لا اجتياح مجلدات من IPC
+fn validate_local_id(local_id: &str) -> Result<(), String> {
     let digits = local_id.strip_prefix("f-").unwrap_or("");
     if digits.is_empty() || !digits.bytes().all(|b| b.is_ascii_digit()) {
         return Err(format!("localId غير صالح: {local_id}"));
     }
-    Ok(std::env::temp_dir()
-        .join("itqan-frames")
+    Ok(())
+}
+
+/// حارس المسار: يبني مسار إطار المخزن بعد فحص المعرّف
+fn local_frame_path(local_id: &str) -> Result<String, String> {
+    validate_local_id(local_id)?;
+    Ok(frames_dir()
         .join(format!("{local_id}.jpg"))
         .display()
         .to_string())
+}
+
+/// ترميز base64 قياسي (RFC 4648 بحشو) بلا تبعيّة جديدة — الحزم ثابتة،
+/// والوظيفة عرض JPEG في webview حصرًا. ٣ بايتات ⇐ ٤ محارف والباقي «=».
+fn base64_encode(bytes: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let n = ((chunk[0] as u32) << 16)
+            | ((*chunk.get(1).unwrap_or(&0) as u32) << 8)
+            | (*chunk.get(2).unwrap_or(&0) as u32);
+        out.push(TABLE[(n >> 18) as usize & 63] as char);
+        out.push(TABLE[(n >> 12) as usize & 63] as char);
+        out.push(if chunk.len() > 1 { TABLE[(n >> 6) as usize & 63] as char } else { '=' });
+        out.push(if chunk.len() > 2 { TABLE[n as usize & 63] as char } else { '=' });
+    }
+    out
+}
+
+/// بايتات الإطار المؤقّت data URL للودجة (المرحلة ١: مصغّرة الخطوة الأحدث) —
+/// نقيّة (الجذر محقون) وقابلة للاختبار، **بلا فكّ ترميز ولا تحجيم**: الإحداثيّات
+/// في TS تعمل على أبعاد الصورة الطبيعيّة مباشرةً
+fn read_frame_data_url(frames_root: &std::path::Path, local_id: &str) -> Result<String, String> {
+    validate_local_id(local_id)?;
+    let path = frames_root.join(format!("{local_id}.jpg"));
+    let bytes = std::fs::read(&path).map_err(|e| format!("تعذّر قراءة الإطار: {e}"))?;
+    Ok(format!("data:image/jpeg;base64,{}", base64_encode(&bytes)))
+}
+
+/// ردّ المصغّرة على السلك — camelCase: { dataUrl }
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ThumbDto {
+    pub data_url: String,
+}
+
+/// `frame_thumb(localId)` — بكسلات اللقطة المؤقّتة للودجة (خامٌ يمرّ، لا فهم دليل)
+pub fn frame_thumb(local_id: &str) -> Result<ThumbDto, String> {
+    let root = frames_dir();
+    Ok(ThumbDto { data_url: read_frame_data_url(&root, local_id)? })
 }
 
 /// فكّ JPEG → مخزن ‏BGRA (نفس صيغة الالتقاط في capture حصرًا)
@@ -232,5 +282,46 @@ mod tests {
             var_luma(&outside)
         );
         let _ = std::fs::remove_file(&path);
+    }
+
+    /// جذر مؤقّت فريد لاختبار المصغّرة — بلا تبعيّة tempfile (الحزم ثابتة)
+    fn thumb_test_dir(tag: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!("itqan-thumb-tests-{}-{tag}", std::process::id()));
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    /// المصغّرة: بايتات الإطار تصل الـwebview data URL بلا فكّ ولا تحجيم —
+    /// مطابقة سلسلة متوقعة حرفيًّا (بتّيّة أقوى من فكّ ترميز في الاختبار)
+    #[test]
+    fn المصغّرة_تقرأ_الإطار_رمزه_بيانات_مطابقةً() {
+        let dir = thumb_test_dir("ok");
+        let bytes: [u8; 7] = [0xFF, 0xD8, 0xFF, 0xE0, 0x01, 0x02, 0x03]; // بادئة JPEG + حشو
+        std::fs::write(dir.join("f-77.jpg"), bytes).unwrap();
+        let url = read_frame_data_url(&dir, "f-77").unwrap();
+        assert!(url.starts_with("data:image/jpeg;base64,"), "{url}");
+        // ‏FFD8FFE0010203 ⇒ «/9j/4AEC» ثم «Aw==» لحشو البايت الأخير (RFC 4648)
+        assert_eq!(url, "data:image/jpeg;base64,/9j/4AECAw==");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// ترميز base64 على حدود المجموعات: ٣ بايتات (بلا حشو) و٢ وبايت واحد
+    #[test]
+    fn ترميز_القاعدة_على_حدود_المجموعات_صحيح() {
+        assert_eq!(base64_encode(&[0xFB, 0xFF, 0xBF]), "+/+/");
+        assert_eq!(base64_encode(&[0xFB, 0xFF]), "+/8=");
+        assert_eq!(base64_encode(&[0xFB]), "+w==");
+        assert_eq!(base64_encode(b""), "");
+        assert_eq!(base64_encode(b"Man"), "TWFu");
+    }
+
+    /// حارس المصغّرة نفسه: localId خارج إنتاجنا يُرَدّ خطأً لا يقرأ شيئًا
+    #[test]
+    fn حارس_المصغّرة_يرفض_اجتياح_المسار() {
+        let dir = thumb_test_dir("guard");
+        assert!(read_frame_data_url(&dir, "../secret").is_err());
+        assert!(read_frame_data_url(&dir, "f-").is_err());
+        assert!(read_frame_data_url(&dir, "x-1").is_err());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -64,6 +64,36 @@ function StepShot({ s, autoNumber, color }: { s: StepDto; autoNumber?: number | 
   )
 }
 
+/** ٣و (قرار المالك 2026-09-17): خطوة الانتقال بين النوافذ شريط فاصل رفيع بين
+ *  البطاقات — بلا مساحة صورة إطلاقًا (لا لقطة لها بحكم التصميم، فلا يظهر
+ *  «لا توجد لقطة» وكأنه فشل التقاط)، ورقمها شارة مصغّرة تُحفظ بالتسلسل.
+ *  `current`/`stepRef` للنسخة الكاملة كي يصلها تمييز الصوت والتمرير كالخطوات. */
+function ViewerNavigate({
+  step,
+  n,
+  current = false,
+  stepRef,
+}: {
+  step: StepDto
+  n?: number | null
+  current?: boolean
+  stepRef?: (el: HTMLDivElement | null) => void
+}) {
+  return (
+    <div
+      className={`viewer-navigate${current ? ' current' : ''}`}
+      ref={stepRef}
+      data-current={current ? 'true' : undefined}
+      dir="rtl"
+    >
+      <span className="viewer-navigate-num">{n ?? ''}</span>
+      <span className="viewer-navigate-title">
+        <bdi>{step.title}</bdi>
+      </span>
+    </div>
+  )
+}
+
 /** العارض العام — يفتح بلا حساب من رابط المشاركة، نظيف وقابل للطباعة. embed=true نسخة التضمين بلا قشرة */
 export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { token } = useParams<{ token: string }>()
   const [data, setData] = useState<PublicGuideDto | null>(null)
@@ -227,6 +257,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
         {guide.kind === 'booklet' && <ViewerBooklet guide={guide} embeds={data.embeds ?? {}} />}
         {guide.kind !== 'booklet' && guide.steps.map((s, i) => {
           if (s.block) return <ViewerBlock key={s.id} step={s} />
+          if (s.kind === 'navigate') return <ViewerNavigate key={s.id} step={s} n={embedNums[i]} />
           return (
             <div className="viewer-step" key={s.id}>
               <h2>
@@ -315,6 +346,18 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
         {guide.kind === 'booklet' && <ViewerBooklet guide={guide} embeds={data.embeds ?? {}} />}
         {guide.kind !== 'booklet' && guide.steps.map((s, i) => {
           if (s.block) return <ViewerBlock key={s.id} step={s} />
+          if (s.kind === 'navigate')
+            return (
+              <ViewerNavigate
+                key={s.id}
+                step={s}
+                n={nums[i]}
+                current={current === i}
+                stepRef={(el) => {
+                  stepEls.current[i] = el
+                }}
+              />
+            )
           return (
             <div
               className={`viewer-step${current === i ? ' current' : ''}`}

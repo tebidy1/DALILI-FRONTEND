@@ -5,46 +5,201 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>إتقان — سطح المكتب</title>
     <style>
-      /* قشرة الودجة (٣هـ-١): قصّ الفراغ كي لا تتجاوز محتويات حدود الودجة الصغيرة.
-         الهويّة (٣هـ-٣) من رموز @dalili/core/theme.ts الرسميّة: حبر جرافيت
-         ‎#2B2A26 على ورق ‎#F6F5F2، والأحمر ‎#C4453D وظيفيّ (نبض التسجيل) حصرًا —
-         لونان + أحمر وظيفيّ، بلا أيّ لون تزيينيّ. */
+      /* ودجة إتقان — واجهة بحالتين (توصية UX الموافق عليها 2026-09-17):
+         حبة 320×72 وقت الخمول، ولوحة زجاجية 320×400 وقت التسجيل.
+         النافذة شفّافة (transparent في tauri.conf.json) والزجاج هنا:
+         خلفية اللوحة بنسبة ألفا تُظهر التطبيقَ الهدف تحتها، وتصفو عند
+         تمرير الماوس. الهويّة من @dalili/core/theme.ts حصرًا: جرافيت
+         ‎#2B2A26 على ورق ‎#F6F5F2، والأحمر ‎#C4453D وظيفيّ (نبض التسجيل
+         والإلغاء المسلَّح)، والأخضر ‎#3A7D44 للمربوط (قرار المالك الصريح). */
+      :root {
+        --ink: #2b2a26;
+        --paper: #f6f5f2;
+        --card: #ffffff;
+        --line: #e7e3da;
+        --muted: #6b675f;
+        --rec: #c4453d;
+        --ok: #3a7d44;
+      }
+      /* حاسم: خاصيّة hidden يجب أن تحجب فعلًا. قواعد مثل `.pill{display:flex}`
+         و`.panel{display:flex}` تساوي محدِّدَ متصفّح `[hidden]{display:none}`
+         وتأتي بعده فتغلبه — فتبقى الحبة ظاهرةً في وضع التسجيل واللوحةُ تُسحق
+         لشريطٍ رفيع (علّة «تتمدّد النافذة ولا يظهر شيء»). هذا السطر يجعل
+         hidden آمرًا فوق أيّ display لاحق. */
+      [hidden] {
+        display: none !important;
+      }
       html,
       body {
         margin: 0;
         height: 100%;
         overflow: hidden;
-        background: #f6f5f2;
-        color: #2b2a26;
+        background: transparent; /* الزجاج: النافذة نفسها هي الشفافة */
+        color: var(--ink);
         font-family: 'Amiri', 'Sakkal Majalla', 'Traditional Arabic', 'Segoe UI', sans-serif;
       }
       #app {
         height: 100vh;
         box-sizing: border-box;
-        padding: 10px 14px;
+        padding: 6px;
       }
-      /* صفّ الودجة (٣هـ-٢): نقطة النبض والأزرار والعدّاد */
-      .row {
+      .shell {
+        height: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+      }
+      /* الزجاج — أثناء التسجيل ترى التطبيق الهدف من خلال الودجة، وتمرير
+         الماوس يصفّيها للتحكم (مصباح يضيء حين تقترب يدك) */
+      .shell.rec {
+        background: rgba(246, 245, 242, 0.68);
+      }
+      #app:hover .shell.rec {
+        background: rgba(246, 245, 242, 0.985);
+        border-color: var(--line);
+      }
+      /* الإيقاف المؤقّت: نَفَسٌ محبوس — اللوحة تثبت أكثر اعتمارًا ومحتواها يخفت */
+      .shell.held {
+        background: rgba(246, 245, 242, 0.94);
+      }
+      .shell.held .panel {
+        opacity: 0.72;
+      }
+      .shell.build {
+        background: rgba(246, 245, 242, 0.96);
+      }
+
+      /* ─── الحبة (الخمول) ─── */
+      .pill {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 10px;
+        box-sizing: border-box;
+        height: 100%;
+      }
+      .pill-row {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        flex: 1;
+        min-height: 0;
       }
-      .row button {
-        min-width: 46px;
+      .status {
+        font-size: 11px;
+        color: var(--muted);
+        min-height: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .status.ok {
+        color: var(--ok);
+        font-weight: 700;
+      }
+
+      /* ─── الأزرار ─── */
+      .btn {
+        min-height: 30px;
         padding: 4px 12px;
-        font-size: 15px;
+        font-size: 13.5px;
         line-height: 1.5;
         font-family: inherit;
-        background: #ffffff;
-        color: #2b2a26;
-        border: 1px solid #e7e3da;
-        border-radius: 3px;
+        background: var(--card);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 8px;
         cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
       }
-      .row button:hover {
-        background: #2b2a26;
-        color: #f6f5f2;
+      .btn:hover {
+        border-color: var(--ink);
       }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .btn.primary {
+        flex: 1;
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+      }
+      .btn.primary:hover {
+        background: #44423b;
+      }
+      .btn.finish {
+        width: 100%;
+        min-height: 34px;
+      }
+      .btn.danger {
+        color: var(--rec);
+        border-color: var(--line);
+      }
+      /* الإلغاء المسلَّح: احمرّ كي يُقرأ أن النقرة القادمة تنفّذ */
+      .btn.danger.armed {
+        background: var(--rec);
+        color: #fff;
+        border-color: var(--rec);
+      }
+      .btn.ghost {
+        background: transparent;
+      }
+      /* الإنهاء: صف قائمة بخطٍ هادئ، ويحمرّ عند الاقتراب لأنه فعلٌ نهائيّ */
+      .btn.exit {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        color: var(--muted);
+      }
+      .btn.exit svg {
+        width: 14px;
+        height: 14px;
+      }
+      .btn.exit:hover {
+        color: var(--rec);
+        border-color: var(--rec);
+        background: rgba(196, 69, 61, 0.06);
+      }
+      .sep {
+        height: 1px;
+        background: var(--line);
+        flex: none;
+      }
+      .icon-btn {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 4px 6px;
+        line-height: 1;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon-btn svg {
+        width: 15px;
+        height: 15px;
+        display: block;
+      }
+      .icon-btn:hover {
+        color: var(--ink);
+        background: rgba(43, 42, 38, 0.06);
+      }
+      :focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: 2px;
+      }
+
+      /* ─── النقاط (نبض التسجيل / حالة الاقتران) ─── */
       .dot {
         width: 10px;
         height: 10px;
@@ -53,57 +208,380 @@
         background: #6b675f;
       }
       .dot.rec {
-        background: #c4453d;
+        background: var(--rec);
         animation: rec-pulse 1.2s ease-in-out infinite;
       }
-      .dot.held {
-        background: #6b675f;
-      }
-      /* اقتران (اق-٢/٣): أخضر للمربوط (قرار المالك الصريح — يُبقى)، والإقران
-         جرافيت نابض تمييزًا له عن رماديّ «غير مقترن» الساكن — الأحمر وظيفيّ
-         للتسجيل وحده فلا لون ثالث */
       .dot.auth-ok {
-        background: #3a7d44;
+        background: var(--ok);
       }
       .dot.auth-wait {
-        background: #2b2a26;
+        background: var(--ink);
         animation: rec-pulse 1.2s ease-in-out infinite;
       }
-      .email {
-        max-width: 96px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 12px;
-        color: #6b675f;
+
+      /* ─── اللوحة (التسجيل) ─── */
+      .panel {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px;
+        box-sizing: border-box;
+        transition: opacity 0.2s ease;
       }
-      .mode {
-        font-size: 13px;
-        color: #6b675f;
+      .ctrl-card,
+      .list-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-sizing: border-box;
+      }
+      .ctrl-card {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .ctrl-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .chip-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #6b675f;
+        flex: none;
+      }
+      .chip.rec .chip-dot {
+        background: var(--rec);
+        animation: rec-pulse 1.2s ease-in-out infinite;
+      }
+      .chip.held .chip-dot {
+        background: #6b675f;
       }
       .count {
         font-weight: 700;
-        font-size: 15px;
+        font-size: 14px;
       }
-      p {
-        margin: 6px 0 0;
+      .countline {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .tools {
+        display: flex;
+        gap: 6px;
+      }
+      .tools .btn {
+        flex: 1;
+      }
+      .note {
+        font-size: 10.5px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      /* ─── شريط التسجيل السفليّ (تكافؤ الإضافة) ─── */
+      .countline-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .capbar {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: none;
+      }
+      .capbar-tools {
+        display: flex;
+        gap: 6px;
+      }
+      .tool {
+        flex: 1;
+        min-height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 4px 8px;
+        font-size: 12.5px;
+        font-family: inherit;
+        background: var(--card);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      }
+      .tool svg { width: 15px; height: 15px; flex: none; }
+      .tool:hover:not(:disabled) { border-color: var(--ink); }
+      .tool:disabled { opacity: 0.5; cursor: default; }
+      .tool.danger { color: var(--rec); }
+      .tool.danger.armed { background: var(--rec); color: #fff; border-color: var(--rec); }
+      .cap-finish {
+        width: 100%;
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        font-size: 14px;
+        font-family: inherit;
+        background: var(--ink);
+        color: var(--paper);
+        border: 1px solid var(--ink);
+        border-radius: 9px;
+        cursor: pointer;
+      }
+      .cap-finish svg { width: 16px; height: 16px; }
+      .cap-finish:hover { background: #44423b; }
+      .list-card {
+        flex: 1;
+        min-height: 0;
+        padding: 6px;
+        display: flex;
+        overflow: hidden;
+      }
+      .steps {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .step-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        padding: 5px 7px;
+        border-radius: 7px;
+        border-inline-start: 3px solid transparent;
+        flex: none;
+      }
+      /* الخطوة الأحدث: نبضة الوصول — حركة بمعنى حدث (تُطفأ بلا حركة إن طُلب) */
+      .step-row.fresh {
+        background: rgba(196, 69, 61, 0.07);
+        border-inline-start-color: var(--rec);
+        animation: step-in 0.35s ease;
+      }
+      .step-row .n {
+        min-width: 18px;
+        text-align: center;
+        font-weight: 700;
         font-size: 12px;
-        color: #6b675f;
       }
+      .step-row .tx {
+        flex: 1;
+        min-width: 0;
+      }
+      .step-row .ttl {
+        display: block;
+        font-size: 12.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .step-row .kd {
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+
+      /* ─── مصغّرة الخطوة الأحدث (تكافؤ PreviewShot، علامة حلقة) ─── */
+      .step-card {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 5px 6px;
+        border-radius: 7px;
+        border-inline-start: 3px solid var(--rec);
+        background: rgba(196, 69, 61, 0.07);
+        animation: step-in 0.35s ease;
+        flex: none;
+      }
+      /* الصفّ داخل البطاقة بلا حشو مزدوج — البطاقة نفسها تحمل التحديد الأحمر */
+      .step-card .step-row {
+        padding: 0 2px;
+      }
+      .step-shot {
+        position: relative;
+        width: 100%;
+        height: 132px;
+        overflow: hidden;
+        border-radius: 7px;
+        background: #efece6;
+        border: 1px solid var(--line);
+      }
+      .step-shot[data-pending="1"]::after {
+        content: 'يرسم التحديد…';
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .shot-zoom {
+        position: absolute;
+        top: 0;
+        inset-inline-start: 0;
+        width: 100%;
+        /* بلا تثبيت ارتفاع: الطبقة تلتفّ على الصورة كالإضافة، فتُحسب نسب
+           العلامة على أبعاد الصورة المعروضة لا على ارتفاع البطاقة */
+      }
+      .shot-zoom img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      /* العلامة حلقة فارغة (قرار المالك: دائرة للديسكتوب بدل مستطيل الإضافة) */
+      .shot-mark {
+        position: absolute;
+        border: 2.5px solid var(--rec);
+        border-radius: 50%;
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+
+      /* ─── الحساب والإعدادات (خلف الترس — لا ضجيج على السطح) ─── */
+      .settings {
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      .settings .ctrl-card {
+        gap: 9px;
+      }
+      .settings-title {
+        font-weight: 700;
+        font-size: 13.5px;
+      }
+      .email-text {
+        font-size: 12px;
+        color: var(--muted);
+        direction: ltr;
+        text-align: right;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
       @keyframes rec-pulse {
         50% {
           opacity: 0.25;
         }
       }
+      @keyframes step-in {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+      }
       @media (prefers-reduced-motion: reduce) {
-        .dot.rec {
+        .dot.rec,
+        .dot.auth-wait,
+        .chip.rec .chip-dot {
           animation: none;
+        }
+        .step-row.fresh {
+          animation: none;
+        }
+        .step-card {
+          animation: none;
+        }
+        .shell,
+        .panel,
+        .btn {
+          transition: none;
         }
       }
     </style>
   </head>
   <body>
-    <main id="app" data-tauri-drag-region>لوحة تسجيل إتقان.</main>
+    <main id="app" data-tauri-drag-region>
+      <!-- الهيكل ثابت كله: الأزرار تُبنى مرة واحدة في الصفحة (درس برهان
+           المالك — إعادة بناء الزر بين نزول الضغطة ورفعها يقتل الحدث)،
+           وmain.ts يحدّث الخصائص حصرًا -->
+      <div class="shell idle" id="shell">
+        <!-- الحبة: الخمول — بداية هادئة، بلا بريد وبلا فصل (قرار المالك) -->
+        <div class="pill" id="pill">
+          <div class="pill-row">
+            <button class="btn primary" id="startBtn">ابدأ الالتقاط</button>
+            <span class="dot" id="authDot" hidden></span>
+            <button class="icon-btn" id="gearBtn" title="الإعدادات" aria-label="الإعدادات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+          </div>
+          <div class="status" id="status"></div>
+        </div>
+
+        <!-- اللوحة: التسجيل — تخطيط الإضافة حرفيًّا: عدّ أعلى، خطوات في الوسط،
+             شريط تحكّم أسفل (إيقاف · طمس · إلغاء) ثم إنهاء عريض -->
+        <div class="panel" id="panel" hidden>
+          <div class="countline-row">
+            <span class="chip" id="chip"><span class="chip-dot"></span><span id="chipText">جاهز</span></span>
+            <span class="count" id="count">٠ خطوة</span>
+          </div>
+          <div class="countline">كل نقرة وإدخال تُوثَّق تلقائيًا</div>
+          <div class="list-card">
+            <div class="steps" id="steps"></div>
+          </div>
+          <div class="capbar">
+            <div class="capbar-tools">
+              <button class="tool" id="pauseBtn" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">
+                <svg class="ic-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="7" y="6" width="3.5" height="12" rx="1"/><rect x="13.5" y="6" width="3.5" height="12" rx="1"/></svg>
+                <svg class="ic-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" hidden><path d="M7 5l12 7-12 7z"/></svg>
+                <span id="pauseTxt">إيقاف</span>
+              </button>
+              <button class="tool" id="blurBtn" disabled aria-disabled="true"
+                title="الطمس يعمل تلقائيًّا — الحقول الحسّاسة تُطمَس دون تدخّل">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="2.5"/><path d="M7 15l4-6M11 16l4-7M15 16l3-5" stroke-width="1.4"/></svg>
+                طمس
+              </button>
+              <button class="tool danger" id="cancelBtn" title="إلغاء التسجيل" aria-label="إلغاء التسجيل">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg>
+                <span id="cancelTxt">إلغاء</span>
+              </button>
+            </div>
+            <button class="cap-finish" id="finishBtn" aria-label="إنهاء ونشر الدليل">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+              إنهاء الالتقاط
+            </button>
+          </div>
+        </div>
+
+        <!-- الإعدادات: خلف الترس حصرًا — قائمة بهدوء: الاقتران أولًا ثم فاصل
+             و«إنهاء التطبيق» آخر الصفوف (طلب المالك ٢٠٢٦-٠٩-١٧) -->
+        <div class="settings" id="settings" hidden>
+          <div class="ctrl-card">
+            <div class="settings-title">الإعدادات</div>
+            <div class="status" id="authStatus"></div>
+            <div class="email-text" id="emailText" hidden></div>
+            <div class="tools">
+              <button class="btn" id="pairBtn" hidden>اقتران</button>
+              <button class="btn danger" id="forgetBtn" hidden>فصل</button>
+              <button class="btn ghost" id="backBtn">رجوع</button>
+            </div>
+            <div class="sep" role="separator"></div>
+            <button class="btn exit" id="exitBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+              إنهاء التطبيق
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

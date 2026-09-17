@@ -18,6 +18,7 @@ export type WidgetAction =
   | 'pause'
   | 'resume'
   | 'stop'
+  | 'cancel'
   | 'done'
   | 'tick'
   | { t: 'count'; steps: number }
@@ -41,6 +42,13 @@ export function reduceWidget(state: WidgetState, action: WidgetAction): WidgetSt
     case 'stop':
       return state.mode === 'recording' || state.mode === 'paused'
         ? { ...state, mode: 'building' }
+        : state
+    case 'cancel':
+      // الإلغاء (توصية UX الموافق عليها — نمط الإضافة): إلقاء الجلسة كاملة —
+      // recording/paused ⇐ صفر جديد. في غير أوضاعه (idle/building) بلا أثر:
+      // البناء جارٍ لا يُلغى بنقرة، والخمول لا يُلغى أصلًا
+      return state.mode === 'recording' || state.mode === 'paused'
+        ? { ...initialWidgetState }
         : state
     case 'done':
       // رجوع للبدء بعد الإنهاء (أو فشله) — جلسة جديدة عدّادها صفري

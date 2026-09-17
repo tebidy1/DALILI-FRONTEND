@@ -20,8 +20,11 @@ import {
   factsToStepSource,
   isSensitiveField,
   markBoxRect,
+  pointMark,
+  stepTitle,
   type DesktopFacts,
   type Guide,
+  type MissingScreenshot,
   type RawStep,
   type ScreenshotMeta,
   type TargetMark,
@@ -72,6 +75,14 @@ export interface RecorderSession {
   stop(): Promise<Guide>
   /** عدد الخطوات المجمَّعة حتى الآن */
   stepCount(): number
+  /** خطوات حيّة للوحة الودجة (توصية UX): العنوان العربي ونوع كل خطوة مجمَّعة
+   *  حتى الآن — من المخزن مباشرة بلا انتظار الإنهاء. العنوان بمولّد النواة
+   *  نفسه (stepTitle) فما تراه اللوحة الحيّ هو ما يُطبَع في الدليل لاحقًا */
+  stepSummaries(): Array<{ title: string; kind: string }>
+  /** لقطة الخطوة الأحدث (المرحلة ١: مصغّرة البطاقة الأحدث) — meta فقط
+   *  (fileId=localId، mark، blurRects)؛ العرض يجلب البكسلات بـframe_thumb.
+   *  غيابها الصادق يمرّ كما هو (MissingScreenshot) — null حصرًا لخلوّ المخزن */
+  latestShot(): ScreenshotMeta | MissingScreenshot | null
   /** ينتظر خمول البناء — مساعد الانتظار للاختبارات وبثّ الإيقاف المنظّم */
   whenIdle(): Promise<void>
 }
@@ -129,11 +140,18 @@ const MISSING_REASONS: Record<string, string> = {
 
 // ───────────────── الجلسة ─────────────────
 
+/// نصف قطر حلقة نقطة الضغط بالبكسل المنطقيّ عند 96dpi — يُحجَّم لكل شاشة بـDPI
+/// (قرار المالك ٣و: حلقة فارغة بنصف قطر ثابت). الثابت الوحيد القابل للضبط هنا.
+const POINT_MARK_RADIUS_PX = 24
+
 interface GestureItem {
   t: 'click' | 'key'
   seq: number
   qpcMs: number
   keyClass?: string
+  /** إحداثيّا الضغط الفيزيائيّان (٣و خيار أ: علامة الحلقة مركزُها النقرة) */
+  x?: number
+  y?: number
 }
 
 /** خيارات الجلسة المحقونة */
@@ -275,8 +293,8 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
       let screenshot: RawStep['screenshot']
       if ('missing' in pick) {
         screenshot = { missing: true, reason: MISSING_REASONS[pick.missing] ?? 'تعذّر الالتقاط' }
-      } else {
-        const meta = buildScreenshot(pick, facts)
+        } else {
+          const meta = buildScreenshot(pick, facts, click)
         // حرق الحسّاس على الجهاز (٣ج-٤) — قبل أيّ تسليم لاحق للطابور (٣د):
         // مستطيل العنصر ببكسل الصورة يحرق في ملفّ الإطار المؤقّت ويسجَّل في
         // blurRects (إحداثيات الصورة الطبيعية بعقد ScreenshotMeta) مع autoBlurred.
@@ -342,11 +360,34 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
     }
   }
 
-  /** لقطة ناجحة ‏Picked ⇐ ‏ScreenshotMeta بعلامة إبراز محوَّلة من الفيزيائي إلى
-   *  بكسل الصورة (طرح أصل الشاشة) وصلاحيّتها من mark-box. غيابُ الإطار يُعالَج
-   *  عند النداء (Missing ⇐ سبب عربيّ) — وهنا الناجح وحده. الحرق نفسه (٣ج-٤). */
-  function buildScreenshot(pick: FramePicked, facts: DesktopFacts): ScreenshotMeta {
+  /** لقطة ناجحة ‏Picked ⇐ ‏ScreenshotMeta بعلامة إبراز. ‏٣و خيار أ (قرار المالك):
+   *  العلامة **حلقة فارغة مركزها نقطة الضغط** بنصف قطر ثابت مُحجَّم بالـDPI —
+   *  لا مستطيل العنصر الذي يخطئه UIA أحيانًا. نقطةٌ غائبة (لا يُفترض في down)
+   *  ⇐ سقوطٌ آمن لعلامة مستطيل العنصر القديمة. **حرق الحسّاس لا يعتمد هنا
+   *  إطلاقًا** — يبقى على مستطيل العنصر في مساره (نطمس الحقل كاملًا). */
+  function buildScreenshot(
+    pick: FramePicked,
+    facts: DesktopFacts,
+    click: GestureItem | undefined,
+  ): ScreenshotMeta {
     const r = imageRectOf(facts.element.rect, pick.monitor)
+    if (click && typeof click.x === 'number' && typeof click.y === 'number') {
+      const radius = Math.round((POINT_MARK_RADIUS_PX * pick.monitor.dpi) / 96)
+      const mark =
+        pointMark(
+          click.x - pick.monitor.x,
+          click.y - pick.monitor.y,
+          radius,
+          pick.monitor.w,
+          pick.monitor.h,
+          DEFAULT_MARK_COLOR,
+        ) ?? undefined
+      return {
+        fileId: pick.localId,
+        blurRects: [],
+        ...(mark ? { mark } : {}),
+      }
+    }
     // الصلاحيّة من النواة (mark-box): مستطيل منحلّ أو خارج الصورة ⇐ بلا علامة بصدق
     const valid = markBoxRect(r, pick.monitor.w, pick.monitor.h) !== null
     const mark: TargetMark | undefined = valid ? { rect: r, color: DEFAULT_MARK_COLOR } : undefined
@@ -384,7 +425,8 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
       // كل ضغطة نافذة جديدة (خطوة مستقلّة) — الكتابة اللاحقة تنضم لنافذتها
       pacer.open()
       windowOpen = true
-      pacer.add({ t: 'click', seq: evt.seq, qpcMs: evt.qpcMs })
+      // النقطة الفيزيائيّة تُحمَل مع الإيماءة (٣و: مركز حلقة العلامة)
+      pacer.add({ t: 'click', seq: evt.seq, qpcMs: evt.qpcMs, x: evt.x, y: evt.y })
     } else if (evt.kind === 'key' && windowOpen) {
       // التصنيف من keyClass وحده — لا حرف يُخزَّن أبدًا
       pacer.add({ t: 'key', seq: evt.seq, qpcMs: evt.qpcMs, keyClass: evt.keyClass ?? 'other' })
@@ -420,6 +462,21 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
       return assembleGuide(buffer)
     },
     stepCount: () => buffer.length,
+    stepSummaries: () =>
+      buffer.map((s) => ({
+        title: stepTitle({
+          kind: s.kind,
+          target: s.target ?? {},
+          value: s.value,
+          sensitive: s.sensitive ?? false,
+          source: s.source,
+        }),
+        kind: s.kind as string,
+      })),
+    latestShot: () => {
+      const last = buffer[buffer.length - 1]
+      return last ? (last.screenshot ?? null) : null
+    },
     whenIdle,
   }
 }

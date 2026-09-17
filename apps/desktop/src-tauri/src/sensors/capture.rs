@@ -354,6 +354,20 @@ fn ring_body(rx: mpsc::Receiver<CaptureMsg>, tx: mpsc::Sender<CaptureMsg>) {
                     }
                 }
                 CaptureMsg::Pick { t_hns, which, reply } => {
+                    // **الحلقة قبل التمهيد** (بلاغ المالك 2026-09-17): مصفوفتا الحلقة
+                    // لا تُمهَّدان إلا في معالج Frame الأول، وأي Pick قبل ذلك كان يفهرس
+                    // stamps[i] على شريحة طولها صفر فيهلِك خيط الالتقاط كله بموته
+                    // («index out of bounds: len is 0») فلا لقطة ما بعدها أبدًا.
+                    // العقد نفسه دون تهيئة: before ⇐ None (no_frame صادق)، وafter ⇐
+                    // ينتظر الواصل الأول (نمط waiting_after العاديّ).
+                    if stamps.is_empty() {
+                        if which == Which::After {
+                            waiting = Some((reply, t_hns));
+                        } else {
+                            let _ = reply.send(None);
+                        }
+                        continue;
+                    }
                     // الخانات الصالحة فقط — فراغ الحلقة (MIN) لا يجوز أن يُختار
                     let valid: Vec<usize> = (0..RING_DEPTH).filter(|&i| stamps[i] != i64::MIN).collect();
                     let view: Vec<i64> = valid.iter().map(|&i| stamps[i]).collect();
@@ -379,6 +393,13 @@ fn ring_body(rx: mpsc::Receiver<CaptureMsg>, tx: mpsc::Sender<CaptureMsg>) {
         let _ = pool.RemoveFrameArrived(frame_token);
         std::thread::sleep(Duration::from_millis(150));
         let _ = pool.Close();
+        // **حفظ المرجع** (شهادة وفاة WER 2026-09-17: ‏GraphicsCapture.dll_unloaded
+        // ⇐ ‏c0000005): إفلات آخر مرجعٍ لعنصر الالتقاط هنا يُحمِّل ‏DLL الالتقاط من
+        // الذاكرة بينما مفكّاته المتأخّرة (نداءات threadpool/إفلاتات ‏COM متأخرة)
+        // قد تستدعيه بعد موته فينهار التطبيق كله. إبقاء مرجع العنصر حيًّا (تسريب
+        // صغير مقصود بمقدار الجلسة، يُحرَّر بنهاية العملية) يُبقي المكتبة محمَّلة
+        // فتستحيل نافذة الموت هذه
+        std::mem::forget(item);
 }
 
 // ───────────────── الجلسة العامة ─────────────────
@@ -782,6 +803,207 @@ fn البعد_على_السطح_الساكن_يسقط_لآخر_إطار_قبل_�
             p.delta_ms, elapsed
         );
     }
+}
+
+/// بلاغ المالك (2026-09-17): أوّل تسجيل على سطحٍ ساكن مات بموته — «Pick» قبل
+/// وصول أوّل إطار كان يفهرس حلقةً غير مُمهَّدة (‏stamps طولها 0) فيهلِك خيط
+/// الالتقاط بانهيار «index out of bounds» فلا لقطة ما بعده أبدًا («لا شيء
+/// يتفاعل»). الرقعة: حارس فراغ الحلقة بعقد لا-إطار نفسه. حيّ: ابدأ ثم انقر
+/// **فورًا بلا أيّ انتظار تهيئة** — على سطحٍ هادئ هذا يدخل نافذة الفراغ
+/// تحديدًا — ثم بعد وصول الإطارات انقر ثانية: الثانية يجب أن تكون ‏Picked
+/// (الخيط حيّ)؛ القديم كان يعيدها Missing بموت القناة.
+#[test]
+#[ignore]
+fn الالتقاط_قبل_أول_إطار_لا_يسقط_خيط_الحلقة() {
+    use crate::sensors::clock::qpc;
+    use crate::sensors::events::FramePickResult;
+    use windows::core::{HSTRING, PCWSTR};
+    use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
+    use windows::Win32::Graphics::Gdi::{GetStockObject, HBRUSH, WHITE_BRUSH};
+    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+    use windows::Win32::System::Threading::GetCurrentThreadId;
+    use windows::Win32::UI::HiDpi::{
+        SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{
+        CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, GetWindowRect,
+        PostThreadMessageW, RegisterClassW, TranslateMessage, MSG, WNDCLASSW,
+        WS_EX_TOPMOST, WS_OVERLAPPEDWINDOW, WS_VISIBLE, WM_QUIT,
+    };
+
+    extern "system" fn wndproc(h: HWND, m: u32, w: WPARAM, l: LPARAM) -> LRESULT {
+        unsafe { DefWindowProcW(h, m, w, l) }
+    }
+    fn spawn_static_window(title: &'static str, x: i32) -> (isize, u32) {
+        let (tx, rx) = mpsc::channel();
+        std::thread::spawn(move || unsafe {
+            let hinst = GetModuleHandleW(None).unwrap();
+            let cls = HSTRING::from(format!("itqan-selftest-{title}"));
+            let wc = WNDCLASSW {
+                lpfnWndProc: Some(wndproc),
+                hInstance: hinst.into(),
+                lpszClassName: PCWSTR(cls.as_ptr()),
+                hbrBackground: HBRUSH(GetStockObject(WHITE_BRUSH).0),
+                ..Default::default()
+            };
+            let _ = RegisterClassW(&wc);
+            let hwnd = CreateWindowExW(
+                WS_EX_TOPMOST, PCWSTR(cls.as_ptr()), &HSTRING::from(title),
+                WS_OVERLAPPEDWINDOW | WS_VISIBLE, x, 200, 320, 200,
+                None, None, Some(hinst.into()), None,
+            )
+            .expect("نافذة الفحص");
+            tx.send((hwnd.0 as isize, GetCurrentThreadId())).unwrap();
+            let mut msg = MSG::default();
+            while GetMessageW(&mut msg, None, 0, 0).as_bool() {
+                let _ = TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+        });
+        rx.recv().unwrap()
+    }
+
+    unsafe {
+        let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    }
+    let (wh, wtid) = spawn_static_window("pre-frame-pick", 60);
+    let center = unsafe {
+        let mut r = RECT::default();
+        GetWindowRect(HWND(wh as *mut _), &mut r).unwrap();
+        POINT { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 }
+    };
+    start();
+    // **فورًا بلا أيّ انتظار تهيئة** — نافذة الفراغ قبل أول Frame هي ميدان البلاغ
+    let seq0 = 991;
+    note_click(seq0, qpc(), center.x, center.y);
+    let r0 = pick(seq0, Which::Before);
+    // ثم انتظار وصول إطارٍ فعلًا (أحدث ختم يتبدّل) بمهلة قصوى لسطحٍ مزدحم
+    let t0 = std::time::Instant::now();
+    loop {
+        if ring_newest_hns() != 0 || t0.elapsed() > Duration::from_secs(8) {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(200));
+    }
+    let seq1 = 992;
+    note_click(seq1, qpc(), center.x, center.y);
+    let r1 = pick(seq1, Which::Before);
+
+    unsafe {
+        let _ = PostThreadMessageW(wtid, WM_QUIT, WPARAM(0), LPARAM(0));
+    }
+    stop();
+
+    println!("pre-frame: النقرة قبل التهيئة أجابت {:?}", r0);
+    // الجوهر: الخيط **حيّ** بعد نافذة الفراغ — الثانية تُلتقط لا تفقَد
+    let FramePickResult::Picked(p1) = r1 else {
+        panic!(
+            "خيط الحلقة مات بانتظارنا: pick بعد وصول الإطارات أعاد {:?} — حارس فراغ الحلقة مكسور",
+            r1
+        );
+    };
+    assert!(p1.delta_ms <= 0.0, "«قبل» دلتاه سالبة: {:+.1}", p1.delta_ms);
+    let meta = std::fs::metadata(&p1.path).expect("ملف JPEG موجود");
+    assert!(meta.len() > 10_000, "JPEG حقيقي لا فارغ: {} بايت", meta.len());
+    println!(
+        "pre-frame: الخيط نجى من نافذة الفراغ — الثانية دلتا={:+.1}ms ({}KB)",
+        p1.delta_ms,
+        meta.len() / 1024
+    );
+}
+
+/// شهادة وفاة WER (2026-09-17): تفكيك الحلقة كان يُحمِّل ‏GraphicsCapture.dll
+/// من الذاكرة بينما مفكّاتها المتأخّرة تستدعيه بعد موته ⇐ ‏c0000005 يموت به
+/// التطبيق كله (0xffffffff بسجلّ التشغيل عند المالك). الرقعة: حفظ مرجع العنصر
+/// حيًّا كي لا تُحمَّل المكتبة أصلًا. حيّ: ‏٥ دورات بدء/إيقاف متتالية — كل
+/// إيقافٍ كان يمر بنافذة الموت — ثم نقرة سادسة تُلتقط فعلًا؛ انهيار العملية
+/// أثناء الدورات ⇐ موت الاختبار نفسه فيفشل
+#[test]
+#[ignore]
+fn دورات_البدء_والايقاف_المتكررة_لا_تهوي_العملية() {
+    use crate::sensors::clock::qpc;
+    use crate::sensors::events::FramePickResult;
+    use windows::core::{HSTRING, PCWSTR};
+    use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
+    use windows::Win32::Graphics::Gdi::{GetStockObject, HBRUSH, WHITE_BRUSH};
+    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+    use windows::Win32::System::Threading::GetCurrentThreadId;
+    use windows::Win32::UI::HiDpi::{
+        SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{
+        CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, GetWindowRect,
+        PostThreadMessageW, RegisterClassW, TranslateMessage, MSG, WNDCLASSW,
+        WS_EX_TOPMOST, WS_OVERLAPPEDWINDOW, WS_VISIBLE, WM_QUIT,
+    };
+
+    extern "system" fn wndproc(h: HWND, m: u32, w: WPARAM, l: LPARAM) -> LRESULT {
+        unsafe { DefWindowProcW(h, m, w, l) }
+    }
+    fn spawn_static_window(title: &'static str, x: i32) -> (isize, u32) {
+        let (tx, rx) = mpsc::channel();
+        std::thread::spawn(move || unsafe {
+            let hinst = GetModuleHandleW(None).unwrap();
+            let cls = HSTRING::from(format!("itqan-selftest-{title}"));
+            let wc = WNDCLASSW {
+                lpfnWndProc: Some(wndproc),
+                hInstance: hinst.into(),
+                lpszClassName: PCWSTR(cls.as_ptr()),
+                hbrBackground: HBRUSH(GetStockObject(WHITE_BRUSH).0),
+                ..Default::default()
+            };
+            let _ = RegisterClassW(&wc);
+            let hwnd = CreateWindowExW(
+                WS_EX_TOPMOST, PCWSTR(cls.as_ptr()), &HSTRING::from(title),
+                WS_OVERLAPPEDWINDOW | WS_VISIBLE, x, 200, 320, 200,
+                None, None, Some(hinst.into()), None,
+            )
+            .expect("نافذة الفحص");
+            tx.send((hwnd.0 as isize, GetCurrentThreadId())).unwrap();
+            let mut msg = MSG::default();
+            while GetMessageW(&mut msg, None, 0, 0).as_bool() {
+                let _ = TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+        });
+        rx.recv().unwrap()
+    }
+
+    unsafe {
+        let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    }
+    let (wh, wtid) = spawn_static_window("teardown-cycles", 60);
+    let center = unsafe {
+        let mut r = RECT::default();
+        GetWindowRect(HWND(wh as *mut _), &mut r).unwrap();
+        POINT { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 }
+    };
+    for cycle in 0..5 {
+        start();
+        // جلسة قصيرة حيّة (إطارات تجري) ثم إيقاف — مسار التفكيك ميدان الجرثومة
+        std::thread::sleep(Duration::from_millis(900));
+        stop();
+        std::thread::sleep(Duration::from_millis(120));
+        println!("teardown-cycles: الدورة {} نجت", cycle + 1);
+    }
+    // البرهان بعد الدورات: «بعد» لا يُفقد أبدًا إن كان الخيط حيًّا (إطار لاحق
+    // حقيقيّ أو سقوطٌ لآخر قبل) — Missing ⇐ الخيط مات فالاختبار يكشفه
+    start();
+    std::thread::sleep(Duration::from_millis(700));
+    let seq = 993;
+    note_click(seq, qpc(), center.x, center.y);
+    let r = pick(seq, Which::After);
+    unsafe {
+        let _ = PostThreadMessageW(wtid, WM_QUIT, WPARAM(0), LPARAM(0));
+    }
+    stop();
+    let FramePickResult::Picked(p) = r else {
+        panic!("الخيط مات بعد الدورات: pick أعاد {:?}", r);
+    };
+    println!(
+        "teardown-cycles: ٥ دورات ثم نقرة سادسة دلتا={:+.1}ms — العملية حيّة والمكتبة محمَّلة",
+        p.delta_ms
+    );
 }
 
 /// برهان ٣ب-٥ الحيّ (نقطة التدقيق): نافذة بـWDA_EXCLUDEFROMCAPTURE تحت نقطة

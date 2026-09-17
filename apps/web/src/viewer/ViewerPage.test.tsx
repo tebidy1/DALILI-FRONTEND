@@ -56,6 +56,33 @@ describe('العارض العام (VIEW-12/13)', () => {
     expect(vi.mocked(client.trackShareView)).toHaveBeenCalledWith('tok-1')
   })
 
+  it('٣و (قرار المالك): خطوة الانتقال بين النوافذ شريط فاصل — بلا مساحة صورة ولا «لا توجد لقطة»', async () => {
+    const { client } = await import('../api')
+    vi.mocked(client.publicGuide).mockResolvedValue({
+      guide: {
+        id: 'g2',
+        title: 'دليل بنافذتين',
+        updatedAt: new Date().toISOString(),
+        steps: [
+          { id: 'n1', kind: 'click', title: 'انقر على «Start»', screenshot: { fileId: 'f1', blurRects: [] } },
+          // خطوة الانتقال: بلا screenshot أصلًا بحكم التصميم — لا بوصفها فشل التقاط
+          { id: 'n2', kind: 'navigate', title: 'انتقل إلى نافذة «CoreInput»' },
+          { id: 'n3', kind: 'click', title: 'انقر على «CoreInput»', screenshot: { fileId: 'f2', blurRects: [] } },
+        ],
+      },
+      sharedAt: new Date().toISOString(),
+    } as unknown as PublicGuideDto)
+    renderViewer()
+    expect(await screen.findByText('دليل بنافذتين')).toBeTruthy()
+    // شريط الفاصل يظهر بعنوان الانتقال ورقمه في التسلسل
+    const band = document.querySelector('.viewer-navigate')
+    expect(band).not.toBeNull()
+    expect(band?.textContent).toContain('انتقل إلى نافذة «CoreInput»')
+    expect(band?.textContent).toContain('2')
+    // ولا نصّ «لا توجد لقطة لهذه الخطوة» في الصفحة كلها — الخطوات الأخرى سليمة
+    expect(screen.queryByText(t('viewer.missingShot'))).toBeNull()
+  })
+
   it('VIEW-13: يحقن meta robots noindex ويزيله عند مغادرة الصفحة', async () => {
     const { client } = await import('../api')
     vi.mocked(client.publicGuide).mockResolvedValue(fixture())

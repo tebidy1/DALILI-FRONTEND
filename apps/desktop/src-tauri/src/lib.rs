@@ -54,6 +54,14 @@ fn frame_blur(local_id: String, rects: Vec<sensors::burn::BurnRect>) -> Result<(
     sensors::burn::blur_frame(&local_id, &rects)
 }
 
+/// `frame_thumb(localId)` — مصغّرة الخطوة الأحدث للودجة (المرحلة ١): بايتات
+/// الإطار المؤقّت data URL. خامٌ يمرّ لا فهم دليل (القاعدة الذهبيّة)، والحارس
+/// نفسه: localId من إنتاجنا حصرًا
+#[tauri::command]
+fn frame_thumb(local_id: String) -> Result<sensors::burn::ThumbDto, String> {
+    sensors::burn::frame_thumb(&local_id)
+}
+
 /// `auth_pair_start(deviceName)` — §٣.٥: ‏{userCode,verifyUrl} فورًا للواجهة
 /// والاستطلاع على خيط خلفيّ. الطلب على ‏spawn_blocking كي لا يحجب الواجهة.
 /// البيئة عند الحدّ حصرًا (إصلاح ٣د-٤-أ): المنشأ يُقرأ هنا ويُمرَّر وسيطًا
@@ -146,6 +154,14 @@ fn open_in_browser(path: String) -> Result<(), String> {
     transport::open::open_in_browser(&path)
 }
 
+/// `app_exit()` — إغلاق التطبيق تمامًا من قائمة الإعدادات (طلب المالك
+/// ٢٠٢٦-٠٩-١٧: ودجة بلا إطار لا تملك زرّ X). الخروج عبر مسار Tauri الرسمي
+/// فيُطوى الخطّاف والحلقات مع العملية — لا خيوط يتيمة بعده
+#[tauri::command]
+fn app_exit(app: tauri::AppHandle) {
+    let _ = app.exit(0);
+}
+
 pub fn run() {
   tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
@@ -154,6 +170,7 @@ pub fn run() {
       recording_stop,
       frame_pick,
       frame_blur,
+      frame_thumb,
       facts_refresh,
       auth_pair_start,
       auth_status,
@@ -162,7 +179,8 @@ pub fn run() {
       queue_file,
       queue_guide,
       queue_retry_failed,
-      open_in_browser
+      open_in_browser,
+      app_exit
     ])
     .setup(|app| {
       // ٣ب-٣ (نقطة المالك ٣): نوافذ إتقان تختفي من لقطاتها نفسها

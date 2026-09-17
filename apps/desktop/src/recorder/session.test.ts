@@ -359,7 +359,7 @@ describe('٣ج-٢ — جلسة التسجيل بساعة TickEvt (لا مؤقّ�
     expect(guide.steps[0]!.target.anchor?.[0]).toEqual({ k: 'automationId', v: 'TabInsert' })
   })
 
-  it('علامة الإبراز: مستطيل العنصر يُنقل لإحداثيّات الصورة (طرح أصل الشاشة) بلون النواة', async () => {
+  it('سقوط آمن: نقرة بلا إحداثيّات (لا يُفترض) ⇐ علامة مستطيل العنصر كما كانت', async () => {
     const { bridge, emit, results } = makeBridge()
     emit0 = emit
     results.set(40, {
@@ -370,7 +370,8 @@ describe('٣ج-٢ — جلسة التسجيل بساعة TickEvt (لا مؤقّ�
       monitor: { x: 1920, y: 0, w: 1920, h: 1080, dpi: 96 },
     })
     const session = createRecorderSession(bridge)
-    down(40, 1000)
+    // بلا x/y أصلًا — المسار الذي يحرسه السقوط (غيابهما لا يُفترض في down)
+    emit('sensor://input', { seq: 40, qpcMs: 1000, kind: 'down', button: 'left', keyClass: null })
     // العنصر فوق الشاشة الثانية (أصلها x=1920) — في الصورة يصير 2500−1920=580
     emit(
       'sensor://facts',
@@ -396,5 +397,104 @@ describe('٣ج-٢ — جلسة التسجيل بساعة TickEvt (لا مؤقّ�
       fileId: 'f-40',
       mark: { rect: { x: 580, y: 90, w: 80, h: 30 }, color: '#ea580c' },
     })
+  })
+
+  it('علامة نقطة الضغط: حلقة ellipse مركزها النقرة لا مستطيل العنصر (قرار المالك ٣و)', async () => {
+    const { bridge, emit, results } = makeBridge()
+    emit0 = emit
+    results.set(41, {
+      localId: 'f-41',
+      path: 'y.jpg',
+      qpcMs: 1000,
+      deltaMs: -10,
+      monitor: { x: 0, y: 0, w: 1920, h: 1080, dpi: 96 },
+    })
+    const session = createRecorderSession(bridge)
+    // نقرة عند (300,200) بعيدةٍ عن مستطيل العنصر (600..680 × 90..120) —
+    // المركز يجب أن يكون نقرةَ المالك لا صندوق العنصر (خيار أ)
+    emit('sensor://input', {
+      seq: 41,
+      qpcMs: 1000,
+      kind: 'down',
+      button: 'left',
+      x: 300,
+      y: 200,
+      keyClass: null,
+    })
+    emit(
+      'sensor://facts',
+      insertTabFacts(41, {
+        element: {
+          automationId: 'TabInsert',
+          name: 'إدراج',
+          controlType: 'TabItem',
+          className: 'NetUI HWND',
+          frameworkId: 'Win32',
+          rect: { x: 600, y: 90, w: 80, h: 30 },
+          isPassword: false,
+          value: undefined,
+        },
+      }),
+    )
+    tick(1200)
+    await settle(session)
+
+    const guide = await session.stop()
+    const shot = guide.steps[0]!.screenshot
+    // نصف قطر 24px منطقيّ عند 96dpi ⇒ ضلع 48، والمركز نقطة الضغط حصرًا
+    expect(shot).toMatchObject({
+      fileId: 'f-41',
+      mark: { rect: { x: 276, y: 176, w: 48, h: 48 }, color: '#ea580c', shape: 'ellipse' },
+    })
+  })
+
+  it('خطوات حيّة للوحة الودجة (توصية UX): stepSummaries تعيد العناوين العربية قبل الإنهاء', async () => {
+    const { bridge, emit } = makeBridge()
+    emit0 = emit
+    const session = createRecorderSession(bridge)
+    expect(session.stepSummaries()).toEqual([])
+    down(21, 3000)
+    emit('sensor://facts', insertTabFacts(21))
+    tick(3100)
+    await settle(session)
+    // القائمة الحيّة ترسم ما بناه المخزن فورًا — بلا انتظار stop/assembleGuide
+    expect(session.stepSummaries()).toEqual([{ title: 'انقر على «إدراج»', kind: 'click' }])
+  })
+})
+
+// latestShot — لقطة الخطوة الأحدث للودجة (المرحلة ١): مصغّرة البطاقة الأخيرة
+// تقرأ الميتا من المخزن الحيّ قبل الإنهاء، والبكسلات يجلِبها عرض الودجة بـframe_thumb
+describe('latestShot — لقطة الخطوة الأحدث (المرحلة ١)', () => {
+  it('تعيد null قبل أيّ خطوة', () => {
+    const { bridge, emit } = makeBridge()
+    emit0 = emit
+    const session = createRecorderSession(bridge)
+    expect(session.latestShot()).toBeNull()
+  })
+
+  it('بعد نقرة ناجحة تعيد meta اللقطة بمعرّف الملفّ المحلّيّ والعلامة', async () => {
+    const { bridge, emit } = makeBridge()
+    emit0 = emit
+    const session = createRecorderSession(bridge)
+    down(31, 5000)
+    emit('sensor://facts', insertTabFacts(31))
+    tick(5100)
+    await settle(session)
+    const shot = session.latestShot()
+    expect(shot).not.toBeNull()
+    expect(shot).toMatchObject({ fileId: expect.stringMatching(/^f-\d+$/) })
+    expect(shot).toMatchObject({ mark: { rect: expect.anything(), color: expect.anything() } })
+  })
+
+  it('خطوة لقطتها غائبة ⇐ الغياب الصادق نفسه ({missing,reason}) لا null', async () => {
+    const { bridge, emit, results } = makeBridge()
+    emit0 = emit
+    const session = createRecorderSession(bridge)
+    results.set(32, { missing: 'protected' })
+    down(32, 6000)
+    emit('sensor://facts', insertTabFacts(32))
+    tick(6100)
+    await settle(session)
+    expect(session.latestShot()).toEqual({ missing: true, reason: 'نافذة محميّة' })
   })
 })
