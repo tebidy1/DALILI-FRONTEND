@@ -44,6 +44,18 @@ export function HeadBar({ meta, unread, onBell, onSettings }: { meta: SessionMet
   )
 }
 
+/** VOX-09/AUTO: نصّا زر الميك حسب الوضع — التلميح يشرح والإعلان يختصر، فدالة واحدة بدل سلكي ثلاثية متوازية في JSX */
+function micCopy(autoMemo: boolean, memoLive: SessionMeta['memoLive'], stepCount: number): { title: string; label: string } {
+  if (autoMemo) {
+    return memoLive
+      ? { title: 'إيقاف التعليق التلقائي لهذه الجلسة', label: 'إيقاف التعليق التلقائي' }
+      : { title: 'التعليق التلقائي يعمل — كل بطاقة جديدة يبدأ عليها التسجيل', label: 'تشغيل التعليق التلقائي' }
+  }
+  if (memoLive) return { title: 'إيقاف التعليق الصوتي', label: 'إيقاف التعليق الصوتي' }
+  if (stepCount === 0) return { title: 'التقط خطوة أولًا ثم علّق عليها بصوتك', label: 'التقط خطوة أولًا ثم علّق عليها بصوتك' }
+  return { title: 'سجّل تعليقًا صوتيًا لهذه الخطوة — يتوقف ذاتيًا عند بطاقة تالية', label: 'سجّل تعليقًا صوتيًا لهذه الخطوة' }
+}
+
 export function CaptureBar({
   paused,
   blurOn,
@@ -75,7 +87,7 @@ export function CaptureBar({
   onFinishPress: () => void
   send: (t: SendMsg) => void
 }) {
-  const ar = (n: number) => n.toLocaleString('ar-EG')
+  const mic = micCopy(autoMemo, memoLive, stepCount)
   return (
     <div className="capbar">
       <div className="capbar-tools">
@@ -102,28 +114,8 @@ export function CaptureBar({
             وفي الوضع التلقائي مفتاح إيقاف/تشغيل التعليق التلقائي كله */}
         <button
           className={`tool mic-tool${memoLive ? ' live' : ''}`}
-          title={
-            autoMemo
-              ? memoLive
-                ? 'إيقاف التعليق التلقائي لهذه الجلسة'
-                : 'التعليق التلقائي يعمل — كل بطاقة جديدة يبدأ عليها التسجيل'
-              : memoLive
-                ? 'إيقاف التعليق الصوتي'
-                : stepCount === 0
-                  ? 'التقط خطوة أولًا ثم علّق عليها بصوتك'
-                  : 'سجّل تعليقًا صوتيًا لهذه الخطوة — يتوقف ذاتيًا عند بطاقة تالية'
-          }
-          aria-label={
-            autoMemo
-              ? memoLive
-                ? 'إيقاف التعليق التلقائي'
-                : 'تشغيل التعليق التلقائي'
-              : memoLive
-                ? 'إيقاف التعليق الصوتي'
-                : stepCount === 0
-                  ? 'التقط خطوة أولًا ثم علّق عليها بصوتك'
-                  : 'سجّل تعليقًا صوتيًا لهذه الخطوة'
-          }
+          title={mic.title}
+          aria-label={mic.label}
           disabled={paused || memoDenied || (!autoMemo && stepCount === 0)}
           onClick={onMemoPress}
         >
@@ -131,11 +123,11 @@ export function CaptureBar({
         </button>
         <button
           className={`tool danger${cancelArmed ? ' armed' : ''}`}
-          title={cancelArmed ? `اضغط مجددًا لتأكيد الإلغاء (${ar(cancelLeft)})` : 'إلغاء التسجيل'}
+          title={cancelArmed ? `اضغط مجددًا لتأكيد الإلغاء (${toArabicDigits(cancelLeft)})` : 'إلغاء التسجيل'}
           aria-label={cancelArmed ? 'اضغط مجددًا لتأكيد الإلغاء' : 'إلغاء التسجيل'}
           onClick={onCancelPress}
         >
-          <TrashIcon /> {cancelArmed ? `تأكيد الإلغاء (${ar(cancelLeft)})` : 'إلغاء'}
+          <TrashIcon /> {cancelArmed ? `تأكيد الإلغاء (${toArabicDigits(cancelLeft)})` : 'إلغاء'}
         </button>
       </div>
       <button className="cap-finish" aria-label="إنهاء ونشر الدليل" onClick={onFinishPress}>

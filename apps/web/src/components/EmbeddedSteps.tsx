@@ -7,8 +7,11 @@ function shotOf(s: StepDto) {
   return s.screenshot && !('missing' in s.screenshot) ? s.screenshot : null
 }
 
-/** لون موحّد لأرقام الدليل: لون أول علامة هدف فيه، وإلا اللون الافتراضي */
-function guideMarkColor(steps: StepDto[]): string {
+/**
+ * لون موحّد لأرقام الدليل: لون أول علامة هدف في الدليل (فتتّسق شارة الركن مع بقية
+ * الشارات)، وإلا لون العلامة الافتراضي حين لا هدف في الدليل كلّه.
+ */
+export function guideMarkColor(steps: StepDto[]): string {
   for (const s of steps) {
     const shot = shotOf(s)
     if (shot?.mark?.color) return shot.mark.color

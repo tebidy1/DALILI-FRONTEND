@@ -9,6 +9,7 @@ import { arDigits, roleLabelAr } from '../lib/format'
 import { readTheme, setTheme, type ThemeChoice } from '../lib/theme'
 import { useOverview } from '../shell/OverviewContext'
 import { useConfirm } from '../components/ConfirmProvider'
+import { DevicesCard } from './DevicesCard'
 
 /**
  * المرحلة هـ (الإعداد — WS-09): «فهرسُ كل شيء» لا تكرار للشاشات — بطاقة بيانات
@@ -61,7 +62,7 @@ export function SettingsPage() {
   }
 
   async function removeFolder(f: FolderDto) {
-    if (!(await confirm({ title: t('library.folderDelete'), body: t('library.deleteFolderConfirm', { name: f.name }), confirmLabel: t('library.folderDelete'), danger: true }))) return
+    if (!(await confirm({ title: t('library.folderDelete'), body: t('library.deleteFolderConfirm', { name: f.name }), danger: true }))) return
     try {
       await client.deleteFolder(f.id)
       reload()
@@ -159,6 +160,9 @@ export function SettingsPage() {
             </button>
           </div>
         </section>
+
+        {/* DTOP-03: الأجهزة المرتبطة (تطبيقات ويندوز) */}
+        <DevicesCard />
 
         {/* — بطاقات المداخل — */}
         <EntryCard title={t('settings.myGuides')} desc={t('settings.myGuidesDesc')} count={counts?.mine} onOpen={() => navigate('/mine')} />

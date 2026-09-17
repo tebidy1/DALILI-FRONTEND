@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FolderDto, GuideSummaryDto } from '@dalili/shared'
+import { siteLabel } from '@dalili/core'
 import { t } from '../i18n'
 import { arDigits, relativeTimeAr } from '../lib/format'
 import { Button } from '../ui/Button'
@@ -98,7 +99,7 @@ export function GuideTable(p: GuideTableProps) {
                   </button>
                 </td>
                 <td className="muted">{folderName || '—'}</td>
-                <td>{g.site ? <span className="chip site-chip static">{g.site}</span> : <span className="muted">—</span>}</td>
+                <td>{g.site ? <span className="chip site-chip static">{siteLabel(g.site)}</span> : <span className="muted">—</span>}</td>
                 <td className="muted" title={g.createdAt}>{relativeTimeAr(g.createdAt)}</td>
                 <td className="muted" title={p.trash && g.deletedAt ? g.deletedAt : g.updatedAt}>
                   {relativeTimeAr(p.trash && g.deletedAt ? g.deletedAt : g.updatedAt)}

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إتقان — سطح المكتب</title>
+    <style>
+      /* قشرة الودجة (٣هـ-١): قصّ الفراغ كي لا تتجاوز محتويات حدود الودجة الصغيرة.
+         الهويّة (٣هـ-٣) من رموز @dalili/core/theme.ts الرسميّة: حبر جرافيت
+         ‎#2B2A26 على ورق ‎#F6F5F2، والأحمر ‎#C4453D وظيفيّ (نبض التسجيل) حصرًا —
+         لونان + أحمر وظيفيّ، بلا أيّ لون تزيينيّ. */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #f6f5f2;
+        color: #2b2a26;
+        font-family: 'Amiri', 'Sakkal Majalla', 'Traditional Arabic', 'Segoe UI', sans-serif;
+      }
+      #app {
+        height: 100vh;
+        box-sizing: border-box;
+        padding: 10px 14px;
+      }
+      /* صفّ الودجة (٣هـ-٢): نقطة النبض والأزرار والعدّاد */
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .row button {
+        min-width: 46px;
+        padding: 4px 12px;
+        font-size: 15px;
+        line-height: 1.5;
+        font-family: inherit;
+        background: #ffffff;
+        color: #2b2a26;
+        border: 1px solid #e7e3da;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .row button:hover {
+        background: #2b2a26;
+        color: #f6f5f2;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex: none;
+        background: #6b675f;
+      }
+      .dot.rec {
+        background: #c4453d;
+        animation: rec-pulse 1.2s ease-in-out infinite;
+      }
+      .dot.held {
+        background: #6b675f;
+      }
+      /* اقتران (اق-٢/٣): أخضر للمربوط (قرار المالك الصريح — يُبقى)، والإقران
+         جرافيت نابض تمييزًا له عن رماديّ «غير مقترن» الساكن — الأحمر وظيفيّ
+         للتسجيل وحده فلا لون ثالث */
+      .dot.auth-ok {
+        background: #3a7d44;
+      }
+      .dot.auth-wait {
+        background: #2b2a26;
+        animation: rec-pulse 1.2s ease-in-out infinite;
+      }
+      .email {
+        max-width: 96px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        color: #6b675f;
+      }
+      .mode {
+        font-size: 13px;
+        color: #6b675f;
+      }
+      .count {
+        font-weight: 700;
+        font-size: 15px;
+      }
+      p {
+        margin: 6px 0 0;
+        font-size: 12px;
+        color: #6b675f;
+      }
+      @keyframes rec-pulse {
+        50% {
+          opacity: 0.25;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .dot.rec {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app" data-tauri-drag-region>لوحة تسجيل إتقان.</main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

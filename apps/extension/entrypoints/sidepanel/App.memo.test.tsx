@@ -109,7 +109,9 @@ describe('VOX-09: زر الميك في اللوحة الجانبية', () => {
     fireEvent.click(btn)
     await waitFor(() => expect(send).toHaveBeenCalledWith({ t: 'memo-toggle' }))
     expect(screen.getByText('٠:٠٧')).toBeTruthy() // مؤقت التسجيل بأرقام هندية
-    expect(screen.getByText('🎙 صوتك يُدمج مع هذه الخطوة')).toBeTruthy()
+    // شريط التسجيل الحي: موجة أعلى البطاقة تحلّ محل السطر الأحمر القديم
+    expect(screen.getByRole('status', { name: 'جارٍ تسجيل تعليق صوتي على هذه البطاقة' })).toBeTruthy()
+    expect(screen.getByText('🎙 جارٍ التسجيل')).toBeTruthy()
     nowSpy.mockRestore()
   })
 

@@ -70,7 +70,7 @@ describe('finish-publish — لحظة النجاح والتسمية (المرح�
     expect(w.pushEvent).toHaveBeenCalledWith('publish', expect.stringContaining('نُشر دليلك'), 'http://localhost:5174/g/g9')
   })
 
-  it('الاسم الاختياري يمر إلى النشر للدليل الجديد — والإضافة لدليل قائم لا تحمل اسمًا', async () => {
+  it('الاسم الاختياري يمر إلى النشر للدليل الجديد', async () => {
     const { publishSteps } = await import('./publish')
     const w = world(capturing)
     await w.finish.finishCapture('دليل الفواتير خطوة بخطوة')
@@ -78,20 +78,7 @@ describe('finish-publish — لحظة النجاح والتسمية (المرح�
       expect.anything(),
       's1',
       3,
-      undefined,
-      undefined,
       expect.objectContaining({ title: 'دليل الفواتير خطوة بخطوة' }),
-    )
-
-    const appendWorld = world({ ...capturing, appendTo: 'g-target', insertAt: 2 })
-    await appendWorld.finish.finishCapture('اسم مهمل للإضافة')
-    expect(vi.mocked(publishSteps)).toHaveBeenLastCalledWith(
-      expect.anything(),
-      's1',
-      3,
-      'g-target',
-      2,
-      expect.objectContaining({ title: undefined }),
     )
   })
 

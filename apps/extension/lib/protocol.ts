@@ -46,10 +46,6 @@ export interface SessionMeta {
   draftReason?: string
   /** تنبيه عابر يظهر في الشريط والنافذة (مثل: إنهاء بلا خطوات) */
   notice?: string
-  /** CAP-17: جلسة تُضيف خطواتها لدليل قائم عند النشر (بدل إنشاء دليل جديد) */
-  appendTo?: string
-  /** موضع إدراج الخطوات في الدليل الهدف — النهاية افتراضيًا */
-  insertAt?: number
   /** VOX-AUTO: «ابدأ مع تعليق صوتي» — كل بطاقة جديدة يبدأ عليها التعليق تلقائيًا حتى التالية */
   autoMemo?: boolean
   /** VOX-09 «ميك الخطوة»: تعليق جارٍ الآن — حلقة حمراء فوق معاينة الخطوة ومؤقت بالزر */
@@ -103,8 +99,6 @@ export type BgMsg =
   | { t: 'blur-mode'; on: boolean }
   /** CAP-15: زر «إخفاء الشريط» في اللوحة — يطوي/يظهر شريط التسجيل في التبويب النشط */
   | { t: 'toggle-bar-cmd' }
-  /** CAP-17: بدء جلسة إضافة على دليل قائم — يصل مُرحَّلًا من صفحة الويب عبر سكربت المحتوى */
-  | { t: 'append-capture'; guideId: string; insertAt?: number }
   /** VOX-09: نتيجة إذن الميكروفون من صفحة الإذن القصيرة (لا يُطلب الإذن من content script أبدًا).
    * ‏flow=memo: الإذن طُلب لأجل تعليق خطوة يدوي؛ بلا flow: مسار «ابدأ مع تعليق صوتي» التلقائي */
   | { t: 'mic-result'; granted: boolean; flow?: 'memo' }
@@ -124,6 +118,8 @@ export type BgMsg =
   | { t: 'train-start'; token?: string; guide?: GuideDto }
   /** دربني: تقدّم من تبويب التدريب — done خطوة نجحت، skip تخطٍّ، stop إنهاء */
   | { t: 'train-progress'; result: TrainResult }
+  /** AUTH-LIVE: دخول/خروج تم في تبويب الويب (يرحّله سكربت المحتوى) — الخلفية تختم AUTH_PING_KEY فتعيد اللوحة فحص الجلسة */
+  | { t: 'auth-changed' }
 
 /** استجابة بدء جلسة الإضافة إلى الويب (زر «أضف خطوات» في المحرر) */
 export interface AppendAck {
@@ -237,5 +233,7 @@ export interface StepSummary {
 export const META_KEY = 'dalili:meta'
 export const TRAIN_KEY = 'dalili:train'
 export const TRAIN_STATS_KEY = 'dalili:train-stats'
+/** AUTH-LIVE: ختم زمني تتبّعه اللوحة عبر storage.onChanged — كل تغيير فيه = أعد فحص الجلسة */
+export const AUTH_PING_KEY = 'dalili:auth-ping'
 export const stepKey = (sessionId: string, i: number) => `dalili:step:${sessionId}:${i}`
 export const shotKey = (sessionId: string, i: number) => `dalili:shot:${sessionId}:${i}`

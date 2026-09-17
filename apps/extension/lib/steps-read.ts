@@ -37,20 +37,6 @@ export async function readStepSummaries(
   return out
 }
 
-export async function readLastShot(
-  sessionId: string,
-  stepCount: number,
-  get: StoreGet,
-): Promise<string | undefined> {
-  for (let i = stepCount - 1; i >= 0; i--) {
-    const key = shotKey(sessionId, i)
-    const got = await get([key])
-    const v = got[key]
-    if (typeof v === 'string') return v
-  }
-  return undefined
-}
-
 /** لقطة خطوة بعينها — تُحمّل كسولًا عند كشف بطاقة سابقة (لا نحمّل صور كل الخطوات) */
 export async function readShotAt(
   sessionId: string,

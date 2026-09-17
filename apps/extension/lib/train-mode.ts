@@ -1,4 +1,4 @@
-import { resolveAnchor, type AnchorDom } from '@dalili/core'
+import { cssAnchorFinder, resolveAnchor, type AnchorDom } from '@dalili/core'
 import type { ToTabMsg, TrainResult, TrainStep } from './protocol'
 import { createTrainCard } from './train-card'
 import { onTargetScreen } from './train'
@@ -18,10 +18,10 @@ import { isVisibleControl, visibleRepresentative } from './gesture'
 const RESOLVE_TICK_MS = 350
 const RESOLVE_ATTEMPTS = 23 // ≈ ٨ ثوانٍ قصوى للبحث عن الزر قبل رسالة الصدق
 
-const realDom: AnchorDom<Element> = {
-  queryAll: (sel) => Array.from(document.querySelectorAll(sel)),
-  textOf: (el) => anchorTextOf(el),
-}
+const realDom: AnchorDom<Element> = cssAnchorFinder(
+  (sel) => Array.from(document.querySelectorAll(sel)),
+  (el) => anchorTextOf(el),
+)
 
 /** خطوات الكتابة والاختيار والتبديل تكتمل بأي إدخال صحيح في العنصر — GM-06 خطوة مرنة */
 const VALUE_KINDS = new Set(['input', 'select', 'toggle', 'keypress'])

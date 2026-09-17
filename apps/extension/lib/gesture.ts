@@ -1,4 +1,5 @@
 import type { CaptureEvent, CaptureRect } from './protocol'
+import { createGesturePacer } from '@dalili/core'
 
 /**
  * إيماءة المستخدم الواحدة — الوحدة الذرّية للالتقاط (بلاغ المالك 2026-09-06).
@@ -217,10 +218,15 @@ export interface GestureCollector {
 }
 
 /**
- * آلة حالة الإيماءة — **موضع العلة الأصلي**: كان `click` و`change` مستمعَين
+ * آلة حالة الإيماءة — **موضع العلة الأصلية**: كان `click` و`change` مستمعَين
  * مستقلَّين يرسل كلٌّ منهما خطوته، فضغطةٌ واحدة تصير خطوتين أو ثلاثًا. استُخرجت
  * هنا لتكون تحت حارس اختبارٍ يعيد تشغيل **تسلسلات الأحداث المقيسة في كروم حقيقي**
  * بدل أن يبقى التوصيل بلا شاهد.
+ *
+ * النوافذ الزمنيّة (صمت ٦٠مث / سقف ٤٠٠مث) مفوَّضة منذ 2026-09-15 إلى
+ * `createGesturePacer` في `@dalili/core` بساعةٍ ومجدولٍ محقونين — المؤقّتات
+ * الحقيقيّة تُمرَّر كمحقن، وتوقّعات DOM (`isVisibleControl` ·
+ * `visibleRepresentative` · `foldGesture`) تبقى هنا حصرًا.
  */
 export function createGestureCollector(
   emit: (folded: FoldedGesture) => void,
@@ -229,45 +235,45 @@ export function createGestureCollector(
   const collectMs = opts.collectMs ?? GESTURE_COLLECT_MS
   const maxMs = opts.maxMs ?? GESTURE_MAX_MS
   const now = opts.now ?? (() => Date.now())
-  let open: { records: GestureRecord[]; els: Element[]; timer: ReturnType<typeof setTimeout> | null; openedAt: number } | null = null
-
-  function flush() {
-    const g = open
-    open = null
-    if (!g) return
-    if (g.timer) clearTimeout(g.timer)
-    const folded = foldGesture(g.records)
-    if (folded) emit(folded)
-  }
-
-  function arm() {
-    if (!open) return
-    if (open.timer) clearTimeout(open.timer)
-    const left = maxMs - (now() - open.openedAt)
-    open.timer = setTimeout(flush, Math.max(0, Math.min(collectMs, left)))
-  }
+  // مفاتيح الإيماءة الحيّة (عناصر DOM) — دفترُ الجامع لا المِضخّة؛ المِضخّة تُعلِم
+  // بإغلاق النافذة عبر onFlush فيُمسح الدفتر معها فلا يختلّ الاتّفاق
+  let els: Element[] = []
+  const pacer = createGesturePacer<GestureRecord>({
+    collectMs,
+    maxMs,
+    now,
+    schedule: (fn, ms) => {
+      const t = setTimeout(fn, ms)
+      return () => clearTimeout(t)
+    },
+    onFlush(records) {
+      els = []
+      const folded = foldGesture(records)
+      if (folded) emit(folded)
+    },
+  })
 
   function add(rec: GestureRecord) {
-    if (!open) open = { records: [], els: [], timer: null, openedAt: now() }
-    open.records.push(rec)
-    if (!open.els.includes(rec.el)) open.els.push(rec.el)
-    arm()
+    pacer.add(rec)
+    if (!els.includes(rec.el)) els.push(rec.el)
   }
 
   return {
     open() {
-      flush()
-      open = { records: [], els: [], timer: null, openedAt: now() }
+      pacer.open() // يصرّف المعلَّق فورًا (عبر onFlush) ثم يفتح نافذة نظيفة
     },
     addClick(ev, el) {
       add({ ev, el })
     },
     addValue(ev, el) {
-      if (!open || !foldsIntoGesture(el, ev.kind, open.els)) return false
+      // نافذة بلا عناصر (= بعد open مباشرة) لا يطويها شيء — كما كان `!open` سابقًا
+      if (pacer.seenCount() === 0 || !foldsIntoGesture(el, ev.kind, els)) return false
       add({ ev, el })
       return true
     },
-    flush,
-    seen: () => open?.els ?? [],
+    flush() {
+      pacer.flush()
+    },
+    seen: () => els,
   }
 }

@@ -196,10 +196,10 @@ export function SearchPage() {
                     <p className="snippet" dangerouslySetInnerHTML={{ __html: h.snippet }} />
                   </div>
                   {/* SRCH-01: مصغّرة الدليل (PERF-02) — لا اللقطة الأصلية */}
-                  {h.thumbFileId && (
+                  {h.thumbUrl && (
                     <img
                       className="hit-thumb"
-                      src={`/files/${h.thumbFileId}`}
+                      src={h.thumbUrl}
                       alt=""
                       loading="lazy"
                       decoding="async"

@@ -36,6 +36,11 @@ export default defineContentScript({
   matches: ['<all_urls>'],
   runAt: 'document_idle',
   main() {
+    // حرس الزرع المزدوج (2026-09-14): التبويب القديم قد يُزرع يدويًا عند بدء الالتقاط
+    // ثم يصله الزرع المعلن عند أول تحميل تالٍ — نسخة واحدة تعيش والعلم هنا القانون
+    const g = globalThis as { __itqanContent?: boolean }
+    if (g.__itqanContent) return
+    g.__itqanContent = true
     let listenersOn = false
     let historyWrapped = false
     let lastUrl = location.href
@@ -402,19 +407,17 @@ export default defineContentScript({
         })
     }
 
-    /** CAP-17: محرر الويب يطلب بدء جلسة إضافة خطوات — ترحيل موثوق عبر postMessage ثم ردّ بإشعار */
+    /** دربني: طلب بدء التدريب من الموقع — ترحيل موثوق عبر postMessage ثم ردّ بإشعار */
     window.addEventListener('message', (e) => {
       if (e.source !== window) return
-      const data = e.data as { source?: string; t?: string; guideId?: string; insertAt?: number; token?: string; guide?: unknown }
-      if (data?.source !== 'dalili-web' || location.origin !== WEB_ORIGIN) return // لا نقبل طلب بدء إلا من موقع دليلي نفسه
-      if (data.t === 'append-capture') {
-        relay({ t: 'append-capture', guideId: data.guideId, insertAt: data.insertAt }, 'append-ack')
-        return
-      }
-      // دربني: العارض يطلب بالرمز العام، والمحرر بالدليل الحالي نفسه (بلا مشاركة) — الرد يرحَّل للصفحة
+      const data = e.data as { source?: string; t?: string; token?: string; guide?: unknown }
+      if (data?.source !== 'dalili-web' || location.origin !== WEB_ORIGIN) return // لا نقبل طلبًا إلا من موقع دليلي نفسه
+      // العارض يطلب بالرمز العام، والمحرر بالدليل الحالي نفسه (بلا مشاركة) — الرد يرحَّل للصفحة
       if (data.t === 'train-start' && (data.token || data.guide)) {
         relay({ t: 'train-start', token: data.token, guide: data.guide }, 'train-ack')
       }
+      // AUTH-LIVE: دخول/خروج تم في صفحة الويب — بلا ردّ، الختم في التخزين هو إشارة اللوحة
+      if (data.t === 'auth-changed') void chrome.runtime.sendMessage({ t: 'auth-changed' }).catch(() => {})
     })
 
     chrome.storage.onChanged.addListener((changes, area) => {

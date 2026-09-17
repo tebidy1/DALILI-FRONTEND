@@ -57,7 +57,7 @@ export function buildTrainPlan(guide: GuideDto): TrainStep[] {
     if (s.kind === 'navigate') continue
     const anchor = s.target?.anchor
     if (!anchor || anchor.length === 0) continue
-    steps.push({ id: s.id, kind: s.kind, title: s.title, note: s.note, anchor, url: s.url })
+    steps.push({ id: s.id, kind: s.kind, title: s.title, note: s.note, anchor, url: s.url ?? '' })
   }
   return steps
 }

@@ -64,7 +64,7 @@ export function FoldersSection({ isViewer }: { isViewer: boolean }) {
   }
 
   async function deleteFolderNow(f: FolderDto) {
-    if (!(await confirm({ title: t('library.folderDelete'), body: t('library.folderDeleteNote'), confirmLabel: t('library.folderDelete'), danger: true }))) return
+    if (!(await confirm({ title: t('library.folderDelete'), body: t('library.folderDeleteNote'), danger: true }))) return
     try {
       await client.deleteFolder(f.id)
       if (folder === f.id) setSp(patchParams(sp, { folder: null }))

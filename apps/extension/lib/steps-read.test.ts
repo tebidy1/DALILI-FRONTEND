@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readStepSummaries, readLastShot, readShotAt, renumberAfterDelete } from './steps-read'
+import { readStepSummaries, readShotAt, renumberAfterDelete } from './steps-read'
 import { stepKey, shotKey, type StoredStep } from './protocol'
 import { voiceMemoKey, type StoredVoiceMemo } from './voice-memo'
 
@@ -30,11 +30,6 @@ describe('steps-read', () => {
     const out = await readStepSummaries(sid, 2, get)
     expect(out[0]!.mark).toEqual({ x: 10, y: 20, w: 30, h: 40 })
     expect(out[1]!.mark).toBeUndefined()
-  })
-
-  it('reads only the last shot', async () => {
-    const get = fakeStore({ [shotKey(sid, 0)]: 'data:a', [shotKey(sid, 1)]: 'data:b' })
-    expect(await readLastShot(sid, 2, get)).toBe('data:b')
   })
 
   it('reads a specific step shot on demand (كشف بطاقة سابقة)', async () => {

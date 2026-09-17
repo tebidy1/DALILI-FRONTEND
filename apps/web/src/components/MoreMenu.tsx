@@ -63,7 +63,7 @@ export function MoreMenu({ items, ariaLabel }: Props) {
               key={it.key}
               type="button"
               role={it.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
-              aria-checked={it.checked === undefined ? undefined : !!it.checked}
+              aria-checked={it.checked}
               className={`more-menu-item${it.danger ? ' danger' : ''}${it.disabled ? ' is-disabled' : ''}${it.checked ? ' is-checked' : ''}`}
               aria-disabled={it.disabled ? 'true' : undefined}
               title={it.disabled ? it.disabledHint : undefined}

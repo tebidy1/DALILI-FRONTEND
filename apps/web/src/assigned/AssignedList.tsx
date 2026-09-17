@@ -1,4 +1,5 @@
 import type { AssignedItemDto } from '@dalili/shared'
+import { siteLabel } from '@dalili/core'
 import { t } from '../i18n'
 import { arDigits, relativeTimeAr } from '../lib/format'
 import { Button } from '../ui/Button'
@@ -40,7 +41,7 @@ export function AssignedList({ items, onOpen, onToggleDone, compact = false }: A
               </button>
               <div className="assigned-meta">
                 <span className="chip">{it.kind === 'booklet' ? t('assigned.kindBooklet') : t('assigned.kindGuide')}</span>
-                {it.site && <span className="assigned-site" dir="auto">{it.site}</span>}
+                {it.site && <span className="assigned-site" dir="auto">{siteLabel(it.site)}</span>}
                 <span className="muted">{arDigits(it.stepCount)} {t('assigned.stepsLabel')}</span>
                 {isNew && <span className="chip assigned-new">{t('assigned.newBadge')}</span>}
               </div>

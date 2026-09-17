@@ -47,6 +47,9 @@ describe('shotSrc', () => {
   it('بلا fileUrl يستعمل fileId', () => {
     expect(shotSrc({ fileId: 'f1' }, API)).toBe('http://api/files/f1')
   })
+  it('يحفظ استعلام التوقيع كما هو (خصوصيّة ٢ب)', () => {
+    expect(shotSrc({ fileId: 'f1', fileUrl: '/files/abc?e=123&s=tok&c=sig' }, API)).toBe('http://api/files/abc?e=123&s=tok&c=sig')
+  })
 })
 
 describe('readerItems', () => {

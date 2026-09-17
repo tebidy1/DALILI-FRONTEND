@@ -21,6 +21,8 @@ vi.mock('../api', () => ({
     // ‏vi.fn() العاري يعيد undefined، و chooseTheme ينادي .catch عليه — فيهرب
     // استثناء غير ملتقط يعدّه vitest خطأ تشغيل ويُسقط اختبارًا بريئًا في ملف آخر
     setMyTheme: vi.fn().mockResolvedValue(undefined),
+    // DTOP-03: بطاقة الأجهزة الجديدة في الإعداد — بلاها تنهار في الاختبارات القائمة
+    listDevices: vi.fn().mockResolvedValue([]),
   },
 }))
 

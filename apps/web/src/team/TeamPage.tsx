@@ -103,7 +103,6 @@ export function TeamPage() {
     const ok = await confirm({
       title: t('team.remove'),
       body: t('team.removeConfirm', { email: m.email, count: arDigits(m.guideCount ?? 0) }),
-      confirmLabel: t('team.remove'),
       danger: true,
     })
     if (!ok) return
@@ -134,7 +133,6 @@ export function TeamPage() {
     const ok = await confirm({
       title: t('team.deleteTeam'),
       body: t('team.deleteTeamConfirm', { name: tm.name }),
-      confirmLabel: t('team.deleteTeam'),
       danger: true,
     })
     if (!ok) return

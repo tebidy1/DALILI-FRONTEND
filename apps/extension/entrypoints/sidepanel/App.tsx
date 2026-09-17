@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DaliliClient, type MeDto } from '@dalili/shared'
-import { META_KEY, type SessionMeta, type StepSummary } from '@/lib/protocol'
-import type { MemoToggleAck } from '@/lib/protocol'
+import { META_KEY, AUTH_PING_KEY, type SessionMeta, type StepSummary } from '@/lib/protocol'
+import type { AutoMemoToggleAck, MemoToggleAck } from '@/lib/protocol'
 import { readStepSummaries, readShotAt } from '@/lib/steps-read'
 import { clearAllSteps, publishSteps } from '@/lib/publish'
 import { autoTranscribeSteps } from '@/lib/voice-memo-upload'
@@ -9,6 +9,7 @@ import { API_BASE, WEB_BASE } from '@/lib/config'
 import { filterByTitle, searchHref, type RecentGuide } from '@/lib/recent'
 import { hostOf } from '@/lib/discover'
 import { urlTokens } from '@dalili/core'
+import { toArabicDigits } from '@/lib/ar-digits'
 import { CANCEL_ARM_WINDOW_MS, CancelArm } from '@/lib/cancel-arm'
 import { useArmCountdown } from './useArmCountdown'
 import type { DiscoverResponseDto } from '@dalili/shared'
@@ -33,6 +34,8 @@ type Sheet = 'none' | 'settings' | 'bell'
 export function App() {
   const [meta, setMeta] = useState<SessionMeta>(IDLE)
   const [me, setMe] = useState<MeDto | null>(null)
+  // AUTH-LIVE: عبارة النجاح لحظة انتقال اللوحة من زائر إلى مسجّل — بلا صمت ولا إغلاق وإعادة فتح
+  const [authHello, setAuthHello] = useState('')
   const [steps, setSteps] = useState<StepSummary[]>([])
   const [lastShot, setLastShot] = useState<string | undefined>()
   const [publishing, setPublishing] = useState(false)
@@ -58,7 +61,6 @@ export function App() {
   // المرحلة ٤: عدّاد الأربع ثوانٍ يُرى على الزر المسلَّح بدل تخمينه
   const armLeft = useArmCountdown(armedKey !== null, armedKey ?? '')
   const cancelLeft = useArmCountdown(cancelArmed)
-  const ar = (n: number) => n.toLocaleString('ar-EG')
   function armedPress(key: string, run: () => void) {
     window.clearTimeout(armTimer.current)
     if (armedKey === key) {
@@ -110,6 +112,57 @@ export function App() {
       .catch(() => {})
   }, [])
 
+  // AUTH-LIVE: فحص الجلسة قابل لإعادة الاستدعاء — كان يُطلب مرة واحدة عند فتح اللوحة،
+  // فدخولٌ تم في تبويب الويب لم يرَه أحد إلا بإغلاق اللوحة وفتحها. الآن يُعاد عند ختم
+  // AUTH_PING_KEY (رسالة من صفحة الويب) وعند عودة التركيز/الظهور للوحة.
+  const prevMe = useRef<boolean | null>(null) // null = لم يُفحص بعد — أول فحص لا يهنّئ
+  const lastAuthCheck = useRef(0)
+  const checkAuth = useCallback(async (isLive?: () => boolean) => {
+    const alive = () => !isLive || isLive()
+    await client
+      .me()
+      .then((m) => {
+        if (!alive()) return
+        setMe(m)
+        if (m && prevMe.current === false) setAuthHello(m.email)
+        prevMe.current = !!m
+        // الأدلة الأخيرة تُجلب فقط لمن سجّل دخوله — الضيف لا أدلة له بعد
+        if (m) {
+          client
+            .listGuides({ limit: 8, sort: 'updated', order: 'desc' })
+            .then((r) => {
+              if (!alive()) return
+              setRecent(
+                r.items.map((it) => ({ id: it.id, title: it.title, updatedAt: it.updatedAt, stepCount: it.stepCount })),
+              )
+            })
+            .catch(() => alive() && setRecentErr('تعذّر جلب الأدلة الأخيرة'))
+        }
+      })
+      .catch(() => alive() && setError('تعذر الوصول للخادم — تأكد من تشغيله على المنفذ 8787'))
+  }, [])
+
+  // AUTH-LIVE: عودة النظر إلى اللوحة بعد الدخول في تبويب الويب تكفي — شبكة أمان
+  // لو فات الترحيل (تبويب أُغلق بسرعة، أو منفذ ويب غير المتوقع في التطوير)
+  useEffect(() => {
+    const recheck = () => {
+      if (Date.now() - lastAuthCheck.current < 1500) return
+      lastAuthCheck.current = Date.now()
+      void checkAuth()
+    }
+    window.addEventListener('focus', recheck)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') recheck()
+    })
+  }, [checkAuth])
+
+  // عبارة النجاح تعيش ثوانٍ ثم تطمئن اللوحة إلى حالها
+  useEffect(() => {
+    if (!authHello) return
+    const timer = setTimeout(() => setAuthHello(''), 5000)
+    return () => clearTimeout(timer)
+  }, [authHello])
+
   useEffect(() => {
     let live = true
     async function load() {
@@ -137,27 +190,11 @@ export function App() {
       const voiceTouched = keys.some((k) => k.startsWith('voice:'))
       if (stepsTouched) setRevealed({})
       if (stepsTouched || voiceTouched || keys.includes(META_KEY)) void load()
+      // AUTH-LIVE: ختم الدخول/الخروج من الويب — بلا خمادلة، إشارة صريحة تعيد الفحص فورًا
+      if (keys.includes(AUTH_PING_KEY)) void checkAuth(() => live)
     }
     chrome.storage.onChanged.addListener(onChanged)
-    client
-      .me()
-      .then((m) => {
-        if (!live) return
-        setMe(m)
-        // الأدلة الأخيرة تُجلب فقط لمن سجّل دخوله — الضيف لا أدلة له بعد
-        if (m) {
-          client
-            .listGuides({ limit: 8, sort: 'updated', order: 'desc' })
-            .then((r) => {
-              if (!live) return
-              setRecent(
-                r.items.map((it) => ({ id: it.id, title: it.title, updatedAt: it.updatedAt, stepCount: it.stepCount })),
-              )
-            })
-            .catch(() => live && setRecentErr('تعذّر جلب الأدلة الأخيرة'))
-        }
-      })
-      .catch(() => live && setError('تعذر الوصول للخادم — تأكد من تشغيله على المنفذ 8787'))
+    void checkAuth(() => live)
     return () => {
       live = false
       chrome.storage.onChanged.removeListener(onChanged)
@@ -268,8 +305,8 @@ export function App() {
   const [guideTitle, setGuideTitle] = useState('')
   const [draftTitle, setDraftTitle] = useState('')
   function onFinishPress() {
-    // بلا خطوات: تمرّر للخلفية تعرض رسالتها الصادقة — والإضافة لدليل قائم لا تعيد تسميته
-    if (meta.stepCount === 0 || meta.appendTo) {
+    // بلا خطوات: تمرّر للخلفية تعرض رسالتها الصادقة
+    if (meta.stepCount === 0) {
       void send('finish')
       return
     }
@@ -281,20 +318,6 @@ export function App() {
     setGuideTitle('')
     void send('finish', title || undefined)
   }
-
-  // المرحلة ٤: شارة الإضافة تذكر اسم الدليل الهدف — يُجلب مرة واحدة لحظة ظهور الإضافة
-  const [appendTitle, setAppendTitle] = useState<string | null>(null)
-  const appendTitleFor = useRef<string | null>(null)
-  useEffect(() => {
-    const target = meta.appendTo
-    if (!target || appendTitleFor.current === target) return
-    appendTitleFor.current = target
-    const client = new DaliliClient(API_BASE)
-    client
-      .getGuide(target)
-      .then((d) => setAppendTitle(d.guide.title))
-      .catch(() => {})
-  }, [meta.appendTo])
 
   // المرحلة ٣: بطاقة «دليلك جاهز» — النجاح يُرى ولا يُبتلع، وتزول بنفسها بعد دقيقتين
   const [successHidden, setSuccessHidden] = useState<string | null>(null)
@@ -312,7 +335,7 @@ export function App() {
   async function onMemoPress() {
     if (meta.autoMemo) {
       try {
-        const ack = (await chrome.runtime.sendMessage({ t: 'auto-memo-toggle' }).catch(() => null)) as { ok: boolean; errorAr?: string } | null
+        const ack = (await chrome.runtime.sendMessage({ t: 'auto-memo-toggle' }).catch(() => null)) as AutoMemoToggleAck | null
         if (ack && !ack.ok && ack.errorAr) setError(ack.errorAr)
       } catch {
         // الخلفية ميتة لحظة — البث سيأتي
@@ -381,10 +404,9 @@ export function App() {
         return
       }
       // VOX-09: تعليقات البطاقات تُرفع خلال النشر ثم تُفرَّغ نصيًا فوق عناوينها
-      const published = await publishSteps(client, meta.sessionId, meta.stepCount, meta.appendTo, meta.insertAt, {
+      const published = await publishSteps(client, meta.sessionId, meta.stepCount, {
         onMemoProgress: setMemoProgress,
-        // المرحلة ٣: الاسم للدليل الجديد وحده — الإضافة لدليل قائم لا تعيد تسميته
-        title: meta.appendTo ? undefined : title,
+        title,
       })
       await clearAllSteps()
       // المرحلة ٣: النجاح يُرى — بطاقة «دليلك جاهز» فوق شاشة الخمول
@@ -411,27 +433,6 @@ export function App() {
   async function discardDraft() {
     await clearAllSteps()
     await chrome.storage.local.set({ [META_KEY]: IDLE })
-  }
-
-  // المرحلة ٢: «حذف المسودة» خطوتان — نفس حماية حذفها من الإعدادات، فالمسودة عمل لم يُنشر
-  const draftArm = useRef(new CancelArm())
-  const [draftArmed, setDraftArmed] = useState(false)
-  const draftArmTimer = useRef<number | undefined>(undefined)
-  const draftLeft = useArmCountdown(draftArmed)
-  function onDraftDiscardPress() {
-    const r = draftArm.current.press(Date.now())
-    window.clearTimeout(draftArmTimer.current)
-    if (r === 'confirm') {
-      setDraftArmed(false)
-      draftArm.current.disarm()
-      void discardDraft()
-      return
-    }
-    setDraftArmed(true)
-    draftArmTimer.current = window.setTimeout(() => {
-      setDraftArmed(false)
-      draftArm.current.disarm()
-    }, CANCEL_ARM_WINDOW_MS)
   }
 
   async function openBell() {
@@ -488,6 +489,12 @@ export function App() {
               </div>
             </div>
           )}
+          {/* AUTH-LIVE: لحظة وصول الدخول من الويب — عبارة قصيرة ثم تفتك بتكتم */}
+          {authHello && (
+            <div className="notice auth-hello" role="status">
+              تم تسجيل الدخول بنجاح — أهلًا <bdi>{authHello}</bdi>
+            </div>
+          )}
           <IdleScreen send={send} me={me} query={query} setQuery={setQuery} discover={discover} recent={recent} recentErr={recentErr} preferredStart={prefs.settings.preferredStart} onOpenHere={openReader} />
         </>
       )}
@@ -495,11 +502,6 @@ export function App() {
       {capturing && (
         <>
           <div className="countline">
-            {meta.appendTo ? (
-              <span className="append-badge">
-                تُضاف الخطوات إلى «{appendTitle ?? 'دليل قائم'}» عند الإنهاء
-              </span>
-            ) : null}
             <b>{stepCount}</b> خطوة — كل نقرة وإدخال يوثَّق تلقائيًا
           </div>
           {meta.notice && <div className="notice">{meta.notice}</div>}
@@ -599,8 +601,11 @@ export function App() {
             <button className="ghost" onClick={() => window.open(`${WEB_BASE}/login?return=extension`, '_blank')}>
               فتح تسجيل الدخول
             </button>
-            <button className="danger" onClick={onDraftDiscardPress}>
-              {draftArmed ? `اضغط مجددًا لتأكيد حذف المسودة (${ar(draftLeft)})` : 'حذف المسودة'}
+            {/* المرحلة ٢: «حذف المسودة» خطوتان بنظام التسليح الموحد نفسه — فالمسودة عمل لم يُنشر */}
+            <button className="danger" onClick={() => armedPress('draft', () => void discardDraft())}>
+              {armedKey === 'draft'
+                ? `اضغط مجددًا لتأكيد حذف المسودة (${toArabicDigits(armLeft)})`
+                : 'حذف المسودة'}
             </button>
           </div>
         </div>

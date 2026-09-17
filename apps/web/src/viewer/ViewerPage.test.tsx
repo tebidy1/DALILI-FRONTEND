@@ -94,8 +94,9 @@ describe('BLK-01: العارض يرسم الكتل بترقيم مُصفّى', (
     renderViewer()
     await screen.findByText('إصدار فاتورة توريد')
     expect(document.querySelectorAll('.viewer-callout.tip').length).toBe(1)
-    // الخطوة الثانية رقمها 2 رغم الكتلة بينها
-    expect(screen.getByText(/^2\./)).toBeTruthy()
+    // الخطوة الثانية رقمها 2 رغم الكتلة بينها — الشارات هي مصدر الترقيم (نمط سكرايب)
+    const nums = Array.from(document.querySelectorAll('.viewer-step-num')).map((el) => el.textContent)
+    expect(nums).toEqual(['1', '2'])
   })
 })
 

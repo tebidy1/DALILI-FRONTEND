@@ -61,7 +61,7 @@ function ViewerBookletBlock({ step, embeds }: { step: StepDto; embeds: Record<st
       )
 
     case 'video':
-      return <VideoBlock url={step.url} title={step.title} />
+      return <VideoBlock url={step.url ?? ''} title={step.title} />
 
     case 'divider':
       return <hr className="booklet-divider" />

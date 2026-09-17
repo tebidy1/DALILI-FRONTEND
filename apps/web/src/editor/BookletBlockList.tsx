@@ -10,8 +10,9 @@ import { BlockBody, type EmbedMeta } from './blocks/BookletBlock'
 /** بطاقة الدليل المضمّن من الدليل نفسه — المصغّرة من أول لقطة صالحة */
 function metaOf(guide: GuideDto, deletedAt?: string): EmbedMeta {
   const shot = guide.steps.find((s) => s.screenshot && !('missing' in s.screenshot))?.screenshot
-  const thumb = shot && !('missing' in shot) ? (shot.thumbFileId ?? shot.fileId) : undefined
-  return { title: guide.title, stepCount: guide.steps.length, thumbFileId: thumb, trashed: !!deletedAt }
+  // خصوصيّة ٢ب: الروابط الموقَّعة من الخادم — لا تركيب من المعرّف
+  const thumb = shot && !('missing' in shot) ? (shot.thumbUrl ?? shot.fileUrl) : undefined
+  return { title: guide.title, stepCount: guide.steps.length, thumbUrl: thumb, trashed: !!deletedAt }
 }
 
 /**
@@ -74,9 +75,10 @@ export function BookletBlockList({
     }
   }, [embedIds])
 
+  // كيان مستند بعمود قراءة وفهرس — لا نموذج إدخال (طلب المالك 2026-09-07)
+  const hasIndex = bookletOutline(steps).length > 0
   return (
-    // كيان مستند بعمود قراءة وفهرس — لا نموذج إدخال (طلب المالك 2026-09-07)
-    <div className={`booklet-doc${editing ? ' is-editing' : bookletOutline(steps).length > 0 ? ' has-index' : ''}`}>
+    <div className={`booklet-doc${editing ? ' is-editing' : hasIndex ? ' has-index' : ''}`}>
       {!editing && <BookletOutline steps={steps} prefix="step-" />}
       <div className="booklet-body">
       {steps.map((s, i) => (

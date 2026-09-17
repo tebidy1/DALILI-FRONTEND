@@ -1,11 +1,11 @@
 import { useCallback, useRef, useState } from 'react'
 import { t } from '../i18n'
-import { requestTrainStart } from '../lib/append-capture'
+import { requestTrainStart } from '../lib/ext-bridge'
 
 /**
  * زر «دربني» (GM-01) — ثابت في الركن الأعلى من شاشة العارض: اقرأ الدليل أولًا
  * ثم ادخل التدريب، أو درّب مباشرة. يظهر فقط حين تحمل بعض الخطوات بطاقة تعريف
- * (AUTO-01). النقر يجسر إلى الامتداد عبر نفس أنبوب append-capture؛
+ * (AUTO-01). النقر يجسر إلى الامتداد عبر أنبوب ext-bridge؛
  * غيابه أو فشله = رسالة عربية صادقة. ackTimeoutMs قابل للحقن للاختبار.
  */
 export function TrainButton({ token, ackTimeoutMs }: { token: string; ackTimeoutMs?: number }) {

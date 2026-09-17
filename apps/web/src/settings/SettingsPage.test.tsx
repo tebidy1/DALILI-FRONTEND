@@ -20,6 +20,8 @@ vi.mock('../api', () => ({
     createFolder: vi.fn(),
     renameFolder: vi.fn(),
     deleteFolder: vi.fn(),
+    // DTOP-03: بطاقة الأجهزة الجديدة في الإعداد — بلاها تنهار في الاختبارات القائمة
+    listDevices: vi.fn().mockResolvedValue([]),
   },
   webShareUrl: (u: string) => u,
 }))

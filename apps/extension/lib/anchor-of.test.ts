@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
 import { anchorOf, anchorTextOf } from './anchor-of'
-import { resolveAnchor, type AnchorDom } from '@dalili/core'
+import { cssAnchorFinder, resolveAnchor, type AnchorDom } from '@dalili/core'
 
 /** DOM حقيقي (jsdom) لواجهة الحل — كما يستعملها وضع التدريب في الصفحة الهدف */
-const realDom: AnchorDom<Element> = {
-  queryAll: (sel) => Array.from(document.querySelectorAll(sel)),
-  textOf: (el) => anchorTextOf(el),
-}
+const realDom: AnchorDom<Element> = cssAnchorFinder(
+  (sel) => Array.from(document.querySelectorAll(sel)),
+  (el) => anchorTextOf(el),
+)
 
 describe('anchorOf — بطاقة تعريف العنصر من DOM (AUTO-01)', () => {
   it('زر بid: أول مرشح هو id ويحل فريدًا في صفحة أخرى', () => {

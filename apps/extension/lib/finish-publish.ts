@@ -48,12 +48,10 @@ export function createFinish(deps: FinishDeps) {
         await chrome.tabs.create({ url: `${WEB_BASE}/login?return=extension` })
         return
       }
-      // CAP-17: الجلسة تعرف هدفها — نشر عادي أو إضافة لدليل قائم في موضع محدد
       // VOX-09: تعليقات الخطوات تُرفع خلال النشر بتقدم صادق «ن من م»
-      const published = await publishSteps(client, sid, meta.stepCount, meta.appendTo, meta.insertAt, {
+      const published = await publishSteps(client, sid, meta.stepCount, {
         onMemoProgress: (m) => void deps.saveMeta({ notice: m }),
-        // المرحلة ٣: الاسم للدليل الجديد وحده — الإضافة لدليل قائم لا تعيد تسميته
-        title: meta.appendTo ? undefined : title,
+        title,
       })
       await clearAllSteps()
       // المرحلة ٣: لحظة النجاح تُحفظ في الحالة — بطاقة «دليلك جاهز» في اللوحة
@@ -64,8 +62,6 @@ export function createFinish(deps: FinishDeps) {
         limited: false,
         autoMemo: false,
         memoLive: undefined,
-        appendTo: undefined,
-        insertAt: undefined,
         notice: undefined,
         lastPublished: { guideId: published.guideId, stepCount: meta.stepCount, at: Date.now() },
       })
@@ -100,8 +96,6 @@ export function createFinish(deps: FinishDeps) {
       notice: undefined,
       autoMemo: false,
       memoLive: undefined,
-      appendTo: undefined,
-      insertAt: undefined,
       lastPublished: undefined,
     })
   }

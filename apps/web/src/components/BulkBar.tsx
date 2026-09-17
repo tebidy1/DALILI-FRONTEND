@@ -16,6 +16,8 @@ export function BulkBar({ count, folders, trash, busy, onMove, onDelete, onShare
   onShare: () => void
   onClear: () => void
 }) {
+  // القاعدة الموحدة: خارج السلة النقل ناعم بلمسة، وفي السلة الحذف نهائي
+  const deleteLabel = trash ? t('library.deleteForever') : t('library.bulkDelete')
   return (
     <div className="bulk-bar" role="toolbar" aria-label={t('library.bulkBar')}>
       <span className="bulk-count">{t('library.selectedCount', { count })}</span>
@@ -50,9 +52,9 @@ export function BulkBar({ count, folders, trash, busy, onMove, onDelete, onShare
         variant="danger"
         onClick={onDelete}
         busy={busy}
-        aria-label={trash ? t('library.deleteForever') : t('library.bulkDelete')}
+        aria-label={deleteLabel}
       >
-        {trash ? t('library.deleteForever') : t('library.bulkDelete')}
+        {deleteLabel}
       </Button>
       <Button size="sm" variant="ghost" onClick={onClear}>
         {t('library.clearSelection')}

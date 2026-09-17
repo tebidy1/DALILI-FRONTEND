@@ -11,7 +11,8 @@ import { BlockMedia } from './BlockMedia'
 export interface EmbedMeta {
   title: string
   stepCount: number
-  thumbFileId?: string
+  /** خصوصيّة ٢ب: رابط المصغّرة الموقَّع من الخادم */
+  thumbUrl?: string
   /** في السلة — حالة ثالثة بين «موجود» و«غير موجود»، ولها رسالتها */
   trashed?: boolean
 }
@@ -113,10 +114,10 @@ export function BlockBody({
             value={step.title}
             onChange={(e) => onPatch({ title: e.target.value })}
           />
-          <VideoBlock url={step.url} title={step.title} />
+          <VideoBlock url={step.url ?? ''} title={step.title} />
         </div>
       ) : (
-        <VideoBlock url={step.url} title={step.title} />
+        <VideoBlock url={step.url ?? ''} title={step.title} />
       )
 
     case 'link':
@@ -154,7 +155,7 @@ export function BlockBody({
         <EmbedBlock
           title={meta?.title ?? step.title}
           stepCount={meta?.stepCount}
-          thumbFileId={meta?.thumbFileId}
+          thumbUrl={meta?.thumbUrl}
           expanded={step.embed?.expanded ?? false}
           missing={missing || !!meta?.trashed}
           missingText={meta?.trashed ? t('editor.embedTrashed') : undefined}

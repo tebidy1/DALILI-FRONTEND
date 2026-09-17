@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FolderDto, GuideSummaryDto } from '@dalili/shared'
+import { siteLabel } from '@dalili/core'
 import { webShareUrl } from '../api'
 import { IconShare } from '../ui/icons'
 import { t } from '../i18n'
@@ -145,7 +146,7 @@ export function GuideCard(p: GuideCardProps) {
                     onClick={() => p.onSite(g.site)}
                   >
                     <SiteBadge site={g.site} />
-                    <span className="site-name">{g.site}</span>
+                    <span className="site-name">{siteLabel(g.site)}</span>
                   </button>
                 ) : (
                   <span className="site-who muted">

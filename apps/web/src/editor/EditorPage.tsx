@@ -5,7 +5,7 @@ import { buildRichHtml } from '../lib/rich-copy'
 import type { ShareInfoDto, StepDto, GuideDto, StepCommentDto } from '@dalili/shared'
 import { client } from '../api'
 import { createHistory, type History } from '../lib/history'
-import { requestTrainStartGuide } from '../lib/append-capture'
+import { requestTrainStartGuide } from '../lib/ext-bridge'
 import { StepCard, type ZoomCommand } from '../components/StepCard'
 import { ToolRail } from './ToolRail'
 import { BulkBar } from './BulkBar'
@@ -299,15 +299,10 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     setHistVer((v) => v + 1)
   }, [])
 
-  /** المرحلة ١: زرا التراجع/الإعادة — نفس مكدس الاختصار، وتعطّلان حين لا ماضٍ/مستقبل */
-  const canUndo = useMemo(() => {
-    void histVer
-    return historyRef.current.canUndo()
-  }, [histVer])
-  const canRedo = useMemo(() => {
-    void histVer
-    return historyRef.current.canRedo()
-  }, [histVer])
+  /** المرحلة ١: زرا التراجع/الإعادة — نفس مكدس الاختصار، وتعطّلان حين لا ماضٍ/مستقبل.
+   *  كل دفع/تراجع يرفع histVer فيُعيد الرسم فتُقرأ الحالة من المرجع مباشرة */
+  const canUndo = historyRef.current.canUndo()
+  const canRedo = historyRef.current.canRedo()
 
   const doUndo = useCallback(() => {
     const next = historyRef.current.undo()
@@ -666,7 +661,6 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
       const ok = await confirm({
         title: t('editor.transcribe'),
         body: t('editor.transcribeOverwrite'),
-        confirmLabel: t('editor.transcribeOverwriteConfirm'),
         danger: true,
       })
       if (!ok) return
@@ -751,8 +745,9 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   /** BLK-01: رفع لقطة لخطوة يدوية — يرفع الملف ثم يضع screenshot (دفعة تراجع واحدة عبر updateStep) */
   const attachShot = useCallback(
     async (idx: number, file: File) => {
-      const { fileId, thumbFileId } = await client.uploadBlob(file, file.name)
-      updateStep(idx, { screenshot: { fileId, thumbFileId, blurRects: [] } })
+      // خصوصيّة ٢ب: الرابط الموقَّع من استجابة الرفع — المعاينة قبل الحفظ لا تركّب رابطًا من المعرّف
+      const { fileId, fileUrl, thumbFileId, thumbUrl } = await client.uploadBlob(file, file.name)
+      updateStep(idx, { screenshot: { fileId, fileUrl, thumbFileId, thumbUrl, blurRects: [] } })
     },
     [updateStep],
   )
@@ -771,7 +766,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   async function toggleShare() {
     if (!id) return
     if (share) {
-      if (!(await confirm({ title: t('editor.revokeShare'), body: t('editor.revokeConfirm'), confirmLabel: t('editor.revokeShare'), danger: true }))) return
+      if (!(await confirm({ title: t('editor.revokeShare'), body: t('editor.revokeConfirm'), danger: true }))) return
       try {
         await client.revokeShare(id)
         setShare(null)
@@ -958,7 +953,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
           )}
           {/* قرار المالك 2026-09-10: زر «أضف خطوات» بالشريط أُزيل — الإدراج من أزرار «+»
               بين الشرائح، وهو إدراج يدوي (صورة مرفقة + تعليق) لا التقاط */}
-          <Button variant="solid" onClick={() => setShareOpen(true)} icon={<IconShare size={16} />}>            {t('editor.shareOpen')}
+          <Button variant="solid" onClick={() => setShareOpen(true)} icon={<IconShare size={16} />}>
+            {t('editor.shareOpen')}
           </Button>
           {/* VER-02: قائمة «المزيد» في آخر الشريط — الإصدارات والحذف فعّالان، البقية تصميم فقط بتلميح «قريبًا».
               طلب المالك 2026-09-09: النقاط الثلاث تعيش آخر الشاشة كما في الاستاندرد (كروم)، وفيها مبدّل «إظهار الأرقام» */}

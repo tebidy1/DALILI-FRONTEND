@@ -14,7 +14,7 @@ vi.mock('../api', () => ({
 import { client } from '../api'
 
 /** SRCH-01: نتيجة البحث تعرض مصغّرة الدليل لا اللقطة الأصلية */
-function response(thumbFileId?: string): SearchResponseDto {
+function response(thumbUrl?: string): SearchResponseDto {
   return {
     hits: [
       {
@@ -26,7 +26,7 @@ function response(thumbFileId?: string): SearchResponseDto {
         snippet: 'افتح <mark>الفحص</mark>',
         updatedAt: new Date('2026-08-01').toISOString(),
         score: 1.5,
-        ...(thumbFileId ? { thumbFileId } : {}),
+        ...(thumbUrl ? { thumbFileId: 'th-1', thumbUrl } : {}),
       },
     ],
     total: 1,
@@ -46,15 +46,15 @@ function renderPage(q: string) {
 }
 
 describe('SRCH-01: مصغّرة نتائج البحث', () => {
-  it('النتيجة ذات thumbFileId تعرض صورة مصغّرة من /files', async () => {
-    vi.mocked(client.search).mockResolvedValue(response('th-1'))
+  it('النتيجة ذات thumbUrl تعرض المصغّرة برابطها الموقَّع كما هو (خصوصيّة ٢ب)', async () => {
+    vi.mocked(client.search).mockResolvedValue(response('/files/th-1?e=1&c=sig'))
     const { container } = renderPage('الفحص')
     const img = await waitFor(() => {
       const el = container.querySelector<HTMLImageElement>('img.hit-thumb')
       expect(el).toBeTruthy()
       return el!
     })
-    expect(img.getAttribute('src')).toBe('/files/th-1')
+    expect(img.getAttribute('src')).toBe('/files/th-1?e=1&c=sig')
     expect(img.getAttribute('loading')).toBe('lazy')
   })
 

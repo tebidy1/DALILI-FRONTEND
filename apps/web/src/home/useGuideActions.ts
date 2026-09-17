@@ -68,7 +68,7 @@ export function useGuideActions(d: GuideActionsDeps) {
    */
   async function remove(g: GuideSummaryDto) {
     if (d.inTrash) {
-      const ok = await confirm({ title: t('library.deleteForever'), body: t('library.confirmDeleteForever'), confirmLabel: t('library.deleteForever'), danger: true })
+      const ok = await confirm({ title: t('library.deleteForever'), body: t('library.confirmDeleteForever'), danger: true })
       if (!ok) return
     }
     try {
@@ -178,7 +178,6 @@ export function useGuideActions(d: GuideActionsDeps) {
       const ok = await confirm({
         title: t('library.deleteForever'),
         body: t('library.bulkDeleteForeverConfirm', { count: n }),
-        confirmLabel: t('library.deleteForever'),
         danger: true,
       })
       if (!ok) return

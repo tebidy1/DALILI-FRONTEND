@@ -1,5 +1,5 @@
 import { assembleGuide, DEFAULT_MARK_COLOR, type RawStep } from '@dalili/core'
-import type { DaliliClient, StepDto } from '@dalili/shared'
+import type { DaliliClient } from '@dalili/shared'
 import { stepKey, shotKey, type StoredStep } from './protocol'
 import { voiceMemoKey, type StoredVoiceMemo } from './voice-memo'
 import { uploadMemo } from './voice-memo-upload'
@@ -50,8 +50,6 @@ export async function publishSteps(
   client: DaliliClient,
   sessionId: string,
   stepCount: number,
-  appendTo?: string,
-  insertAt?: number,
   opts: { onMemoProgress?: (message: string) => void; /** المرحلة ٣: الاسم الاختياري — للدليل الجديد وحده */ title?: string } = {},
 ): Promise<PublishResult> {
   const raw: RawStep[] = []
@@ -112,21 +110,13 @@ export async function publishSteps(
       voice,
     })
   }
-  // CAP-17: جلسة إضافة — العناوين والمعرفات من نفس مولّد الدليل، والهدف دليل قائم
-  let guideId: string
-  if (appendTo) {
-    const { steps } = assembleGuide(raw)
-    await client.appendSteps(appendTo, steps as unknown as StepDto[], insertAt)
-    guideId = appendTo
-  } else {
-    const guide = assembleGuide(raw)
-    // المرحلة ٣ (قرار المالك): التسمية لحظة «امتلاك» الدليل — ما كتبه المستخدم
-    // يغلب الاسم المشتق من الصفحة، والفراغ يترك الاشتقاق القائم بلا مساس
-    const named = opts.title?.trim()
-    if (named) guide.title = named
-    const created = await client.createGuide(guide as unknown as Parameters<DaliliClient['createGuide']>[0])
-    guideId = created.id
-  }
+  const guide = assembleGuide(raw)
+  // المرحلة ٣ (قرار المالك): التسمية لحظة «امتلاك» الدليل — ما كتبه المستخدم
+  // يغلب الاسم المشتق من الصفحة، والفراغ يترك الاشتقاق القائم بلا مساس
+  const named = opts.title?.trim()
+  if (named) guide.title = named
+  const created = await client.createGuide(guide as unknown as Parameters<DaliliClient['createGuide']>[0])
+  const guideId = created.id
   // الصوت المرفوع عاش في الخادم — نسخته المحلية تُمسح؛ الفاشل وحده يبقى (لا يفقد أبدًا)
   const removeMemoKeys = memoKeys.filter((k) => memoGot[k] && !keptMemoKeys.has(k))
   if (removeMemoKeys.length > 0) await chrome.storage.local.remove(removeMemoKeys)

@@ -12,7 +12,7 @@ import { t } from '../i18n'
 export interface ConfirmOptions {
   title: string
   body?: ReactNode
-  /** افتراضيًا «تأكيد» — خصّصه بعبارة الفعل نفسها مثل «نقل إلى السلة» */
+  /** افتراضيًا نص العنوان نفسه — خصّصه بفعل العمل حين يختلف عن السؤال مثل «حذف» */
   confirmLabel?: string
   cancelLabel?: string
   danger?: boolean
@@ -57,7 +57,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         open={state !== null}
         title={state?.title ?? ''}
         body={state?.body}
-        confirmLabel={state?.confirmLabel ?? t('common.confirm')}
+        confirmLabel={state?.confirmLabel ?? state?.title ?? t('common.confirm')}
         cancelLabel={state?.cancelLabel ?? t('common.cancel')}
         danger={state?.danger}
         onConfirm={() => settle(true)}

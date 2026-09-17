@@ -1602,14 +1602,36 @@ textarea.guide-desc-input:focus {
 }
 .viewer-step-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-start;
   gap: var(--sp-3);
   flex-wrap: wrap;
-  margin-bottom: var(--sp-2);
 }
 .viewer-step-head h2 {
   margin: 0;
+  /* لا flex:1 — كان يلتهم العرض فيلتفّ رابط الخطوة لسطر ثانٍ دائمًا.
+     العنوان يأخذ بحسب نصّه، والرابط يدفع نفسه للطرف المقابل بالهامش الآلي */
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  padding-top: 2px;
+}
+.viewer-step-head .step-url-pill {
+  margin-inline-start: auto;
+}
+/* شارة رقم الخطوة — قرص هادئ بلون العلامة، لغة واحدة مع شارة قارئ الإضافة (.rcard-n) */
+.viewer-step-num {
+  flex: none;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  color: var(--brand);
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
 /* صف البيانات: مالك · خطوات · مدة · تحديث · موقع · مشاهدات · حالة الحفظ */
@@ -2026,13 +2048,28 @@ textarea.guide-desc-input:focus {
 .viewer-step {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
-  margin-bottom: 28px;
+  gap: var(--sp-3);
+  /* نمط سكرايب (طلب المالك 2026-09-15): كل خطوة بطاقة بيضاء مستقلة على ورق
+     الصفحة، والمسافة بينها واسعة (٤٠px) كي تتنفس العين — كانت 28px بلا بطاقة */
+  margin-bottom: 48px;
   /* طلب المالك 2026-09-01: بطاقة الخطوة في العارض أضيق ٢٠٪ (٩٨٠→٧٨٤) ومتوسّطة،
      كي تطابق تصغير المحرر — الارتفاع مقلَّص أصلًا من .shot-viewport المشترك. */
   max-width: 784px;
   margin-inline: auto;
   width: 100%;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent),
+    0 8px 24px color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+/* طلب المالك 2026-09-15: الإطار الافتراضي فاتح فيختفي بين اللقطة الفاتحة وبياض
+   البطاقة — بين الشاشة والبطاقة إطار أوضح بدرجة واحدة يرسم حدودها على الطرفين */
+.viewer-step .shot-viewport {
+  border-color: var(--line-strong);
 }
 
 /* PERF-04: تمرير افتراضي للأدلة الطويلة — المتصفح يتخطى تخطيط ما هو خارج
@@ -2088,9 +2125,8 @@ textarea.guide-desc-input:focus {
 }
 .viewer-step.current {
   outline: 2px solid var(--accent);
-  outline-offset: 6px;
-  border-radius: 8px;
-  padding-inline: 8px;
+  outline-offset: 4px;
+  border-radius: var(--r-lg);
 }
 
 /* — VIEW-12: عارض الجوال — «سارة» تصل من واتساب: عمود واحد مريح وهدف لمس كافٍ — */
@@ -2110,10 +2146,16 @@ textarea.guide-desc-input:focus {
     min-height: 44px;
   }
   .viewer-step {
-    margin-bottom: var(--sp-5);
+    /* البطاقات على الجوال: مسافة أهدأ من سطح المكتب وحشوة أقرب للحافة */
+    margin-bottom: 32px;
+    padding: var(--sp-4);
   }
   .viewer-step h2 {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
+  }
+  /* الكبسولة الملتفّة تحت العنوان تلازم بداية السطر لا تفرّ للطرف البعيد */
+  .viewer-step-head .step-url-pill {
+    margin-inline-start: 0;
   }
 }
 
@@ -2312,6 +2354,12 @@ textarea.guide-desc-input:focus {
     padding: 0;
   }
   .step-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* بطاقات العارض تطبع نظيفة: بلا ظل، وكل خطوة لا تنشطر بين صفحتين */
+  .viewer-step {
+    box-shadow: none;
     break-inside: avoid;
     page-break-inside: avoid;
   }

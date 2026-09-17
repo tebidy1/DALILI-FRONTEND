@@ -103,7 +103,6 @@ function CommentRow({
                 void confirm({
                   title: t('comments.delete'),
                   body: t('comments.deleteConfirm'),
-                  confirmLabel: t('comments.delete'),
                   danger: true,
                 }).then((ok) => {
                   if (ok) void onDelete(c.id)

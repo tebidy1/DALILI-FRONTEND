@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { markBoxStyle, type MarkRect } from '@/lib/mark-box'
-import { CAPTURE_ZOOM, zoomFrame, type ZoomLimits } from '@/lib/zoom-frame'
-import { shotLayout, toLocal } from '@/lib/shot-layout'
+import { CAPTURE_ZOOM, markBoxRect, shotLayout, toLocal, zoomFrame, type MarkRect, type MarkRectPct, type ZoomLimits } from '@dalili/core'
+
+/** النواة تعيد أرقامًا نسبية (٠–١٠٠) — تنسيق CSS شأن العرض ويبقى هنا */
+const pct = (n: number) => `${n}%`
+const asStyle = (r: MarkRectPct) => ({ left: pct(r.left), top: pct(r.top), width: pct(r.width), height: pct(r.height) })
 
 /**
  * لقطة خطوة واحدة — مشتركة بين قائمة الالتقاط والقارئ (PNL-01).
@@ -50,7 +52,10 @@ export function PreviewShot({
   }, [])
 
   const layout = nat ? shotLayout(nat.w, nat.h, crop) : null
-  const boxOf = (r: MarkRect) => (layout ? markBoxStyle(toLocal(r, crop), layout.frameW, layout.frameH) : null)
+  const boxOf = (r: MarkRect) => {
+    const b = layout ? markBoxRect(toLocal(r, crop), layout.frameW, layout.frameH) : null
+    return b ? asStyle(b) : null
+  }
   const zoomed = !!mark && !full
   const frame = zoomed && mark && layout && view ? zoomFrame(toLocal(mark, crop), layout.frameW, layout.frameH, view.w, view.h, zoom) : null
   const markBox = mark ? boxOf(mark) : null
@@ -71,7 +76,7 @@ export function PreviewShot({
           alt={alt}
           loading="lazy"
           decoding="async"
-          style={crop && layout ? layout.img : undefined}
+          style={crop && layout ? { width: pct(layout.img.widthPct), left: pct(layout.img.leftPct), top: pct(layout.img.topPct) } : undefined}
           onLoad={(e) => setNat({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
         />
         {blur.map((r, i) => {

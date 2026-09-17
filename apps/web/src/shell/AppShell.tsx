@@ -1,5 +1,6 @@
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Link, Outlet } from 'react-router-dom'
+import type { ReactNode } from 'react'
 import { client } from '../api'
 import { Button } from '../ui/Button'
 import {
@@ -13,6 +14,7 @@ import {
   IconUsers,
 } from '../ui/icons'
 import { t } from '../i18n'
+import { notifyAuthChanged } from '../lib/ext-bridge'
 import { arDigits, roleLabelAr } from '../lib/format'
 import { PathMark } from '../brand/PathMark'
 import { useOverview, OverviewProvider } from './OverviewContext'
@@ -50,19 +52,22 @@ function Sidebar() {
 
   async function logout() {
     await client.logout().catch(() => {})
+    // AUTH-LIVE: الخروج يُعلن للإضافة أيضًا — تعود لوحتها لوضع الزائر بلا إعادة فتح
+    notifyAuthChanged()
     navigate('/login')
   }
 
   const roleLabel = overview ? roleLabelAr(overview.myRole) : ''
 
   const assignedNew = overview?.assignedNewCount ?? 0
-  const navItems = [
-    { to: '/', label: t('home.navHome'), icon: <IconHome size={17} />, exact: true, badge: 0 },
-    { to: '/mine', label: t('home.navMine'), icon: <IconUser size={17} />, badge: 0 },
-    { to: '/saved', label: t('home.navSaved'), icon: <IconBookmark size={17} />, badge: 0 },
+  // الشارة وحدها لبند /assigned — البقية بلا رقم صفري اصطناعي يُخفى عند الرسم
+  const navItems: { to: string; label: string; icon: ReactNode; exact?: boolean; badge?: number }[] = [
+    { to: '/', label: t('home.navHome'), icon: <IconHome size={17} />, exact: true },
+    { to: '/mine', label: t('home.navMine'), icon: <IconUser size={17} /> },
+    { to: '/saved', label: t('home.navSaved'), icon: <IconBookmark size={17} /> },
     { to: '/assigned', label: t('assigned.nav'), icon: <IconInbox size={17} />, badge: assignedNew },
-    { to: '/team', label: t('home.navTeam'), icon: <IconUsers size={17} />, badge: 0 },
-    { to: '/settings', label: t('home.navSettings'), icon: <IconSettings size={17} />, badge: 0 },
+    { to: '/team', label: t('home.navTeam'), icon: <IconUsers size={17} /> },
+    { to: '/settings', label: t('home.navSettings'), icon: <IconSettings size={17} /> },
   ]
 
   return (
@@ -83,7 +88,7 @@ function Sidebar() {
             <Link key={item.to} className={`side-item${active ? ' sel' : ''}`} aria-current={active ? 'page' : undefined} to={item.to}>
               {item.icon}
               <span>{item.label}</span>
-              {item.badge > 0 && <span className="side-badge">{arDigits(item.badge)}</span>}
+              {item.badge ? <span className="side-badge">{arDigits(item.badge)}</span> : null}
             </Link>
           )
         })}

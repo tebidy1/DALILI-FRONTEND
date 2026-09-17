@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { DEFAULT_MARK_COLOR, extractCapturedSites, nearestStepIndexAt, stepAudioMs, stepAudioRanges, stepNumbers } from '@dalili/core'
+import { extractCapturedSites, nearestStepIndexAt, stepAudioMs, stepAudioRanges, stepNumbers } from '@dalili/core'
 import type { PublicGuideDto, StepCommentDto, StepDto } from '@dalili/shared'
 import { client } from '../api'
 import { StepImage } from '../components/StepImage'
 import { GuideComments } from '../components/GuideComments'
 import { StepVoiceBadge } from '../components/StepVoiceBadge'
+import { guideMarkColor } from '../components/EmbeddedSteps'
 import { ViewerBooklet } from './ViewerBooklet'
 import { SkeletonScreen } from '../ui/Skeleton'
 import { StateView } from '../ui/StateView'
@@ -324,8 +325,11 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
               data-current={current === i ? 'true' : undefined}
             >
               <div className="viewer-step-head">
+                {/* نمط سكرايب (طلب المالك 2026-09-15): الرقم شارة دائرية مستقلة يجاورها العنوان —
+                    لا «2.» نصية داخل العنوان */}
+                <span className="viewer-step-num">{nums[i]}</span>
                 <h2>
-                  {nums[i]}. <bdi>{s.title}</bdi>
+                  <bdi>{s.title}</bdi>
                 </h2>
                 {s.url && (
                   <a
@@ -366,17 +370,5 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
 
 function shotOf(s: StepDto) {
   return s.screenshot && !('missing' in s.screenshot) ? s.screenshot : null
-}
-
-/**
- * لون موحّد لأرقام الدليل: لون أول علامة هدف في الدليل (فتتّسق شارة الركن مع بقية
- * الشارات)، وإلا لون العلامة الافتراضي حين لا هدف في الدليل كلّه.
- */
-function guideMarkColor(steps: StepDto[]): string {
-  for (const s of steps) {
-    const shot = shotOf(s)
-    if (shot?.mark?.color) return shot.mark.color
-  }
-  return DEFAULT_MARK_COLOR
 }
 

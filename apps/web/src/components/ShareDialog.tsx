@@ -82,7 +82,7 @@ export function ShareDialog({
     try {
       if (await onPublish()) {
         setCreating(true)
-        await Promise.resolve(onEnsureShare())
+        await onEnsureShare()
         setCreating(false)
       }
     } finally {

@@ -212,7 +212,20 @@ a:hover { text-decoration: underline; }
 .countline { padding: 14px 18px 6px; font-size: .84rem; color: var(--dl-muted); }
 .countline b { color: var(--dl-ink); font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; margin-inline-end: 3px; }
 .notice { margin: 0 18px 6px; font-size: .8rem; color: var(--dl-accent); }
-.append-badge { display: inline-block; background: color-mix(in srgb, var(--dl-brand) 11%, transparent); color: var(--dl-brand); border-radius: 999px; font-size: .72rem; font-weight: 600; padding: 3px 10px; margin-inline-end: 6px; }
+
+/* AUTH-LIVE: عبارة وصول الدخول من الويب — ظهور هادئ من الأعلى يوازي لحظة النجاح ثم تفتك */
+.auth-hello {
+  color: var(--dl-brand);
+  font-weight: 600;
+  animation: auth-hello-in .45s cubic-bezier(.2, .8, .3, 1) both;
+}
+@keyframes auth-hello-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-hello { animation: none; }
+}
 
 /* SRCH-04: شارة الاكتشاف — بلا حاوية (طلب المالك 2026-09-09): صفوف على الحائط بفواصل
    رفيعة، وترويستها بأسلوب ترويسة «الأدلة الأخيرة» */
@@ -367,16 +380,34 @@ a:hover { text-decoration: underline; }
 .cap-finish:hover { filter: none; background: var(--dl-surface); color: var(--dl-ink); }
 .cap-finish svg { width: 19px; height: 19px; }
 
-/* ——— VOX-09 «ميك الخطوة»: زر الميك + حلقة التسجيل + شارة 🎙 ——— */
+/* ——— VOX-09 «ميك الخطوة»: زر الميك + شريط التسجيل الحي + شارة 🎙 ——— */
 .capbar-tools .tool.mic-tool.live {
   color: var(--dl-surface); background: var(--dl-danger); border-color: var(--dl-danger);
   animation: dl-arm-pulse 1.2s ease-in-out infinite;
 }
 .memo-timer { font-variant-numeric: tabular-nums; font-weight: 700; }
-/* حلقة التسجيل الحمراء النابضة حول معاينة آخر لقطة */
-.memo-live .step-shot { outline: 2px solid var(--dl-danger); outline-offset: 2px; animation: dl-memo-ring 1.4s ease-in-out infinite; }
-@keyframes dl-memo-ring { 50% { outline-color: color-mix(in srgb, var(--dl-danger) 35%, transparent); } }
-.memo-hint { color: var(--dl-danger); font-size: .74rem; font-weight: 600; margin-top: 6px; }
+/* إطار هادئ ثابت حول معاينة الخطوة قيد التسجيل — الحركة للشريط الموجي وحده */
+.memo-live .step-shot { outline: 2px solid color-mix(in srgb, var(--dl-danger) 55%, transparent); outline-offset: 2px; }
+/* شريط التسجيل الحي (2026-09-14): موجة أفقية متحركة أعلى البطاقة تسمّي النشاط
+   «تسجيل صوت» بدل مجرد احمرار. ٣٦ عمودًا بإيقاف واحد وأطوار مزاحة (تأخير سالب
+   لكل عمود) ترسم موجة سفر أفقيًا — transform فقط بلا rAF، وشريط مضاف ١٨px
+   فلا يُغطّى أي محتوى من البطاقة. */
+.memo-wave {
+  display: flex; align-items: center; gap: 8px;
+  height: 18px; margin: -10px -10px 0; padding: 0 10px;
+  border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--dl-danger) 7%, var(--dl-surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--dl-danger) 18%, transparent);
+}
+.memo-wave-label { flex: none; color: var(--dl-danger); font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.memo-wave-bars { flex: 1; display: flex; align-items: center; gap: 2px; height: 100%; overflow: hidden; }
+.memo-wave-bars i {
+  flex: 1 1 auto; min-width: 1.5px; max-width: 3px; height: 100%;
+  border-radius: 2px; background: var(--dl-danger); opacity: .75;
+  animation: dl-memo-wave 1.15s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -85ms);
+}
+@keyframes dl-memo-wave { 0%, 100% { transform: scaleY(.22); } 50% { transform: scaleY(1); } }
 /* شارة 🎙 بالمدة على بطاقة الخطوة — قابلة للحذف قبل النشر */
 .voice-badge {
   display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;
@@ -470,4 +501,9 @@ a:hover { text-decoration: underline; }
 .rcard.sk .sk-shot { display: block; aspect-ratio: 16 / 10; border-radius: 10px; background: var(--dl-surface2); animation: dl-sk 1.2s ease-in-out infinite; }
 @keyframes dl-sk { 50% { opacity: .55 } }
 
-@media (prefers-reduced-motion: reduce) { .spin, .dot, .step.fresh, .tool.armed, .tool.mic-tool.live, .memo-live .step-shot, .del.armed, .voice-del.armed, button.danger.armed, .step-shot.pending .pending-sheen, .step-shot.pending .pending-cap, .rcard.sk .sk-shot { animation: none } .step, .del, .doc, .doc-enter, .tool { transition: none } }
+@media (prefers-reduced-motion: reduce) { .spin, .dot, .step.fresh, .tool.armed, .tool.mic-tool.live, .memo-wave-bars i, .del.armed, .voice-del.armed, button.danger.armed, .step-shot.pending .pending-sheen, .step-shot.pending .pending-cap, .rcard.sk .sk-shot { animation: none } .step, .del, .doc, .doc-enter, .tool { transition: none } }
+/* بلا حركة: الموجة تتجمد نمطًا موجيًا ثابتًا (طويل/قصير/متوسط) لا خطًّا مسطحًا */
+@media (prefers-reduced-motion: reduce) {
+  .memo-wave-bars i:nth-child(3n) { height: 72%; }
+  .memo-wave-bars i:nth-child(3n+1) { height: 40%; }
+}

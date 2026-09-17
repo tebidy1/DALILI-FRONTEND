@@ -7,7 +7,9 @@ export default defineConfig({
     description: 'سجّل خطوات أي مهمة في المتصفح وحوّلها إلى دليل عربي قابل للمشاركة بخطوة واحدة',
     // OPS-06: إصدار دلالي — يُرفع مع كل إرسال للمتجر
     version: '0.2.0',
-    permissions: ['storage', 'unlimitedStorage', 'tabs', 'sidePanel', 'offscreen'],
+    // scripting (2026-09-14): الحقن عند الطلب — التبويبات المفتوحة قبل تحميل الامتداد
+    // تُفَعَّل لحظة بدء الالتقاط بلا F5. لا تحذير تركيب جديد: وصول <all_urls> ممنوح أصلًا.
+    permissions: ['storage', 'unlimitedStorage', 'tabs', 'sidePanel', 'offscreen', 'scripting'],
     host_permissions: ['<all_urls>'],
     // دربني: خط الرقعة العربي (Aref Ruqaa، رخصة OFL داخل الحزمة) يُحمَّل داخل
     // Shadow DOM في أي صفحة — يجب كشفه للويب وإلا ظهر خط الصفحة بدل خط اليد

@@ -4,10 +4,8 @@
  * وأهلية «دربني». لا chrome.* ولا DOM.
  */
 import { DaliliApiError, type GuideDetailsDto, type GuideDto, type StepDto } from '@dalili/shared'
-import { richToPlain, stepNumbers, type RichText } from '@dalili/core'
+import { richToPlain, stepNumbers, type MarkRect, type RichText, type ZoomLimits } from '@dalili/core'
 import { buildTrainPlan } from './train'
-import type { MarkRect } from './mark-box'
-import type { ZoomLimits } from './zoom-frame'
 
 /** تكبير القارئ أهدأ من الالتقاط: السياق حول العنصر يسمح بمقارنة الصفحة الحقيقية */
 export const READER_ZOOM: ZoomLimits = { min: 1.5, max: 2.5, fill: 0.4 }

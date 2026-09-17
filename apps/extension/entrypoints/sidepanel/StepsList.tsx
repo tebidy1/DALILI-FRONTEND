@@ -1,10 +1,15 @@
+import type { CSSProperties } from 'react'
 import type { SessionMeta, StepSummary } from '@/lib/protocol'
+import { toArabicDigits } from '@/lib/ar-digits'
 import { ChevronIcon, TrashIcon } from './icons'
 import { kindLabel, voiceBadgeAr } from './parts'
 import { PreviewShot, PendingShot } from './Shot'
 
+/** عدسة الموجة: ٣٦ عمودًا بطور مزاح يرسم موجة سفر أفقية واحدة عبر الشريط */
+const WAVE_BARS = Array.from({ length: 36 }, (_, i) => i)
+
 /** قائمة خطوات الالتقاط في اللوحة — الاقتطاع من App.tsx لقانون الحجم.
- * VOX-09: شارة 🎙 قابلة للحذف، وحلقة حمراء نابضة حول معاينة الخطوة المدموجة */
+ * VOX-09: شارة 🎙 قابلة للحذف، وشريط موجي حي أعلى البطاقة قيد التسجيل */
 export function StepsList({
   steps,
   meta,
@@ -29,7 +34,7 @@ export function StepsList({
   onDeleteMemo: (index: number) => void
 }) {
   const stepCount = meta.stepCount
-  const ar = (n: number) => n.toLocaleString('ar-EG')
+  const ar = toArabicDigits
   return (
     <div>
       {steps.length === 0 && <div className="empty">تفاعل مع الصفحة (نقرة أو كتابة) لتظهر الخطوات هنا</div>}
@@ -38,14 +43,25 @@ export function StepsList({
         // الأحدث تعرض لقطتها دائمًا؛ السابقة تُكشف يدويًا بزر المثلث
         const shot = isNewest ? lastShot : revealed[s.i]
         const expanded = shot !== undefined
-        const num = (s.i + 1).toLocaleString('ar-EG')
-        // VOX-09: التعليق الجاري يضيء حلقة حمراء حول معاينة الخطوة المدموجة
+        const num = ar(s.i + 1)
+        // VOX-09: التعليق الجاري يُظهر شريط الموجة أعلى بطاقته
         const memoOnStep = meta.memoLive?.stepIndex === s.i
         // المرحلة ٢: الحذف خطوتان — الأزرار تتبدل تسميتها وتحمرّ عند التسليح
         const stepArmed = armedKey === `s:${s.i}`
         const memoArmed = armedKey === `m:${s.i}`
         return (
           <div key={s.i} className={`step ${isNewest ? 'fresh' : ''} ${s.sensitive ? 'sensitive' : ''} ${expanded ? 'expanded' : ''}`}>
+            {/* شريط التسجيل الحي: موجة أفقية أعلى البطاقة — يظهر فور بدء الصوت ولو لم تصل اللقطة بعد */}
+            {memoOnStep && (
+              <div className="memo-wave" role="status" aria-label="جارٍ تسجيل تعليق صوتي على هذه البطاقة">
+                <span className="memo-wave-label">🎙 جارٍ التسجيل</span>
+                <span className="memo-wave-bars" aria-hidden="true">
+                  {WAVE_BARS.map((i) => (
+                    <i key={i} style={{ '--i': i } as CSSProperties} />
+                  ))}
+                </span>
+              </div>
+            )}
             <div className="step-row">
               <span className="n">{num}</span>
               <div className="tx">
@@ -88,7 +104,6 @@ export function StepsList({
             </div>
             {/* نافذة الالتقاط: البطاقة الأحدث تعرض «يرسم التحديد…» حتى تصل لقطتها المكبّرة */}
             {isNewest && !expanded && !s.missingReason && <PendingShot />}
-            {memoOnStep && expanded && shot && <div className="memo-hint">🎙 صوتك يُدمج مع هذه الخطوة</div>}
             {expanded && shot && (
               <div className={memoOnStep ? 'memo-live' : ''}>
                 <PreviewShot src={shot} mark={s.mark} alt={`لقطة الخطوة ${num}`} />

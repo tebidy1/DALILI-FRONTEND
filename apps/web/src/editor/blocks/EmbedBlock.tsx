@@ -14,7 +14,7 @@ export function EmbedBlock({
   onRemove,
   missing,
   missingText,
-  thumbFileId,
+  thumbUrl,
   openHref,
   children,
 }: {
@@ -27,7 +27,8 @@ export function EmbedBlock({
   missing?: boolean
   /** نص الغياب — يختلف بين المحرر (محذوف) والعارض (غير متاح عبر هذا الرابط) */
   missingText?: string
-  thumbFileId?: string
+  /** خصوصيّة ٢ب: رابط المصغّرة الموقَّع — لا تركيب من المعرّف */
+  thumbUrl?: string
   openHref?: string
   /** الخطوات المفرودة — يمرّرها المستدعي كي لا تعرف البطاقة كيف تُرسم الخطوة */
   children?: React.ReactNode
@@ -48,8 +49,8 @@ export function EmbedBlock({
   return (
     <div className="embed-card">
       <div className="embed-head">
-        {thumbFileId ? (
-          <img className="embed-thumb" src={`/files/${thumbFileId}`} alt="" loading="lazy" />
+        {thumbUrl ? (
+          <img className="embed-thumb" src={thumbUrl} alt="" loading="lazy" />
         ) : (
           <span className="embed-thumb embed-thumb-letter" aria-hidden>
             {title.trim().charAt(0) || '؟'}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { siteLabel } from '@dalili/core'
 import { IconFilter } from '../ui/icons'
 import { Button } from '../ui/Button'
 import { t } from '../i18n'
@@ -91,7 +92,7 @@ export function FiltersPanel(p: FiltersPanelProps) {
                 value={p.site}
                 options={[
                   { key: null, label: t('home.filterAllLabel') },
-                  ...p.sites.map((s) => ({ key: s.site, label: s.site, count: s.count })),
+                  ...p.sites.map((s) => ({ key: s.site, label: siteLabel(s.site), count: s.count })),
                 ]}
                 onChange={(k) => p.setParams({ site: k })}
               />
@@ -148,7 +149,7 @@ export function ActiveFilters(a: {
       {a.when && (
         <ActiveChip label={`${t('home.filterWhen')}: ${whenLabel(a.when)}`} onClear={() => a.setParams({ when: null })} />
       )}
-      {a.site && <ActiveChip label={`${t('home.filterSite')}: ${a.site}`} onClear={() => a.setParams({ site: null })} />}
+      {a.site && <ActiveChip label={`${t('home.filterSite')}: ${siteLabel(a.site)}`} onClear={() => a.setParams({ site: null })} />}
       {a.folder && a.screen === 'home' && (
         <ActiveChip
           label={`${t('home.navFolders')}: ${a.folderName}`}

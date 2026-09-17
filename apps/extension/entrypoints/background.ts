@@ -1,10 +1,11 @@
 import { defineBackground } from 'wxt/utils/define-background'
-import type { AutoMemoToggleAck, BgMsg, MemoToggleAck } from '@/lib/protocol'
+import { AUTH_PING_KEY, type BgMsg, type MemoToggleAck } from '@/lib/protocol'
 import { createSessionStore } from '@/lib/session-store'
 import { createCaptureFlow } from '@/lib/capture-flow'
 import { createFinish } from '@/lib/finish-publish'
 import { makeVoiceMemo } from '@/lib/voice-memo'
 import { createAutoMemo } from '@/lib/auto-memo'
+import { makeContentInjector } from '@/lib/content-inject'
 import { ensureOffscreenDocument } from '@/lib/offscreen'
 import { createActivity } from '@/lib/activity'
 import { WEB_BASE } from '@/lib/config'
@@ -55,6 +56,11 @@ const autoMemoCtl = createAutoMemo({
   saveMeta: store.save,
   syncMeta: attachMemoToMeta,
   prepare: ensureOffscreenDocument,
+})
+
+/** الحقن عند الطلب (2026-09-14): تفعيل التبويبات اليتيمة بلا F5 — lib/content-inject */
+const contentInjector = makeContentInjector({
+  executeScript: (details) => chrome.scripting.executeScript(details),
 })
 
 /** VOX-09: زر الميك في اللوحة (الوضع العادي) — جارٍ يوقف، وإلا يبدأ على آخر خطوة ملتقطة */
@@ -109,14 +115,15 @@ async function onMicResult(granted: boolean, senderTabId?: number, flow?: 'memo'
     } else {
       await store.save({ notice: 'التقط خطوة أولًا ثم علّق عليها بصوتك' })
     }
-  } else if (granted) {
-    // VOX-AUTO: جلسة تبدأ والتعليق التلقائي معلَّم — أول بطاقة يبدأ عليها التسجيل فور ولادتها
-    await startCapture()
-    await store.save({ autoMemo: true })
-    await ensureOffscreenDocument()
   } else {
     await startCapture()
-    await store.save({ notice: 'لا صوت — الالتقاط مستمر بلا تعليق' })
+    if (granted) {
+      // VOX-AUTO: جلسة تبدأ والتعليق التلقائي معلَّم — أول بطاقة يبدأ عليها التسجيل فور ولادتها
+      await store.save({ autoMemo: true })
+      await ensureOffscreenDocument()
+    } else {
+      await store.save({ notice: 'لا صوت — الالتقاط مستمر بلا تعليق' })
+    }
   }
   await returnFocusAndClose(senderTabId)
 }
@@ -131,8 +138,8 @@ async function returnFocusAndClose(senderTabId?: number): Promise<void> {
   if (senderTabId !== undefined) await chrome.tabs.remove(senderTabId).catch(() => {})
 }
 
-/** بدء جلسة عادية أو جلسة إضافة على دليل قائم (CAP-17) */
-async function startCapture(opts: { appendTo?: string; insertAt?: number } = {}) {
+/** بدء جلسة التقاط جديدة */
+async function startCapture() {
   const meta = store.get()
   if (meta.state === 'capturing' || meta.state === 'paused') return
   if (meta.state === 'draft') return // مسودة قائمة — انشرها أو ألغها أولًا من النافذة
@@ -147,20 +154,22 @@ async function startCapture(opts: { appendTo?: string; insertAt?: number } = {})
     notice: undefined,
     autoMemo: false,
     memoLive: undefined,
-    appendTo: opts.appendTo,
-    insertAt: opts.insertAt,
     lastPublished: undefined, // المرحلة ٣: جلسة جديدة تمحو بطاقة النجاح السابقة
   })
-  // فخ التبويب اليتيم: بعد إعادة تحميل الامتداد تبقى الصفحات المفتوحة سابقًا
-  // على سكربت منفصل لا يوصل أحداثه — النقر فيها لا يُلتقط شيئًا بصمت.
-  // لا نمنع البدء؛ نعلن بصدق أن التبويب النشط يحتاج F5.
-  // البث دائمًا وفي كل المسارات — بدء الصوت يجري والتبويب النشط صفحة الإذن،
-  // فحصر البث آنذاك كان يترك مسارَي الالتقاط (عادي/صوتي) مختلفين.
+  // فخ التبويب اليتيم (2026-09-14): الصفحات المفتوحة قبل تحميل الامتداد بلا سكربت معلن
+  // — بدل طلب F5 يُزرع الملف المبني نفسه برمجيًا فيبدأ الالتقاط فورًا؛ السكربت المزرَع
+  // يطلب whoami لحظة دخوله فيتلقى حالة الجلسة القائمة بنفسه. البثّ دائمًا وفي كل
+  // المسارات — بدء الصوت يجري والتبويب النشط صفحة الإذن، فحصر البثّ آنذاك كان يترك
+  // مسارَي الالتقاط (عادي/صوتي) مختلفين.
   const live = await store.broadcast()
   const active = await store.activeTab()
   if (active?.id !== undefined && active.url?.startsWith('http') && !live.has(active.id)) {
-    await store.save({ notice: 'هذا التبويب مفتوح منذ قبل تحميل الامتداد — حدّثه (F5) وإلا لن يُلتقط منه شيء' })
-    await activity.push('tab', 'تبويب مفتوح منذ قبل تحميل الامتداد — حدّثه (F5) كي تُلتقط خطواته').catch(() => {})
+    const injected = await contentInjector.inject(active.id)
+    if (!injected) {
+      // كروم يمنع التحقين في صفحاته المحمية (متجر كروم وعضله) — الف5 لا يصلحها أيضًا، نعلن بصدق
+      await store.save({ notice: 'الالتقاط غير متاح في هذا التبويب — كروم يمنع الإضافات من التفعيل داخل صفحاته المحمية' })
+      await activity.push('tab', 'تبويب محمي يمنع المتصفح التفعيل فيه — الالتقاط غير متاح عنده').catch(() => {})
+    }
   }
 }
 
@@ -215,7 +224,7 @@ export default defineBackground(() => {
 
   chrome.runtime.onMessage.addListener((msg: BgMsg, sender, sendResponse) => {
     const expectsResponse =
-      msg.t === 'whoami' || msg.t === 'append-capture' || msg.t === 'train-start' || msg.t === 'memo-toggle' || msg.t === 'auto-memo-toggle'
+      msg.t === 'whoami' || msg.t === 'train-start' || msg.t === 'memo-toggle' || msg.t === 'auto-memo-toggle'
     void (async () => {
       await Promise.all([metaReady, trainReady])
       if (msg.t === 'whoami') {
@@ -263,21 +272,10 @@ export default defineBackground(() => {
         case 'train-progress':
           void onTrainProgress(msg.result, sender.tab?.id)
           break
-        case 'append-capture': {
-          // CAP-17: من محرر الويب — بدء جلسة تُضاف خطواتها للدليل المحدد عند الإنهاء
-          const meta = store.get()
-          if (meta.state === 'capturing' || meta.state === 'paused') {
-            sendResponse({ ok: false, errorAr: 'جلسة التقاط جارية بالفعل — أنهها أولًا من اللوحة الجانبية' })
-            break
-          }
-          if (meta.state === 'draft') {
-            sendResponse({ ok: false, errorAr: 'توجد مسودة محلية قائمة — انشرها أو احذفها من اللوحة الجانبية أولًا' })
-            break
-          }
-          await startCapture({ appendTo: msg.guideId, insertAt: msg.insertAt })
-          sendResponse({ ok: true })
+        case 'auth-changed':
+          // AUTH-LIVE: دخول/خروج في تبويب الويب — ختم يوقظ لوحة اللوحة عبر storage.onChanged
+          await chrome.storage.local.set({ [AUTH_PING_KEY]: Date.now() })
           break
-        }
         case 'pause':
           if (store.get().state === 'capturing') {
             // VOX-06: لا صوت يُسمع في غيابك — التعليق الجاري يُوقف ويُحفظ قبل الإيقاف
@@ -344,5 +342,20 @@ export default defineBackground(() => {
   chrome.tabs.onUpdated.addListener((tabId, info) => {
     const status = info.status
     if (status) void trainReady.then(() => onTabUpdated(tabId, status))
+  })
+
+  // الحقن عند التبديل (2026-09-14): الانتقال لتبويب قديم أثناء جلسة حية يزَرع في
+  // اللحظة نفسها لا حين يعود المالك ليكتشف صمتًا — الحرس في content.ts يجعل الإعادة آمنة
+  chrome.tabs.onActivated.addListener(({ tabId }) => {
+    void metaReady.then(async () => {
+      const meta = store.get()
+      if (meta.state !== 'capturing' && meta.state !== 'paused') return
+      try {
+        const tab = await chrome.tabs.get(tabId)
+        if (tab.url?.startsWith('http')) await contentInjector.inject(tabId)
+      } catch {
+        // تبويب أُغلق في ذرى التبديل — لا معنى للاعتراض
+      }
+    })
   })
 })

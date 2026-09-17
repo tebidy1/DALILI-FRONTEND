@@ -10,6 +10,7 @@ import { EditorPage } from './editor/EditorPage'
 import { VersionView } from './editor/VersionView'
 import { ViewerPage } from './viewer/ViewerPage'
 import { SearchPage } from './search/SearchPage'
+import { DevicePage } from './devices/DevicePage'
 import { SearchPalette } from './search/SearchPalette'
 import { ShortcutsDialog } from './ui/ShortcutsDialog'
 import { TeamPage } from './team/TeamPage'
@@ -52,6 +53,8 @@ export function App() {
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
         <Route path="/search" element={<AuthGate><SearchPage /></AuthGate>} />
+        {/* DTOP-03: الموافقة على ربط جهاز — التطبيق يفتحها بـ/device?code=… */}
+        <Route path="/device" element={<AuthGate><DevicePage /></AuthGate>} />
         {/* VER-01: عرض نسخة قديمة قراءةً فقط — لا استعادة في هذه المرحلة */}
         <Route path="/g/:id/v/:vid" element={<AuthGate><VersionView /></AuthGate>} />
         <Route path="/g/:id" element={<AuthGate><EditorPage /></AuthGate>} />
