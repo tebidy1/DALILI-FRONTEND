@@ -1,0 +1,284 @@
+/*
+ * أنماط صفحة عرض الهوية (/brand) — نطاق مغلق بالصنف .brand-page ولا تلامس رموز المنتج.
+ * الألوان هنا هي مصدر الوصول للهوية (docs/brand-identity.md) — لا تُستعمل خارج الصفحة.
+ * ممنوع صنف عام باسم .brand هنا: الشريط الجانبي يستعمله لاسم «دليلي»، وتسربه بـ min-height
+ * انفخ الاسم بارتفاع الشاشة ودفع قائمة التنقل خارجها (بلاغ المالك 2026-09-06).
+ */
+
+.brand-page {
+  --bi-ink: #16324f;
+  --bi-amber: #c97b2d;
+  --bi-sand: #f7f4ee;
+  --bi-night: #0f1e2e;
+  --bi-charcoal: #1c2b33;
+  --bi-smoke: #5a6b75;
+  --bi-line: #e3ddd2;
+
+  min-height: 100vh;
+  background: var(--bi-sand);
+  color: var(--bi-charcoal);
+  font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* — الترويسة الليلية: ٦٠٪ فراغ، الصيحة هي البطل — */
+.brand-hero {
+  background: var(--bi-night);
+  color: #fff;
+  padding: 96px 32px 88px;
+  text-align: center;
+}
+.brand-lockup {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 12px;
+  color: #fff;
+}
+.brand-lockup.is-ink {
+  color: var(--bi-ink);
+}
+.brand-word {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+.brand-h1 {
+  font-size: clamp(34px, 6vw, 56px);
+  font-weight: 600;
+  margin: 40px auto 16px;
+  max-width: 18ch;
+  line-height: 1.25;
+}
+.brand-support {
+  margin: 0 auto;
+  max-width: 52ch;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.brand-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 24px 96px;
+}
+
+.brand-section {
+  margin-top: 72px;
+}
+.brand-h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--bi-ink);
+  margin: 0 0 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--bi-amber);
+  display: inline-block;
+}
+
+/* — الألوان — */
+.brand-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+.brand-swatch {
+  height: 92px;
+  border-radius: 10px;
+  background: var(--sw);
+  display: flex;
+  align-items: flex-end;
+  padding: 10px 12px;
+}
+.brand-swatch span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bi-charcoal);
+  mix-blend-mode: luminosity;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.brand-swatch-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 15px;
+  color: var(--bi-ink);
+}
+.brand-swatch-card small {
+  color: var(--bi-smoke);
+  line-height: 1.6;
+  display: block;
+  margin-top: 2px;
+}
+.brand-warn {
+  margin-top: 20px;
+  padding: 14px 18px;
+  border: 1px solid #c9b28a;
+  background: #fbf3e6;
+  border-radius: 10px;
+  color: #7a5a24;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* — الطباعة — */
+.brand-type-row {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--bi-line);
+}
+.brand-type-row:last-child {
+  border-bottom: none;
+}
+.brand-type-label {
+  color: var(--bi-smoke);
+  font-size: 12px;
+  display: block;
+  margin-bottom: 8px;
+}
+.brand-type-sample {
+  margin: 0;
+  color: var(--bi-charcoal);
+}
+
+/* — الشعار — */
+.brand-logo-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.brand-logo-tile {
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.brand-logo-tile.is-sand {
+  background: #fff;
+  border: 1px solid var(--bi-line);
+}
+.brand-logo-tile.is-night {
+  background: var(--bi-night);
+}
+.brand-logo-tile small {
+  color: var(--bi-smoke);
+}
+.brand-logo-tile.is-night small {
+  color: rgba(255, 255, 255, 0.7);
+}
+.brand-sizes {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  color: var(--bi-ink);
+}
+.brand-mark {
+  display: block;
+}
+.brand-note {
+  margin-top: 16px;
+  color: var(--bi-smoke);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* — أعمدة الرسائل — */
+.brand-pillars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.brand-pillar {
+  background: #fff;
+  border: 1px solid var(--bi-line);
+  border-radius: 12px;
+  padding: 20px;
+}
+.brand-pillar h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--bi-ink);
+}
+.brand-proof {
+  margin: 0;
+  font-size: 14px;
+  color: var(--bi-smoke);
+  line-height: 1.8;
+  border-right: 3px solid var(--bi-amber);
+  padding-right: 12px;
+}
+
+/* — الصوت: افعل ولا تفعل — */
+.brand-voice {
+  display: grid;
+  gap: 18px;
+}
+.brand-voice-pair blockquote {
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.brand-voice-pair .is-good {
+  background: #fff;
+  border: 1px solid var(--bi-line);
+  border-right: 4px solid var(--bi-ink);
+}
+.brand-voice-pair .is-bad {
+  background: transparent;
+  border: 1px dashed #d8b4b4;
+  color: #8a4a4a;
+  text-decoration: line-through;
+  text-decoration-color: rgba(138, 74, 74, 0.5);
+}
+.brand-voice-tags {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.brand-voice-tags span {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.tag-good {
+  background: var(--bi-ink);
+  color: #fff;
+}
+.tag-bad {
+  background: transparent;
+  border: 1px solid #d8b4b4;
+  color: #8a4a4a;
+}
+
+/* — الختام وزر الإجراء (عنبري: حدث نادر ≤١٠٪) — */
+.brand-footer {
+  margin-top: 80px;
+  padding-top: 32px;
+  border-top: 2px solid var(--bi-amber);
+  text-align: center;
+  color: var(--bi-smoke);
+  font-size: 14px;
+}
+.brand-btn {
+  margin-top: 20px;
+  background: var(--bi-amber);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 28px;
+  font: inherit;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  transition: filter 180ms ease;
+}
+.brand-btn:hover {
+  filter: brightness(0.92);
+}

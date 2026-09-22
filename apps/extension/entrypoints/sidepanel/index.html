@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <title>إتقان</title>
+    <!--
+      شاشة الإقلاع مكتوبة هنا لا في React عمدًا: اللوحة تبقى بيضاء حتى يُحمَّل
+      الحزم ويُقرأ الثيم ثم يُركَّب React — وأي شاشة تكتبها React تصل بعد ذلك
+      الفراغ لا قبله. الأنماط مضمَّنة لأن ملف CSS خارجي هو نفسه انتظار آخر.
+      الرسمة نفس مسارات الشعار (المصدر: apps/site/assets/brand/itqan-mark.svg).
+    -->
+    <style>
+      #itqan-splash {
+        position: fixed; inset: 0; z-index: 9;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 21px; background: #F6F5F2; color: #2B2A26;
+        transition: opacity 260ms cubic-bezier(.22,1,.36,1);
+      }
+      #itqan-splash.is-out { opacity: 0; pointer-events: none; }
+      @media (prefers-color-scheme: dark) {
+        #itqan-splash { background: #191817; color: #ECEAE4; }
+        #itqan-splash .sp-alif { stroke: #C9877A; }
+        #itqan-splash .sp-rule { background: #343330; }
+      }
+      #itqan-splash svg { width: 200px; height: auto; overflow: visible; }
+      #itqan-splash .sp-ink {
+        fill: none; stroke: currentColor; stroke-width: 8;
+        stroke-linecap: round; stroke-linejoin: round;
+        stroke-dasharray: 1 1;
+        animation: sp-draw var(--d, 460ms) cubic-bezier(.45,0,.25,1) var(--t, 0ms) both;
+      }
+      #itqan-splash .sp-alif { stroke: #8A5447; stroke-width: 9; }
+      #itqan-splash .sp-dot { stroke-width: 10; }
+      #itqan-splash .sp-fine { stroke-width: 7; }
+      @keyframes sp-draw {
+        from { stroke-dashoffset: 1; opacity: 0 }
+        6%   { opacity: 1 }
+        to   { stroke-dashoffset: 0; opacity: 1 }
+      }
+      /* القفل: الخطّان يبتلعان ما تبقّى من عرض الشعار — نفس نسب الموقع */
+      #itqan-splash .sp-lock {
+        width: 200px; display: flex; align-items: center; justify-content: center;
+        gap: 7px; opacity: 0; animation: sp-in 420ms ease 900ms both;
+      }
+      #itqan-splash .sp-rule { flex: 1 1 0; min-width: 0; height: 1px; background: #D8D4CB; }
+      #itqan-splash .sp-latin {
+        flex: 0 0 auto; direction: ltr; font: 500 10px/1 'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;
+        letter-spacing: .3em; margin-inline-end: -.3em; white-space: nowrap;
+      }
+      #itqan-splash .sp-latin b { font-weight: 500; color: #8A5447; }
+      #itqan-splash .sp-latin i { font-style: normal; margin-inline-start: .55em; }
+      @media (prefers-color-scheme: dark) { #itqan-splash .sp-latin b { color: #C9877A; } }
+      @keyframes sp-in { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+      @media (prefers-reduced-motion: reduce) {
+        #itqan-splash .sp-ink { animation: none; stroke-dashoffset: 0; opacity: 1 }
+        #itqan-splash .sp-lock { animation: none; opacity: 1 }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="itqan-splash" role="status" aria-label="إتقان — جارٍ الفتح">
+      <svg viewBox="176 48 421 204" aria-hidden="true">
+        <path class="sp-ink" pathLength="1" style="--t:60ms;--d:360ms" d="M 574 66 C 570 102, 575 144, 572 185"/>
+        <path class="sp-ink sp-fine" pathLength="1" style="--t:340ms;--d:150ms" d="M 579 207 C 567 199, 558 208, 565 216 L 578 216 L 560 226"/>
+        <path class="sp-ink" pathLength="1" style="--t:230ms;--d:380ms" d="M 540 148 C 546 169, 531 185, 508 185 L 449 185"/>
+        <path class="sp-ink sp-dot" pathLength="1" style="--t:520ms;--d:110ms" d="M 519 124 L 518 126"/>
+        <path class="sp-ink sp-dot" pathLength="1" style="--t:570ms;--d:110ms" d="M 502 124 L 501 126"/>
+        <path class="sp-ink" pathLength="1" style="--t:400ms;--d:320ms" d="M 449 185 C 466 175, 466 145, 449 143 C 430 140, 428 168, 445 174 C 449 176, 453 177, 457 176"/>
+        <path class="sp-ink" pathLength="1" style="--t:560ms;--d:360ms" d="M 312 148 C 319 175, 317 205, 295 220 C 270 239, 222 239, 203 215 C 191 200, 192 183, 198 168"/>
+        <path class="sp-ink sp-dot" pathLength="1" style="--t:640ms;--d:110ms" d="M 452 116 L 451 118"/>
+        <path class="sp-ink sp-dot" pathLength="1" style="--t:690ms;--d:110ms" d="M 435 116 L 434 118"/>
+        <path class="sp-ink sp-dot" pathLength="1" style="--t:790ms;--d:120ms" d="M 257 151 L 256 153"/>
+        <!-- امتداد القاف يترك مقعدًا فارغًا… -->
+        <path class="sp-ink" pathLength="1" style="--t:650ms;--d:200ms" d="M 449 185 C 428 186, 400 186, 376 184"/>
+        <!-- …تملؤه الألف آخرًا، وهي وحدها الملوّنة -->
+        <path class="sp-ink sp-alif" pathLength="1" style="--t:820ms;--d:340ms" d="M 373 66 C 371 103, 374 142, 376 184"/>
+      </svg>
+      <div class="sp-lock">
+        <span class="sp-rule"></span>
+        <span class="sp-latin"><b>ACTIVE.</b><i>SOP</i></span>
+        <span class="sp-rule"></span>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

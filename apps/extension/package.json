@@ -1,0 +1,32 @@
+{
+  "name": "@dalili/extension",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build -b chrome",
+    "zip": "wxt zip -b chrome",
+    "test": "vitest run",
+    "typecheck": "wxt prepare && tsc --noEmit"
+  },
+  "dependencies": {
+    "@dalili/core": "workspace:*",
+    "@dalili/shared": "workspace:*",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@types/chrome": "^0.1.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@wxt-dev/module-react": "^1.2.0",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "wxt": "^0.21.0"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "generated": "2026-09-19",
+  "source": [
+    "docs/widget-pebble-design-2026-09-19.html",
+    "docs/extension-tour-mockup-2026-09-19.html"
+  ],
+  "scale": 2,
+  "sets": {
+    "scenes": {
+      "dir": "scenes",
+      "canvas": [
+        1000,
+        563
+      ],
+      "alpha": false,
+      "items": [
+        "scene1 السكون",
+        "scene2 نقرة البداية",
+        "scene3 أثناء التوثيق",
+        "scene4 لحظة الالتقاط",
+        "scene5 شريط التحكم",
+        "scene6 الإيقاف المؤقت",
+        "scene7 تأكيد الإلغاء",
+        "scene8 الإنهاء والتوست",
+        "scene9 عجلات التدريب"
+      ]
+    },
+    "scenes-extension": {
+      "dir": "scenes-extension",
+      "canvas": [
+        1000,
+        563
+      ],
+      "alpha": false,
+      "items": [
+        "ext1 فتح اللوحة",
+        "ext2 بدء الالتقاط",
+        "ext3 تسجيل خطوة",
+        "ext4 تعليق صوتي",
+        "ext5 مراجعة وحذف",
+        "ext6 الإنهاء والمشاركة",
+        "ext7 القراءة والمشاركة"
+      ]
+    },
+    "states": {
+      "dir": "states",
+      "alpha": true,
+      "canvas_default": [
+        340,
+        430
+      ],
+      "canvas_w-pill": [
+        380,
+        240
+      ],
+      "items": [
+        "w-pebble-idle",
+        "w-menu-start",
+        "w-pebble-rec",
+        "w-flash",
+        "w-strip",
+        "w-paused",
+        "w-confirm",
+        "w-toast",
+        "w-pill"
+      ]
+    }
+  }
+}

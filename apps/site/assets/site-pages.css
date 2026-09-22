@@ -1,0 +1,331 @@
+/* ============================================================
+   إتقان — site-pages.css
+   أنماط الصفحات الفرعية (المعيار · الأمن · SOP بالعربي · طلب عرض)
+   تُحمَّل بعد site.css و site-v2.css وتلتزم برموزها نفسها.
+   ============================================================ */
+
+/* ——— حالة الصفحة الحالية في الترويسة ——— */
+.header-nav a[aria-current="page"] { font-weight: 600; }
+.header-nav a[aria-current="page"]::after { transform: scaleX(1); }
+
+/* ——— ترويسة الصفحة (ليست هيرو الرئيسية — افتتاحية تحريرية هادئة) ——— */
+.page-hero { padding-block: 88px 12px; }
+.page-hero .eyebrow { margin-bottom: 20px; }
+.page-hero h1 {
+  font-size: clamp(36px, 5vw, 58px);
+  line-height: 1.22; max-width: 46rem;
+}
+.page-lead {
+  color: var(--muted); font-size: 18px; line-height: 1.85;
+  max-width: 40rem; margin-top: 20px;
+}
+.page-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.page-chips span {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); padding: 6px 16px;
+  font-size: 13.5px; font-weight: 500; color: var(--ink);
+}
+.page-chips span i {
+  width: 7px; height: 7px; background: var(--sage);
+  transform: rotate(45deg); flex: none;
+}
+
+/* ——— شارات الحالة (صادقة: مبني / قيد الاكتمال / قيد التصميم) ——— */
+.status-badge.status-clay { color: var(--clay); border-color: rgba(138,84,71,.35); }
+.status-badge.status-design {
+  color: var(--muted); border-color: var(--line); border-style: dashed;
+}
+
+/* ——— صفوف المعيار الخماسي ——— */
+.cond-legend {
+  display: flex; flex-wrap: wrap; gap: 18px; align-items: center;
+  margin: 0 4px 22px; color: var(--muted); font-size: 13px;
+}
+.cond-legend .status-badge { font-size: 11.5px; padding: 2px 10px 2px 12px; }
+.cond-list { border-top: 2px solid var(--ink); max-width: 62rem; }
+.cond-row {
+  display: grid; grid-template-columns: 84px minmax(0,1.15fr) minmax(0,1.5fr) auto;
+  gap: 26px; align-items: start;
+  padding: 34px 4px; border-bottom: 1px solid var(--line);
+  transition: background-color var(--dur-base) ease;
+}
+.cond-row:hover { background: var(--surface); }
+.cond-letter {
+  font-family: 'Amiri', serif; font-weight: 700; font-size: 58px; line-height: 1;
+  color: var(--ink);
+}
+.cond-row[data-letter="ا"] .cond-letter { color: var(--clay); }
+.cond-name { font-family: 'Amiri', serif; font-weight: 700; font-size: 25px; margin-bottom: 6px; }
+.cond-desc { color: var(--muted); font-size: 15.5px; line-height: 1.8; }
+.cond-desc b { color: var(--ink); font-weight: 600; }
+.cond-meta {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+}
+.clause-chip {
+  font-family: 'IBM Plex Mono', monospace; direction: ltr; unicode-bidi: isolate;
+  font-size: 12px; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 3px 10px; background: var(--surface);
+  white-space: nowrap;
+}
+.cond-note { font-size: 12.5px; color: var(--muted); max-width: 15rem; line-height: 1.6; }
+
+/* ——— مأخذ «الألف هي الاعتماد» — ملمسي بلون الطين ——— */
+.alif-callout {
+  display: flex; gap: 24px; align-items: flex-start;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface); padding: 34px 38px;
+  max-width: 62rem;
+}
+.alif-callout .alif { flex: none; margin-top: 10px; }
+.alif-callout .alif i { width: 12px; height: 12px; }
+.alif-callout .alif i.off { width: 10px; height: 10px; }
+.alif-callout p { font-size: 17px; line-height: 1.95; max-width: 40rem; }
+.alif-callout b { color: var(--clay); }
+
+/* ——— بطاقة «حالة الشرط عندنا اليوم» فوق التوقيع ——— */
+.sd-stage { gap: 48px; }
+
+/* ——— «نقول / لا نقول» — بطاقتان متجاورتان ——— */
+.honest-split {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--line); border: 1px solid var(--line);
+  border-radius: var(--r-md); overflow: hidden;
+  max-width: 62rem;
+}
+.honest-split > div { background: var(--surface); padding: 30px 32px; }
+.honest-split h3 {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  font-size: 13px; font-weight: 600; color: var(--sage);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+}
+.honest-split .no h3 { color: var(--clay); }
+.honest-split p { color: var(--muted); font-size: 15.5px; line-height: 1.85; }
+.honest-split b { color: var(--ink); }
+
+/* ——— «اختبروا مورّدكم الحالي» — ثلاث بطاقات أسئلة ——— */
+.q-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  max-width: 62rem; margin-top: 40px;
+}
+.q-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 28px 26px;
+}
+.q-card .qn {
+  font-family: 'Amiri', serif; font-weight: 700; font-size: 30px; line-height: 1;
+  color: var(--sage); display: block; margin-bottom: 14px;
+}
+.q-card h3 { font-size: 20px; margin-bottom: 8px; }
+.q-card p { color: var(--muted); font-size: 14.5px; line-height: 1.8; }
+.q-close {
+  font-family: 'Amiri', serif; font-weight: 700;
+  font-size: clamp(20px, 2.4vw, 26px); line-height: 1.7;
+  max-width: 44rem; margin-top: 36px;
+}
+
+/* ——— دعوة الخطوة التالية — لوحة ملمسية ——— */
+.next-cta {
+  display: grid; grid-template-columns: 1.3fr .7fr; gap: 40px; align-items: center;
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--surface); padding: 56px 60px;
+  box-shadow: var(--shadow-card);
+}
+.next-cta h2 { font-size: clamp(26px, 3.2vw, 36px); margin-bottom: 12px; }
+.next-cta p { color: var(--muted); font-size: 16px; line-height: 1.8; }
+.next-cta .cta-actions { display: flex; flex-direction: column; gap: 14px; align-items: stretch; }
+.next-cta .link-arrow { justify-content: center; }
+
+/* ——— بطاقات الضوابط الأمنية ——— */
+.control-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  max-width: 66rem;
+}
+.control-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 28px 26px;
+  transition: transform var(--dur-base) var(--ease-settle), box-shadow var(--dur-base) ease, border-color var(--dur-base) ease;
+}
+.control-card:hover {
+  transform: translateY(-4px); border-color: var(--line-strong);
+  box-shadow: var(--shadow-card);
+}
+.control-card .cc-icon {
+  width: 44px; height: 44px; border: 1px solid var(--line);
+  border-radius: 10px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
+}
+.control-card h3 { font-size: 18.5px; margin-bottom: 8px; }
+.control-card p { color: var(--muted); font-size: 14.5px; line-height: 1.8; }
+.control-card .mono {
+  display: inline-block; margin-top: 12px;
+  font-size: 11.5px; color: var(--sage);
+  border: 1px solid rgba(64,91,80,.3); border-radius: 6px; padding: 2px 9px;
+}
+.control-card.wide { grid-column: span 1; }
+.control-cards .span-2 { grid-column: span 2; }
+
+/* ——— شريط التصريح الداكن — «لا نملك بياناتكم أصلًا» ——— */
+.no-own-list {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px;
+  max-width: 62rem; margin-top: 56px;
+}
+.no-own-list li { list-style: none; border-top: 2px solid rgba(243,241,236,.28); padding-top: 20px; }
+.no-own-list li b { display: block; font-size: 16.5px; margin-bottom: 8px; color: var(--paper-on-dark); }
+.no-own-list li span { color: var(--muted-on-dark); font-size: 14.5px; line-height: 1.8; }
+
+/* ——— بطاقتا السياق التنظيمي ودفتر السرية ——— */
+.pair-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  max-width: 66rem; align-items: stretch;
+}
+.pair-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 34px 34px;
+}
+.pair-card h3 { font-size: 21px; margin-bottom: 12px; }
+.pair-card > p { color: var(--muted); font-size: 15.5px; line-height: 1.85; }
+.pair-card ul { list-style: none; margin-top: 16px; }
+.pair-card ul li {
+  border-top: 1px solid var(--line); padding: 10px 0;
+  color: var(--muted); font-size: 15px;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.pair-card ul li::before {
+  content: ""; width: 7px; height: 7px; background: var(--sage);
+  transform: rotate(45deg); flex: none; translate: 0 -1px;
+}
+.pair-card .link-arrow { margin-top: 20px; }
+
+/* ——— لوحة التعريف الكبيرة (SOP بالعربي) ——— */
+.define-panel {
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--surface); padding: 48px 52px;
+  box-shadow: var(--shadow-card);
+}
+.define-panel .dp-term {
+  font-family: 'Amiri', serif; font-weight: 700;
+  font-size: clamp(24px, 3vw, 32px); line-height: 1.6; margin-bottom: 14px;
+}
+.define-panel .dp-term .mono { font-size: .8em; color: var(--sage); }
+.define-panel p { color: var(--muted); font-size: 17px; line-height: 1.95; max-width: 40rem; }
+.define-panel b { color: var(--ink); }
+
+/* ——— أصل المصطلح ——— */
+.gloss-grid {
+  display: grid; grid-template-columns: .8fr 1.2fr; gap: 48px;
+  max-width: 62rem; align-items: start;
+}
+.gloss-grid .mono-lat {
+  font-family: 'IBM Plex Mono', monospace; direction: ltr; unicode-bidi: isolate;
+  font-size: clamp(22px, 2.6vw, 30px); font-weight: 500; line-height: 1.5;
+  border-inline-start: 2px solid var(--sage); padding-inline-start: 20px;
+  color: var(--ink);
+}
+.gloss-grid .mono-lat small {
+  display: block; font-family: 'IBM Plex Sans Arabic', sans-serif;
+  font-size: 13px; color: var(--muted); margin-top: 10px; letter-spacing: 0;
+}
+.gloss-grid .gloss-body { color: var(--muted); font-size: 16px; line-height: 1.9; }
+.gloss-grid .gloss-body b { color: var(--ink); }
+
+/* ——— جداول المقارنة بنكهة v2 ——— */
+.v2-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.v2-table th, .v2-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 17px 22px; text-align: right; font-size: 15.5px; line-height: 1.7;
+  vertical-align: top;
+}
+.v2-table tr:last-child th, .v2-table tr:last-child td { border-bottom: none; }
+.v2-table th {
+  background: var(--surface2); color: var(--ink);
+  font-weight: 600; font-size: 14.5px;
+}
+.v2-table th:first-child { color: var(--muted); font-weight: 500; }
+.v2-table td:first-child { font-weight: 600; white-space: nowrap; }
+.v2-table td:last-child { border-inline-start: 1px solid var(--line); background: rgba(64,91,80,.04); }
+.vs-caption { color: var(--muted); font-size: 14px; margin-top: 14px; }
+.vs-close {
+  font-family: 'Amiri', serif; font-weight: 700;
+  font-size: clamp(20px, 2.4vw, 26px); max-width: 44rem;
+}
+
+/* ——— مأخذ المعيار الخماسي في صفحة SOP ——— */
+.five-teaser {
+  display: flex; gap: 28px; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface); padding: 34px 38px; max-width: 62rem;
+}
+.five-teaser p { color: var(--muted); font-size: 16px; line-height: 1.8; max-width: 34rem; }
+.five-teaser p b { color: var(--ink); }
+.five-teaser .alif { flex: none; }
+.five-teaser .alif i { width: 11px; height: 11px; }
+.five-teaser .alif i.off { width: 9px; height: 9px; }
+
+/* ——— صفحة طلب العرض ——— */
+.booking-text h2 { font-size: clamp(26px, 3.2vw, 36px); margin-bottom: 14px; }
+.req-promises { list-style: none; margin-top: 26px; }
+.req-promises li {
+  border-top: 1px solid var(--line); padding: 16px 0;
+  display: flex; gap: 14px; align-items: baseline;
+}
+.req-promises li::before {
+  content: ""; width: 8px; height: 8px; background: var(--sage);
+  transform: rotate(45deg); flex: none; translate: 0 -1px;
+}
+.req-promises li b { display: block; font-size: 15.5px; margin-bottom: 2px; }
+.req-promises li span { color: var(--muted); font-size: 14px; line-height: 1.7; display: block; }
+.req-refuse {
+  display: flex; gap: 14px; align-items: center;
+  border: 1px dashed var(--line-strong); border-radius: var(--r-md);
+  background: var(--surface2); padding: 18px 24px;
+  color: var(--muted); font-size: 14.5px; margin-top: 28px;
+}
+.req-refuse::before {
+  content: ""; width: 8px; height: 8px; background: var(--clay);
+  transform: rotate(45deg); flex: none;
+}
+.req-side-note {
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface); padding: 26px 28px; margin-top: 28px;
+}
+.req-side-note b { display: block; font-size: 15.5px; margin-bottom: 8px; }
+.req-side-note p { color: var(--muted); font-size: 14px; line-height: 1.8; }
+.req-side-note a { color: var(--sage); font-weight: 600; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+
+/* ——— عناصر تحريرية مشتركة ——— */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 66rem; }
+.stack { display: flex; flex-direction: column; gap: 20px; max-width: 66rem; }
+
+/* ——— استجابة ——— */
+@media (max-width: 1000px) {
+  .control-cards { grid-template-columns: 1fr 1fr; }
+  .control-cards .span-2 { grid-column: span 2; }
+}
+@media (max-width: 800px) {
+  .page-hero { padding-block: 56px 8px; }
+  .cond-row { grid-template-columns: 56px 1fr; row-gap: 12px; padding: 26px 2px; }
+  .cond-letter { font-size: 44px; }
+  .cond-meta { grid-column: 1 / -1; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .cond-note { max-width: none; }
+  .honest-split, .pair-cards, .q-cards, .no-own-list, .gloss-grid { grid-template-columns: 1fr; }
+  .control-cards, .control-cards .span-2 { grid-template-columns: 1fr; grid-column: span 1; }
+  .next-cta { grid-template-columns: 1fr; padding: 40px 28px; }
+  .next-cta .cta-actions { flex-direction: column; }
+  .alif-callout { padding: 26px 24px; gap: 16px; }
+  .define-panel { padding: 32px 26px; }
+  .five-teaser { padding: 26px 24px; }
+  .form-grid-2 { grid-template-columns: 1fr; }
+  .v2-table { display: block; overflow-x: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control-card, .cond-row { transition: none; }
+}

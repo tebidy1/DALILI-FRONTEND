@@ -1,0 +1,648 @@
+// 644 سطرًا فوق قانون الـ400 — أقرب نتوءين للاقتطاع: كتلة AUTH-LIVE وفتح/استعادة القارئ (خطّافا useAuthLive/useReaderOpen)؛
+// الاستخراج يلامس اختبارات العرض فأُجّل (فحص 2026-09-21).
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { DaliliClient, type MeDto } from '@dalili/shared'
+import { META_KEY, AUTH_PING_KEY, type SessionMeta, type StepSummary } from '@/lib/protocol'
+import type { AutoMemoToggleAck, MemoToggleAck } from '@/lib/protocol'
+import { readStepSummaries, readShotAt } from '@/lib/steps-read'
+import { clearAllSteps, publishSteps } from '@/lib/publish'
+import { autoTranscribeSteps } from '@/lib/voice-memo-upload'
+import { API_BASE, WEB_BASE } from '@/lib/config'
+import { filterByTitle, searchHref, type RecentGuide } from '@/lib/recent'
+import { hostOf } from '@/lib/discover'
+import { urlTokens } from '@dalili/core'
+import { toArabicDigits } from '@/lib/ar-digits'
+import { t } from '@/lib/i18n'
+import { CANCEL_ARM_WINDOW_MS, CancelArm } from '@/lib/cancel-arm'
+import { useArmCountdown } from './useArmCountdown'
+import type { DiscoverResponseDto } from '@dalili/shared'
+import { CaptureBar, HeadBar } from './parts'
+import { IdleScreen } from './IdleScreen'
+import { StepsList } from './StepsList'
+import { SettingsSheet, BellSheet } from './Sheets'
+import { usePrefs, panelActivity } from './usePrefs'
+import { READER_KEY } from '@/lib/reader'
+import { GuideReader } from './reader/GuideReader'
+import { makeReaderDeps } from './reader/deps'
+
+const client = new DaliliClient(API_BASE)
+// PNL-01: تبعيات القارئ ثابتة على مستوى الوحدة — load ثابت المرجع فلا يعيد الجلب في كل رسم
+const readerDeps = makeReaderDeps(client)
+const IDLE: SessionMeta = { state: 'idle', sessionId: '', startedAt: 0, stepCount: 0 }
+const getKeys = (keys: string[]) => chrome.storage.local.get(keys)
+
+type BtnMsg = 'start' | 'start-with-audio' | 'finish' | 'pause' | 'resume' | 'cancel'
+type Sheet = 'none' | 'settings' | 'bell'
+
+export function App() {
+  const [meta, setMeta] = useState<SessionMeta>(IDLE)
+  const [me, setMe] = useState<MeDto | null>(null)
+  // AUTH-LIVE: عبارة النجاح لحظة انتقال اللوحة من زائر إلى مسجّل — بلا صمت ولا إغلاق وإعادة فتح
+  const [authHello, setAuthHello] = useState('')
+  const [steps, setSteps] = useState<StepSummary[]>([])
+  const [lastShot, setLastShot] = useState<string | undefined>()
+  const [publishing, setPublishing] = useState(false)
+  const [error, setError] = useState('')
+  const [recent, setRecent] = useState<RecentGuide[]>([])
+  const [recentErr, setRecentErr] = useState('')
+  const [query, setQuery] = useState('')
+  const [discover, setDiscover] = useState<DiscoverResponseDto | null>(null)
+  // زرّا الترويسة (2026-09-10): أي لوحة مفتوحة، ومن كان جديدًا في السجل لحظة فتح الجرس
+  const [sheet, setSheet] = useState<Sheet>('none')
+  const [freshIds, setFreshIds] = useState<ReadonlySet<string>>(new Set())
+  const prefs = usePrefs(me, client)
+  // CAP-13: زر «طمس» في شريط اللوحة — يفعّل سحب الطمس على التبويب النشط
+  const [blurOn, setBlurOn] = useState(false)
+  // CAP-02: الإلغاء بتأكيد خطوتين — النقرة الأولى تُسلّح الزر (٤ث)، والثانية تلغي فعلًا
+  const cancelArm = useRef(new CancelArm())
+  const [cancelArmed, setCancelArmed] = useState(false)
+  const cancelArmTimer = useRef<number | undefined>(undefined)
+  // المرحلة ٢: الحذوف السريعة كلها خطوتان بنفس النمط — حذف خطوة، حذف تعليق صوتي، حذف المسودة.
+  // لا نوافذ منبثقة داخل شاشة عمل ضيقة: النقرة الأولى تُسلّح والثانية داخل النافذة تنفّذ
+  const [armedKey, setArmedKey] = useState<string | null>(null)
+  const armTimer = useRef<number | undefined>(undefined)
+  // المرحلة ٤: عدّاد الأربع ثوانٍ يُرى على الزر المسلَّح بدل تخمينه
+  const armLeft = useArmCountdown(armedKey !== null, armedKey ?? '')
+  const cancelLeft = useArmCountdown(cancelArmed)
+  // نمط التسليح/التأكيد مكرر ثلاثًا (هنا وonCancelPress وonDiscardPress في Sheets) — خطّاف useArmedAction يوحّده،
+  // ودلالات المؤقّت حساسة فأُجّل لقرار المالك.
+  function armedPress(key: string, run: () => void) {
+    window.clearTimeout(armTimer.current)
+    if (armedKey === key) {
+      setArmedKey(null)
+      run()
+      return
+    }
+    setArmedKey(key)
+    armTimer.current = window.setTimeout(() => setArmedKey((k) => (k === key ? null : k)), CANCEL_ARM_WINDOW_MS)
+  }
+  // VOX-09/AUTO: زر الميك — يدويًا في الوضع العادي، ومفتاح التعليق التلقائي في وضع «ابدأ مع تعليق صوتي»
+  const [memoDenied, setMemoDenied] = useState(false)
+  const [memoProgress, setMemoProgress] = useState('')
+  // كشف يدوي للقطات خطوات سابقة (فهرس→dataURL) — الأحدث تُعرض دائمًا عبر lastShot
+  const [revealed, setRevealed] = useState<Record<number, string>>({})
+  const stepsRef = useRef<HTMLDivElement>(null)
+
+  // PNL-01: الدليل المفتوح داخل اللوحة — ومن أين فُتح (موضع التمرير وزر ↵) ليعود الرجوع إليه
+  const [readerId, setReaderId] = useState<string | null>(null)
+  const readerReturn = useRef<{ scrollTop: number; guideId: string } | null>(null)
+  const openReader = useCallback((id: string) => {
+    readerReturn.current = { scrollTop: document.scrollingElement?.scrollTop ?? 0, guideId: id }
+    setReaderId(id)
+    document.scrollingElement?.scrollTo(0, 0)
+    void chrome.storage.session?.set({ [READER_KEY]: id }).catch(() => {})
+  }, [])
+  const closeReader = useCallback(() => {
+    setReaderId(null)
+    void chrome.storage.session?.remove(READER_KEY).catch(() => {})
+  }, [])
+  // الرجوع: نفس موضع التمرير، والتركيز على زر ↵ الذي فُتح منه الدليل
+  useEffect(() => {
+    const back = readerReturn.current
+    if (readerId !== null || !back) return
+    readerReturn.current = null
+    requestAnimationFrame(() => {
+      document.scrollingElement?.scrollTo(0, back.scrollTop)
+      document.querySelector<HTMLButtonElement>(`.doc-enter[data-guide="${back.guideId}"]`)?.focus()
+    })
+  }, [readerId])
+  // استعادة القارئ بعد إغلاق اللوحة وفتحها (الجلسة تُمسح بإغلاق المتصفح)
+  useEffect(() => {
+    chrome.storage.session
+      ?.get(READER_KEY)
+      .then((r) => {
+        const id = r[READER_KEY]
+        if (typeof id === 'string') setReaderId(id)
+      })
+      .catch(() => {})
+  }, [])
+
+  // AUTH-LIVE: فحص الجلسة قابل لإعادة الاستدعاء — كان يُطلب مرة واحدة عند فتح اللوحة،
+  // فدخولٌ تم في تبويب الويب لم يرَه أحد إلا بإغلاق اللوحة وفتحها. الآن يُعاد عند ختم
+  // AUTH_PING_KEY (رسالة من صفحة الويب) وعند عودة التركيز/الظهور للوحة.
+  const prevMe = useRef<boolean | null>(null) // null = لم يُفحص بعد — أول فحص لا يهنّئ
+  const lastAuthCheck = useRef(0)
+  const checkAuth = useCallback(async (isLive?: () => boolean) => {
+    const alive = () => !isLive || isLive()
+    await client
+      .me()
+      .then((m) => {
+        if (!alive()) return
+        setMe(m)
+        if (m && prevMe.current === false) setAuthHello(m.email)
+        prevMe.current = !!m
+        // الأدلة الأخيرة تُجلب فقط لمن سجّل دخوله — الضيف لا أدلة له بعد
+        if (m) {
+          client
+            .listGuides({ limit: 8, sort: 'updated', order: 'desc' })
+            .then((r) => {
+              if (!alive()) return
+              setRecent(
+                r.items.map((it) => ({ id: it.id, title: it.title, updatedAt: it.updatedAt, stepCount: it.stepCount })),
+              )
+            })
+            .catch(() => alive() && setRecentErr(t('ext.recentError')))
+        }
+      })
+      .catch(() => alive() && setError(t('ext.serverUnreachable')))
+  }, [])
+
+  // AUTH-LIVE: عودة النظر إلى اللوحة بعد الدخول في تبويب الويب تكفي — شبكة أمان
+  // لو فات الترحيل (تبويب أُغلق بسرعة، أو منفذ ويب غير المتوقع في التطوير)
+  useEffect(() => {
+    const recheck = () => {
+      if (Date.now() - lastAuthCheck.current < 1500) return
+      lastAuthCheck.current = Date.now()
+      void checkAuth()
+    }
+    window.addEventListener('focus', recheck)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') recheck()
+    })
+  }, [checkAuth])
+
+  // عبارة النجاح تعيش ثوانٍ ثم تطمئن اللوحة إلى حالها
+  useEffect(() => {
+    if (!authHello) return
+    const timer = setTimeout(() => setAuthHello(''), 5000)
+    return () => clearTimeout(timer)
+  }, [authHello])
+
+  useEffect(() => {
+    let live = true
+    async function load() {
+      const got = (await chrome.storage.local.get(META_KEY))[META_KEY] as SessionMeta | undefined
+      const m = got ?? IDLE
+      if (!live) return
+      setMeta(m)
+      if (m.state === 'capturing' || m.state === 'paused') {
+        setSteps(await readStepSummaries(m.sessionId, m.stepCount, getKeys))
+        // البطاقة الأحدث تعرض لقطتها هي حصرًا (لا آخر لقطة متاحة) — أثناء فجوة
+        // الالتقاط تبقى undefined فيظهر العنصر النائب «يرسم التحديد…» بدل لقطة سابقة
+        setLastShot(await readShotAt(m.sessionId, m.stepCount - 1, getKeys))
+      } else {
+        setSteps([])
+        setLastShot(undefined)
+      }
+    }
+    void load()
+    const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area !== 'local') return
+      const keys = Object.keys(changes)
+      // خطوة جديدة أو حذف: البطاقات السابقة تنطوي لعنوان فقط (الأحدث وحدها تعرض لقطتها)
+      // VOX-09: مفتاح صوت جديد = انتهى تسجيل تعليق — الشارة تظهر بالمدة بلا طيّ المعاينات
+      const stepsTouched = keys.some((k) => k.startsWith('dalili:step:') || k.startsWith('dalili:shot:'))
+      const voiceTouched = keys.some((k) => k.startsWith('voice:'))
+      if (stepsTouched) setRevealed({})
+      if (stepsTouched || voiceTouched || keys.includes(META_KEY)) void load()
+      // AUTH-LIVE: ختم الدخول/الخروج من الويب — بلا خمادلة، إشارة صريحة تعيد الفحص فورًا
+      if (keys.includes(AUTH_PING_KEY)) void checkAuth(() => live)
+    }
+    chrome.storage.onChanged.addListener(onChanged)
+    void checkAuth(() => live)
+    return () => {
+      live = false
+      chrome.storage.onChanged.removeListener(onChanged)
+    }
+  }, [])
+
+  /**
+   * SRCH-04: شارة الاكتشاف — أدلة المالك على نطاق التبويب النشط.
+   * أحداث فقط (تفعيل/تحديث تبويب) بلا دوران؛ صمت صادق عند الفشل (الشارة كمالية)،
+   * وتختفي على صفحات المتصفح الداخلية وفوق دليل بلا أدلة على نطاقه.
+   */
+  useEffect(() => {
+    if (!me) return
+    let live = true
+    const ac = new AbortController()
+    async function refresh(tab: chrome.tabs.Tab | undefined) {
+      const host = tab?.url ? hostOf(tab.url) : null
+      if (!host || !tab?.url) {
+        if (live) setDiscover(null)
+        return
+      }
+      try {
+        // SRCH-04 تطوّر: نرسل رموز الشاشة الحالية (مُجزّئ core نفسه المستعمل في الفهرس)
+        const screen = urlTokens(tab.url).screen.join(' ')
+        const res = await client.discover(host, screen, ac.signal)
+        if (live) setDiscover(res.count > 0 ? res : null)
+      } catch {
+        if (live) setDiscover(null)
+      }
+    }
+    const queryActive = () => {
+      chrome.tabs
+        .query({ active: true, currentWindow: true })
+        .then((ts) => refresh(ts[0]))
+        .catch(() => {})
+    }
+    const onActivated = () => queryActive()
+    const onUpdated = (tabId: number, info: chrome.tabs.OnUpdatedInfo, tab: chrome.tabs.Tab) => {
+      if (tab.active && (info.url || info.status === 'complete')) refresh(tab).catch(() => {})
+    }
+    queryActive()
+    chrome.tabs.onActivated.addListener(onActivated)
+    chrome.tabs.onUpdated.addListener(onUpdated)
+    return () => {
+      live = false
+      ac.abort()
+      chrome.tabs.onActivated.removeListener(onActivated)
+      chrome.tabs.onUpdated.removeListener(onUpdated)
+    }
+  }, [me])
+
+  async function send(msg: BtnMsg, title?: string) {
+    setError('')
+    await chrome.runtime.sendMessage(title ? { t: msg, title } : { t: msg }).catch(() => setError(t('ext.extNotResponding')))
+  }
+
+  /** رسالة نارية محصّنة — موت العامل أو غياب الرد لا يرمي في واجهة المستخدم */
+  function fire(msg: Record<string, unknown>) {
+    try {
+      const p = chrome.runtime.sendMessage(msg) as unknown
+      if (p && typeof (p as Promise<unknown>).catch === 'function') void (p as Promise<unknown>).catch(() => {})
+    } catch {
+      // العامل غير متاح الآن — لا شيء تفعله الواجهة
+    }
+  }
+  // CAP-13: تبديل وضع الطمس على الصفحة الجارية — يُطفأ تلقائيًا خارج التسجيل الفعلي
+  function toggleBlur() {
+    const next = !blurOn
+    setBlurOn(next)
+    fire({ t: 'blur-mode', on: next })
+  }
+
+  // CAP-02: الإلغاء خطوتين — الأولى تُسلّح مع مؤقت إبقاء قصير، والثانية داخل النافذة تُلغي فعلًا
+  function onCancelPress() {
+    const r = cancelArm.current.press(Date.now())
+    window.clearTimeout(cancelArmTimer.current)
+    if (r === 'confirm') {
+      setCancelArmed(false)
+      cancelArm.current.disarm()
+      void send('cancel')
+      return
+    }
+    setCancelArmed(true)
+    cancelArmTimer.current = window.setTimeout(() => {
+      setCancelArmed(false)
+      cancelArm.current.disarm()
+    }, CANCEL_ARM_WINDOW_MS)
+  }
+
+  // خروج الجلسة من التسجيل الفعلي (إيقاف/إنهاء) يعيد زر الطمس لوضعه المطفأ
+  useEffect(() => {
+    if (meta.state !== 'capturing' && blurOn) setBlurOn(false)
+  }, [meta.state, blurOn])
+
+  // البطاقة الأحدث أسفل القائمة — نمرّر إليها تلقائيًا عند كل خطوة جديدة
+  useEffect(() => {
+    const el = stepsRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [meta.stepCount])
+
+  // المرحلة ٢: تغيّر عدد الخطوات يبطل التسليح — لا زر مسلَّح على فهرس قديم
+  useEffect(() => {
+    setArmedKey(null)
+  }, [meta.stepCount])
+
+  // المرحلة ٣ (قرار المالك): سطر الاسم الاختياري قبل النشر — التسمية لحظة «امتلاك» الدليل
+  const [askTitle, setAskTitle] = useState(false)
+  const [guideTitle, setGuideTitle] = useState('')
+  const [draftTitle, setDraftTitle] = useState('')
+  function onFinishPress() {
+    // بلا خطوات: تمرّر للخلفية تعرض رسالتها الصادقة
+    if (meta.stepCount === 0) {
+      void send('finish')
+      return
+    }
+    setAskTitle(true)
+  }
+  function publishNow() {
+    const title = guideTitle.trim()
+    setAskTitle(false)
+    setGuideTitle('')
+    void send('finish', title || undefined)
+  }
+
+  // المرحلة ٣: بطاقة «دليلك جاهز» — النجاح يُرى ولا يُبتلع، وتزول بنفسها بعد دقيقتين
+  const [successHidden, setSuccessHidden] = useState<string | null>(null)
+  const lastPub = meta.lastPublished
+  const showSuccess =
+    meta.state === 'idle' && !!lastPub && successHidden !== lastPub.guideId && Date.now() - lastPub.at < 120_000
+
+  function deleteStep(index: number) {
+    armedPress(`s:${index}`, () => fire({ t: 'delete-step', index }))
+  }
+
+  /** VOX-09: رسالة تعليق تنتظر ردّها — غياب الجواب يصير null، وخطأ الخلفية يُعرض في اللوحة */
+  async function memoSend<T extends { ok: boolean; errorAr?: string }>(msg: Record<string, unknown>): Promise<T | null> {
+    try {
+      const ack = (await chrome.runtime.sendMessage(msg).catch(() => null)) as T | null
+      if (ack && !ack.ok && ack.errorAr) setError(ack.errorAr)
+      return ack
+    } catch {
+      // الخلفية ميتة لحظة — البث سيأتي
+      return null
+    }
+  }
+
+  // VOX-09: ضغطة الميك — في الوضع التلقائي مفتاح إيقاف/تشغيل، وإلا بدء/إيقاف يدوي على آخر بطاقة
+  async function onMemoPress() {
+    if (meta.autoMemo) {
+      await memoSend<AutoMemoToggleAck>({ t: 'auto-memo-toggle' })
+      return
+    }
+    if (meta.memoLive) {
+      // الإيقاف ينتظر الجواب: فشل التسجيل (صمت ميكروفون) يُعرض بصدق بدل صمت الأزرار
+      await memoSend<MemoToggleAck>({ t: 'memo-toggle' })
+      return
+    }
+    try {
+      const p = await navigator.permissions.query({ name: 'microphone' as PermissionName })
+      if (p.state === 'denied') {
+        setMemoDenied(true)
+        setError(t('ext.noMicPermission'))
+        return
+      }
+      if (p.state === 'granted') {
+        const ack = await memoSend<MemoToggleAck>({ t: 'memo-toggle' })
+        if (ack && !ack.ok && ack.errorAr?.includes('الميكروفون')) setMemoDenied(true)
+        return
+      }
+      fire({ t: 'memo-request' })
+    } catch {
+      // المتصفح بلا permissions API — مسار صفحة الإذن هو القانون (VOX-06)
+      fire({ t: 'memo-request' })
+    }
+  }
+
+  function deleteMemo(index: number) {
+    armedPress(`m:${index}`, () => fire({ t: 'memo-delete', index }))
+  }
+
+  // كشف/طيّ لقطة بطاقة سابقة — تُحمّل كسولًا عند أول كشف
+  async function toggleReveal(index: number) {
+    if (revealed[index] !== undefined) {
+      setRevealed((prev) => {
+        const next = { ...prev }
+        delete next[index]
+        return next
+      })
+      return
+    }
+    const shot = await readShotAt(meta.sessionId, index, getKeys)
+    if (shot) setRevealed((prev) => ({ ...prev, [index]: shot }))
+  }
+
+  async function publishDraft(title?: string) {
+    if (publishing) return
+    setPublishing(true)
+    setError('')
+    setMemoProgress('')
+    try {
+      const who = await client.me()
+      if (!who) {
+        window.open(`${WEB_BASE}/login?return=extension`, '_blank')
+        return
+      }
+      // VOX-09: تعليقات البطاقات تُرفع خلال النشر ثم تُفرَّغ نصيًا فوق عناوينها
+      const published = await publishSteps(client, meta.sessionId, meta.stepCount, {
+        onMemoProgress: setMemoProgress,
+        title,
+      })
+      await clearAllSteps()
+      // المرحلة ٣: النجاح يُرى — بطاقة «دليلك جاهز» فوق شاشة الخمول
+      await chrome.storage.local.set({
+        [META_KEY]: { ...IDLE, lastPublished: { guideId: published.guideId, stepCount: meta.stepCount, at: Date.now() } },
+      })
+      // التفريغ التلقائي: كلام كل تعليق يُلحق تحت عنوان بطاقته — الفشل لافتة إعادة محاولة بالمحرر
+      const sttSteps = await autoTranscribeSteps(client, published.guideId, published.memoTotal > 0)
+      if (!sttSteps.ok)
+        void panelActivity
+          .push('stt', t('ext.sttFail'), `${WEB_BASE}/g/${published.guideId}`)
+          .catch(() => {})
+      window.open(`${WEB_BASE}/g/${published.guideId}${sttSteps.ok ? '' : '?stt=failed'}`, '_blank')
+      // النشر الناجح حدثٌ في الجرس برابط دائم — بطاقة النجاح تزول بعد دقيقتين، الحدث يبقى
+      void panelActivity.push('publish', t('ext.publishSuccess'), `${WEB_BASE}/g/${published.guideId}`).catch(() => {})
+    } catch (e) {
+      setError((e instanceof Error ? e.message : t('ext.publishFail')) + t('ext.stepsStillSaved'))
+      void panelActivity.push('draft', t('ext.publishFailDraft')).catch(() => {})
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  async function discardDraft() {
+    await clearAllSteps()
+    await chrome.storage.local.set({ [META_KEY]: IDLE })
+  }
+
+  async function openBell() {
+    setSheet('bell')
+    setFreshIds(await prefs.readAll())
+  }
+
+  async function onLogout() {
+    await client.logout().catch(() => {})
+    window.location.reload()
+  }
+
+  const { state, stepCount } = meta
+  const capturing = state === 'capturing' || state === 'paused'
+  const paused = state === 'paused'
+
+  // PNL-01: بدء التقاط جديد يغلق القارئ — شاشة واحدة لكل حالة
+  useEffect(() => {
+    if (meta.state !== 'idle' && readerId !== null) closeReader()
+  }, [meta.state, readerId, closeReader])
+  // الرجوع من القارئ محجوب أثناء فتح لوحة منزلقة كي لا يبتلع Esc إغلاقها
+  const onReaderBack = useCallback(() => {
+    if (sheet === 'none') closeReader()
+  }, [sheet, closeReader])
+
+  return (
+    <div className="wrap">
+      <HeadBar meta={meta} unread={prefs.unread} onBell={() => void openBell()} onSettings={() => setSheet('settings')} />
+
+      {error && <div className="body" style={{ paddingBottom: 0 }}><div className="err">{error}</div></div>}
+
+      {state === 'idle' && readerId !== null && (
+        <GuideReader guideId={readerId} deps={readerDeps} onBack={onReaderBack} />
+      )}
+
+      {state === 'idle' && readerId === null && (
+        <>
+          {/* المرحلة ٣: لحظة النجاح — النشر أكمل اللحظة المُكافئة فتُرى ولا تمرّ صامتة */}
+          {showSuccess && lastPub && (
+            <div className="body">
+              <div className="success-card" role="status">
+                <div className="success-title">{t('ext.guideReady')}</div>
+                <div className="muted">
+                  {t('ext.publishedSteps', { count: toArabicDigits(lastPub.stepCount) })}
+                </div>
+                <div className="row">
+                  <button onClick={() => window.open(`${WEB_BASE}/g/${lastPub.guideId}`, '_blank')}>
+                    {t('ext.openGuide')}
+                  </button>
+                  <button className="ghost" onClick={() => setSuccessHidden(lastPub.guideId)}>
+                    {t('ext.done')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* AUTH-LIVE: لحظة وصول الدخول من الويب — عبارة قصيرة ثم تفتك بتكتم */}
+          {authHello && (
+            <div className="notice auth-hello" role="status">
+              {t('ext.loginSuccess')} <bdi>{authHello}</bdi>
+            </div>
+          )}
+          <IdleScreen send={send} me={me} query={query} setQuery={setQuery} discover={discover} recent={recent} recentErr={recentErr} preferredStart={prefs.settings.preferredStart} onOpenHere={openReader} />
+        </>
+      )}
+
+      {capturing && (
+        <>
+          <div className="countline">
+            <b>{stepCount}</b> {t('ext.captureSummaryTail', { count: stepCount })}
+          </div>
+          {meta.notice && <div className="notice">{meta.notice}</div>}
+          {meta.limited && <div className="notice">{t('ext.limitReached')}</div>}
+
+          <div className="steps" ref={stepsRef}>
+            <StepsList
+              steps={steps}
+              meta={meta}
+              lastShot={lastShot}
+              revealed={revealed}
+              armedKey={armedKey}
+              armLeft={armLeft}
+              onReveal={toggleReveal}
+              onDeleteStep={deleteStep}
+              onDeleteMemo={deleteMemo}
+            />
+          </div>
+
+          {/* المرحلة ٣: سطر الاسم الاختياري قبل النشر — التسمية اختيار لا إلزام */}
+          {askTitle && (
+            <div className="ask-title">
+              <label htmlFor="guide-name">{t('ext.guideName')}</label>
+              <input
+                id="guide-name"
+                dir={prefs.locale === 'en' ? 'ltr' : 'rtl'}
+                autoFocus
+                maxLength={120}
+                value={guideTitle}
+                placeholder={t('ext.guideNamePlaceholder')}
+                onChange={(e) => setGuideTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    publishNow()
+                  }
+                  if (e.key === 'Escape') setAskTitle(false)
+                }}
+              />
+              <div className="row">
+                <button onClick={publishNow}>{t('ext.publishNow')}</button>
+                <button className="ghost" onClick={() => setAskTitle(false)}>
+                  {t('ext.back')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* شريط تحكم سفلي ثابت بأسلوب اسكرايب: صف أدوات ثم زر إنهاء عريض */}
+          <CaptureBar
+            paused={paused}
+            blurOn={blurOn}
+            toggleBlur={toggleBlur}
+            cancelArmed={cancelArmed}
+            cancelLeft={cancelLeft}
+            onCancelPress={onCancelPress}
+            memoLive={meta.memoLive}
+            autoMemo={!!meta.autoMemo}
+            stepCount={stepCount}
+            memoDenied={memoDenied}
+            onMemoPress={onMemoPress}
+            onFinishPress={onFinishPress}
+            send={send}
+          />
+        </>
+      )}
+
+      {state === 'saving' && (
+        <div className="body">
+          <div className="spin" />
+          <div className="ok center">{t('ext.uploading')}</div>
+          {meta.notice && <div className="notice">{meta.notice}</div>}
+        </div>
+      )}
+
+      {state === 'draft' && (
+        <div className="body">
+          <div className="countline"><b>{stepCount}</b> {t('ext.draftStepsTail', { count: stepCount })}</div>
+          <div className="ok">{meta.draftReason ?? t('ext.localDraft')}</div>
+          {publishing && memoProgress && <div className="notice">{memoProgress}</div>}
+          {/* المرحلة ٣: التسمية متاحة هنا أيضًا — من نشر مسودة قديمة يستطيع تسميتها أولًا */}
+          <label className="ask-title" htmlFor="draft-name">
+            {t('ext.guideName')}
+            <input
+              id="draft-name"
+              dir={prefs.locale === 'en' ? 'ltr' : 'rtl'}
+              maxLength={120}
+              value={draftTitle}
+              placeholder={t('ext.guideNamePlaceholder')}
+              onChange={(e) => setDraftTitle(e.target.value)}
+            />
+          </label>
+          <button onClick={() => void publishDraft(draftTitle.trim() || undefined)} disabled={publishing}>
+            {publishing ? t('ext.publishing') : t('ext.publishNowLong')}
+          </button>
+          <div className="row">
+            <button className="ghost" onClick={() => window.open(`${WEB_BASE}/login?return=extension`, '_blank')}>
+              {t('ext.openLogin')}
+            </button>
+            {/* المرحلة ٢: «حذف المسودة» خطوتان بنظام التسليح الموحد نفسه — فالمسودة عمل لم يُنشر */}
+            <button className="danger" onClick={() => armedPress('draft', () => void discardDraft())}>
+              {armedKey === 'draft'
+                ? `${t('ext.draftDeleteConfirm')} (${toArabicDigits(armLeft)})`
+                : t('ext.draftDelete')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {sheet === 'settings' && (
+        <SettingsSheet
+          me={me}
+          settings={prefs.settings}
+          onPreferredStart={prefs.onPreferredStart}
+          theme={prefs.theme}
+          onTheme={prefs.onTheme}
+          locale={prefs.locale}
+          onLocale={prefs.onLocale}
+          hasDraft={state === 'draft'}
+          onDiscardDraft={() => {
+            void discardDraft()
+            setSheet('none')
+          }}
+          onLogout={() => void onLogout()}
+          onClose={() => setSheet('none')}
+        />
+      )}
+      {sheet === 'bell' && (
+        <BellSheet
+          events={prefs.events}
+          freshIds={freshIds}
+          onClose={() => setSheet('none')}
+          // المرحلة ٣: الجرس يوصلك للحل — المسودة تُدار من شاشتها في اللوحة
+          onDraftClick={() => {
+            setSheet('none')
+            if (meta.state !== 'draft') setError(t('ext.draftGone'))
+          }}
+        />
+      )}
+    </div>
+  )
+}

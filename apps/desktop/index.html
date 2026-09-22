@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إتقان</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <!-- الخطّ بلا حجب: أنماطه الخارجيّة لو حجبت تأخّر تشغيل main.ts كلّه
+        (شبكة بطيئة/بلا إنترنت = ودجة ميتة دقائق) — البديلة Segoe UI
+        تُرسم فورًا ويتبدّل الخطّ عند وصوله -->
+    <style>
+      /* ═══ الفصل النظيف للنوافذ (طلب المالك 2026-09-19): الحصاة نافذة
+         ‏main دائمة ٤٤ لا تتحوّل، والقوائم والبطاقات نافذة ‏popout منفصلة
+         تنبثق فوقها بمحاذاة الحافة اليمنى وفجوة ١٢ — كل نافذة ترى طبقتها
+         وحدها عبر data-win. البطاقات من المرجع حرفًا (مصمتة — لا ضباب
+         ولا ظلّ تحت حماية WDA — ومستطيلة بزوايا النظام). التلميحات
+         ويندوز الأصلية title (تُقصّ لو كانت CSS). ═══ */
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: linear-gradient(175deg, #243946 0%, #1c2b33 100%);
+        font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+      }
+      /* نافذة المنبثقة: سطحها فاتح — والشريط وحده يغطي نفسه بالكحليّ */
+      body[data-win="popout"] {
+        background: #fcfcfc;
+      }
+      body[data-win="popout"][data-form="strip"] {
+        background: linear-gradient(175deg, #243946 0%, #1c2b33 100%);
+      }
+      #app {
+        width: 100%;
+        height: 100vh;
+        cursor: default;
+      }
+      /* ═══ بطاقة قائمة البدء (شكل العدم) ═══ */
+      .wcard {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: #fcfcfc;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        padding: 4px;
+      }
+      body[data-win="popout"][data-form="menu"] .wcard { display: block; }
+      /* رأس القائمة: الترس يفتح الإعدادات (طلب المالك — آليّة التطبيق الأول) */
+      .menu-head {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0 2px 2px;
+      }
+      .menu-head .gear {
+        width: 26px;
+        height: 26px;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        color: #5d5d5d;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+      .menu-head .gear:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+      .menu-head .gear svg {
+        width: 15px;
+        height: 15px;
+      }
+      .cap-ctas {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 4px;
+      }
+      .cap-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-family: inherit;
+        border-radius: 4px;
+        cursor: pointer;
+        box-sizing: border-box;
+      }
+      .cap-btn b {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .cap-btn.primary {
+        background: #1c2b33;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-bottom-color: rgba(0, 0, 0, 0.2);
+        color: #fff;
+        min-height: 40px;
+        font-size: 14px;
+      }
+      .cap-btn.primary:hover {
+        background: #2b3f4b;
+      }
+      .cap-btn.secondary {
+        background: #fdfdfd;
+        color: #1b1b1b;
+        border: 1px solid rgba(0, 0, 0, 0.07);
+        border-bottom-color: rgba(0, 0, 0, 0.16);
+        min-height: 36px;
+        font-size: 13px;
+      }
+      .cap-btn.secondary:hover {
+        background: #f6f6f6;
+      }
+      .cap-btn svg {
+        width: 15px;
+        height: 15px;
+        flex: none;
+      }
+      .menu-cap {
+        font-size: 10.5px;
+        color: #5a6b75;
+        text-align: center;
+        margin: 2px 4px 4px;
+        line-height: 1.35;
+      }
+      /* ═══ شريط التحكّم (شكل الجلسة) — عمود أزرار بلا كلمات ═══ */
+      .strip {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: linear-gradient(175deg, #243946 0%, #1c2b33 100%);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        padding: 6px 5px;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+      }
+      body[data-win="popout"][data-form="strip"] .strip { display: flex; }
+      .sbtn {
+        position: relative;
+        width: 38px;
+        height: 38px;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        color: #e9eff3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-family: inherit;
+        padding: 0;
+        box-sizing: border-box;
+        flex: none;
+      }
+      .sbtn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .sbtn svg {
+        width: 17px;
+        height: 17px;
+        display: block;
+      }
+      .sbtn.sfinish {
+        background: #3a7d44;
+        color: #fff;
+      }
+      .sbtn.sfinish:hover {
+        background: #2f6238;
+      }
+      .sbtn.sdanger {
+        color: #ff9b93;
+      }
+      .sbtn.sdanger:hover {
+        background: rgba(196, 69, 61, 0.24);
+      }
+      .ssep {
+        width: 20px;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.16);
+        margin: 2px 0;
+        flex: none;
+      }
+      /* نبضة التعليق الصوتيّ على زرّ الميك — تظهر بالجلسة الصوتيّة حصرًا */
+      .sdot {
+        display: none;
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #c4453d;
+        border: 1.5px solid #1c2b33;
+      }
+      body.voice #micDot {
+        display: block;
+        animation: rec-pulse 1.2s ease-in-out infinite;
+      }
+      /* نبضة الجلسة على المربّع: علامة «التسجيل يعمل» داخل النافذة */
+      .recdot {
+        display: none;
+        position: fixed;
+        top: 6px;
+        left: 6px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #c4453d;
+        border: 1px solid #1c2b33;
+      }
+      body[data-win="main"].session:not(.voice):not(.paused) .recdot {
+        display: block;
+        animation: rec-pulse 1.6s ease-in-out infinite;
+      }
+      /* ‏UX لغة الحصاة (طلب المالك 2026-09-19): أثناء التعليق الصوتيّ
+         ميكروفونٌ أحمر نابض على الحصاة يُعلن أن الصوت يُسجَّل، وعند
+         الإيقاف علامةُ تشغيلٍ ▶ لأن النقر عليها يُستأنف التسجيل */
+      .picon {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 22px;
+        height: 22px;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+      .picon-play {
+        color: #ffffff;
+      }
+      body[data-win="main"].paused .picon-play { display: block; }
+      body[data-win="main"].voice:not(.paused) .picon-mic {
+        display: block;
+        animation: mic-breathe 1.4s ease-in-out infinite;
+      }
+      @keyframes mic-breathe {
+        0%, 100% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        50% {
+          opacity: 0.45;
+          transform: translate(-50%, -50%) scale(0.94);
+        }
+      }
+      /* ═══ تفاعلات الجلسة (خطوات المرجع ٦–٨) — بطاقات منسوخة حرفًا،
+         مصمتة (لا ضباب ولا ظلّ — حماية WDA) ومستطيلة (زوايا النظام) ═══ */
+      /* ٦ شريحة الإيقاف المؤقّت */
+      .chipbar {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: #fcfcfc;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        padding: 5px 12px;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      body[data-win="popout"][data-form="chip"] .chipbar { display: flex; }
+      .chipbar .cdot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #b9b4aa;
+        flex: none;
+      }
+      .chipbar .ctxt {
+        font-size: 11px;
+        font-weight: 600;
+        color: #5a6b75;
+        white-space: nowrap;
+      }
+      /* ٧ بطاقة تأكيد الإلغاء */
+      .confirm-card {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: #fcfcfc;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        padding: 12px;
+      }
+      body[data-win="popout"][data-form="confirm"] .confirm-card { display: block; }
+      .confirm-card h4 {
+        margin: 2px 4px 3px;
+        font-size: 14px;
+        color: #1b1b1b;
+      }
+      .confirm-card p {
+        margin: 0 4px 10px;
+        font-size: 12px;
+        color: #5a6b75;
+      }
+      .confirm-card p b {
+        color: #1b1b1b;
+      }
+      .crow {
+        display: flex;
+        gap: 8px;
+        padding: 0 4px 2px;
+      }
+      .cbtn {
+        flex: 1;
+        font-family: inherit;
+        font-size: 12.5px;
+        font-weight: 700;
+        border-radius: 4px;
+        padding: 7px 6px;
+        cursor: pointer;
+        border: 1px solid rgba(0, 0, 0, 0.07);
+        border-bottom-color: rgba(0, 0, 0, 0.16);
+        background: #fdfdfd;
+        color: #1b1b1b;
+      }
+      .cbtn:hover {
+        background: #f6f6f6;
+      }
+      .cbtn.red {
+        background: #c4453d;
+        border-color: rgba(0, 0, 0, 0.08);
+        border-bottom-color: rgba(0, 0, 0, 0.2);
+        color: #fff;
+      }
+      .cbtn.red:hover {
+        background: #a93a33;
+      }
+      /* ٨ بطاقة البناء */
+      .buildbox {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: #fcfcfc;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        padding: 12px 14px;
+      }
+      body[data-win="popout"][data-form="build"] .buildbox { display: block; }
+      .buildbox .bt {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #1b1b1b;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .buildbox .spin {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 0, 0, 0.08);
+        border-top-color: #3a7d44;
+        animation: spin 0.9s linear infinite;
+        flex: none;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .btrack {
+        height: 3px;
+        border-radius: 99px;
+        background: rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+      }
+      .bfill {
+        height: 100%;
+        width: 4%;
+        background: #3a7d44;
+      }
+      body[data-win="popout"][data-form="build"] .bfill {
+        animation: bfill-run 1.6s ease-out forwards;
+      }
+      @keyframes bfill-run {
+        from {
+          width: 4%;
+        }
+        to {
+          width: 100%;
+        }
+      }
+      /* توست الوصول */
+      .toast-card {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: #fcfcfc;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        padding: 11px 14px;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+      }
+      body[data-win="popout"][data-form="toast"] .toast-card { display: flex; }
+      .toast-card .tcheck {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #3a7d44;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+      }
+      .toast-card .tcheck svg {
+        width: 13px;
+        height: 13px;
+      }
+      .toast-card .tt {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #1b1b1b;
+        line-height: 1.35;
+      }
+      .toast-card .ts {
+        font-size: 10.5px;
+        color: #5a6b75;
+        line-height: 1.35;
+      }
+      body[data-win="popout"][data-form="toast"] .toast-card { animation: pop-in 0.32s ease; }
+      @keyframes pop-in {
+        from {
+          opacity: 0;
+          transform: translateY(7px) scale(0.97);
+        }
+      }
+      /* الحركة السلسة: الأزرار تصعد تِرًّا عند انفتاح الشريط (فلوينت) */
+      @keyframes sbtn-rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+      }
+      @keyframes rec-pulse {
+        50% {
+          opacity: 0.25;
+        }
+      }
+      /* ═══ لحظة الالتقاط (خطوة المرجع ٤): بطاقة اللقطة المصغّرة تقفز ثم
+         تذوب بعد ٢.٣ث — اللقطة مكبَّرة على العلامة والدائرة الحمراء على
+         الزر المقصود، وتحتها «الخطوة ١» + شارة الصوت + «تراجع». تكييف
+         WDA: سطح مصمت ‏#FCFCFC بلا ضباب ولا ظلّ ═══ */
+      .flash {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: #fcfcfc;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        padding: 6px;
+      }
+      body[data-win="popout"][data-form="flash"] .flash { display: block; animation: pop-in 0.3s ease; }
+      .flash .shot {
+        position: relative;
+        height: 118px;
+        border-radius: 4px;
+        overflow: hidden;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        background: #f4f2ec;
+      }
+      .flash .shot-grid {
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(rgba(28, 43, 51, 0.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(28, 43, 51, 0.055) 1px, transparent 1px);
+        background-size: 22px 22px;
+      }
+      /* اللقطة الحقيقيّة: بكسلات الخطوة الفعلية بحجمٍ يحويها الصندوق
+         (المقياس يضبطه JS عند التحميل كي تتمركز حلقة العلامة بحسابٍ واحد) */
+      .flash .shot-img {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-width: none;
+      }
+      .flash .shot-ring {
+        display: none;
+        position: absolute;
+        border: 2.5px solid #c4453d;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+      /* الانتظار الفوريّ (بلاغ المالك): البطاقة تقفز بالرقم قبل وصول
+         البكسلات — نبض خلفيّة مصمت هادئ لا ضباب فيه ولا ظلّ (تكييف WDA) */
+      .flash .shot.wait {
+        animation: shotwait 1.1s ease-in-out infinite;
+      }
+      .flash .shot.wait .shot-img,
+      .flash .shot.wait .shot-ring {
+        display: none;
+      }
+      @keyframes shotwait {
+        0%,
+        100% {
+          background-color: #f4f2ec;
+        }
+        50% {
+          background-color: #e9e4d7;
+        }
+      }
+      .flash .frow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 5px 3px;
+        font-size: 12px;
+      }
+      .flash .fstep {
+        font-weight: 700;
+        color: #1c2b33;
+      }
+      .flash .fvoice {
+        color: #c4453d;
+        font-size: 10.5px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .flash .fvoice svg {
+        width: 11px;
+        height: 11px;
+      }
+      /* قاعدة hidden تعلو CSS — شارة الصوت لا تظهر بلا جلسة صوتيّة */
+      .flash .fvoice[hidden] {
+        display: none;
+      }
+      /* «تراجع» بنمط زر الرابط في ويندوز: نصّ ملون بلا إطار، تعبئة خفيفة عند المرور */
+      .flash .undo {
+        margin-inline-start: auto;
+        background: none;
+        border: none;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        color: #c4453d;
+        cursor: pointer;
+        padding: 3px 8px;
+      }
+      .flash .undo:hover {
+        background: rgba(196, 69, 61, 0.08);
+      }
+      /* ═══ عجلات التدريب (خطوة المرجع ٩): الحبّة الكاملة بأزرار مكتوبة
+         في أول جولتين حصرًا ثم تنطوي للقائمة العادية. تكييف WDA: شارة
+         «أول جولتين ثم تنطوي» كانت تفيض خارج البطاقة في المرجع — داخل
+         النافذة هنا (الفيض خارج النافذة شفاف تُفلطه الحماية) ═══ */
+      .pillzbox {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: #fcfcfc;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        padding: 8px;
+      }
+      body[data-win="popout"][data-form="pillz"] .pillzbox { display: block; }
+      .pillzbox .train-tag {
+        display: table;
+        margin: 0 2px 2px;
+        background: #1c2b33;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: 4px;
+        padding: 3px 11px;
+      }
+      .pillzbox .pillz-head {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 4px;
+      }
+      .pillzbox .pillz-head .gear {
+        width: 18px;
+        height: 18px;
+        color: #5d5d5d;
+      }
+      .pillzbox .cap-btn.primary {
+        min-height: 44px;
+        font-size: 15px;
+      }
+      .pillzbox .cap-btn.secondary {
+        min-height: 40px;
+        font-size: 13.5px;
+      }
+      /* ═══ الإعدادات: صفّا mrow من المرجع حرفًا (الربط/إنهاء التطبيق) ═══ */
+      .setcard {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: #fcfcfc;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        padding: 4px;
+        flex-direction: column;
+        justify-content: center;
+      }
+      body[data-win="popout"][data-form="settings"] .setcard { display: flex; }
+      .mrow {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        width: 100%;
+        padding: 0 10px;
+        height: 34px;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        font-family: inherit;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #1b1b1b;
+        cursor: pointer;
+        text-align: right;
+      }
+      .mrow:hover {
+        background: rgba(0, 0, 0, 0.045);
+      }
+      .mrow svg {
+        width: 16px;
+        height: 16px;
+        flex: none;
+        color: #5d5d5d;
+      }
+      .mrow .st {
+        margin-inline-start: auto;
+        font-size: 11px;
+        font-weight: 600;
+        color: #5a6b75;
+        font-variant-numeric: tabular-nums;
+      }
+      .mrow.danger,
+      .mrow.danger svg {
+        color: #c4453d;
+      }
+      .mrow.danger:hover {
+        background: rgba(196, 69, 61, 0.08);
+      }
+
+      /* ═══ الحساب: حالات الربط الثلاث بمقاسٍ واحد (تصميم المالك 2026-09-20) ═══ */
+      .acct {
+        display: none;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        background: #fcfcfc;
+        border: 1px solid rgba(0, 0, 0, 0.057);
+        padding: 12px;
+      }
+      body[data-win="popout"][data-form="account"] .acct { display: block; }
+      .acct .phead {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 2px 8px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.057);
+      }
+      .acct .phead h3 {
+        margin: 0;
+        font-size: 14px;
+        color: #1b1b1b;
+        flex: 1;
+        font-family: inherit;
+      }
+      .acct .pdot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #b9b4aa;
+        flex: none;
+      }
+      body[data-phase="pairing"] .acct .pdot {
+        background: #d9a441;
+        animation: rec-pulse 1.2s ease-in-out infinite;
+      }
+      body[data-phase="paired"] .acct .pdot {
+        background: #3a7d44;
+      }
+      .acct .pstate {
+        font-size: 11px;
+        font-weight: 700;
+        color: #5a6b75;
+      }
+      .acct .pbody {
+        padding: 10px 2px 0;
+        font-size: 12px;
+        color: #5a6b75;
+        line-height: 1.8;
+      }
+      .acct .pbody .hint {
+        font-size: 10.5px;
+        line-height: 1.7;
+        margin-top: 8px;
+      }
+      .acct [data-show] {
+        display: none;
+      }
+      body[data-phase="unpaired"] .acct [data-show="unpaired"] { display: block; }
+      body[data-phase="pairing"] .acct [data-show="pairing"] { display: block; }
+      body[data-phase="paired"] .acct [data-show="paired"] { display: block; }
+      body[data-phase="unknown"] .acct [data-show="unknown"] { display: block; }
+      /* الرمز القصير — الرمز السرّي في خزنة ويندوز لا تراه أيّ شاشة */
+      .acct .pcode {
+        margin: 8px 0;
+        background: #f4f2ec;
+        border: 1px dashed rgba(28, 43, 51, 0.28);
+        border-radius: 4px;
+        padding: 10px;
+        text-align: center;
+        font-size: 21px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        color: #1c2b33;
+        direction: ltr;
+      }
+      .acct .cap-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-family: inherit;
+        border-radius: 4px;
+        cursor: pointer;
+        box-sizing: border-box;
+        width: 100%;
+      }
+      .acct .cap-btn.secondary {
+        background: #fdfdfd;
+        color: #1b1b1b;
+        border: 1px solid rgba(0, 0, 0, 0.07);
+        border-bottom-color: rgba(0, 0, 0, 0.16);
+        min-height: 34px;
+        font-size: 12.5px;
+        margin-top: 8px;
+      }
+      .acct .cap-btn.secondary:hover {
+        background: #f6f6f6;
+      }
+      .acct .cap-btn svg {
+        width: 14px;
+        height: 14px;
+        flex: none;
+      }
+      .acct .ptext {
+        background: none;
+        border: none;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        color: #c4453d;
+        cursor: pointer;
+        padding: 5px 8px;
+        margin-top: 6px;
+      }
+      .acct .ptext:hover {
+        background: rgba(196, 69, 61, 0.08);
+      }
+      .acct .prow {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 2px 0;
+      }
+      .acct .tcheck {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #3a7d44;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+      }
+      .acct .tcheck svg {
+        width: 13px;
+        height: 13px;
+      }
+      .acct .pmail {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #1b1b1b;
+        direction: ltr;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .strip > *,
+        .recdot,
+        .sdot,
+        .picon,
+        .bfill,
+        .spin,
+        .toast-card,
+        .flash {
+          animation: none !important;
+        }
+      }
+      body[data-win="popout"][data-form="strip"] .strip > * {
+        animation: sbtn-rise 0.2s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+      }
+      body[data-win="popout"][data-form="strip"] .strip > :nth-child(1) { animation-delay: 0.02s; }
+      body[data-win="popout"][data-form="strip"] .strip > :nth-child(2) { animation-delay: 0.07s; }
+      body[data-win="popout"][data-form="strip"] .strip > :nth-child(3) { animation-delay: 0.12s; }
+      body[data-win="popout"][data-form="strip"] .strip > :nth-child(4) { animation-delay: 0.17s; }
+      body[data-win="popout"][data-form="strip"] .strip > :nth-child(5) { animation-delay: 0.22s; }
+    </style>
+  </head>
+  <body>
+    <main id="app">
+      <div class="wcard" id="menuStart">
+        <div class="menu-head">
+          <button class="gear" id="menuGear" type="button" title="الإعدادات" aria-label="الإعدادات">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+        <div class="cap-ctas">
+          <button class="cap-btn primary" id="btnCap" type="button"><b>التقاط</b></button>
+          <button class="cap-btn secondary" id="btnCapV" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            التقاط مع تعليق صوتي
+          </button>
+        </div>
+        <p class="menu-cap">اختر كيف تريد أن يبدأ التوثيق</p>
+      </div>
+      <div class="strip" id="strip">
+        <button class="sbtn sfinish" id="stripFinish" type="button" title="إنهاء وشِحْن الدليل" aria-label="إنهاء وشحن الدليل">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>
+        </button>
+        <button class="sbtn sdanger" id="stripCancel" type="button" title="إلغاء التسجيل" aria-label="إلغاء التسجيل">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg>
+        </button>
+        <span class="ssep" role="separator"></span>
+        <button class="sbtn" id="stripPause" type="button" title="إيقاف مؤقت" aria-label="إيقاف مؤقت أو متابعة">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="7" y="6" width="3.5" height="12" rx="1"/><rect x="13.5" y="6" width="3.5" height="12" rx="1"/></svg>
+        </button>
+        <button class="sbtn" id="stripMic" type="button" title="تعليق صوتي" aria-label="تعليق صوتي">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          <span class="sdot" id="micDot"></span>
+        </button>
+      </div>
+      <div class="chipbar" id="chipPaused" title="انقر للمتابعة">
+        <span class="cdot" aria-hidden="true"></span>
+        <span class="ctxt">موقوف مؤقتًا — نقراتك لا تُصوَّر</span>
+      </div>
+      <div class="confirm-card" id="confirmBox">
+        <h4>إلغاء التسجيل؟</h4>
+        <p>سيُحذف كل شيء: <b id="confirmN">٠ خطوات</b> ولم يُشحن شيء بعد.</p>
+        <div class="crow">
+          <button class="cbtn red" id="btnYes" type="button">نعم، احذف الكل</button>
+          <button class="cbtn" id="btnNo" type="button">متابعة التسجيل</button>
+        </div>
+      </div>
+      <div class="buildbox" id="buildBox">
+        <div class="bt"><span class="spin" aria-hidden="true"></span> جارٍ بناء الدليل…</div>
+        <div class="btrack"><div class="bfill"></div></div>
+      </div>
+      <div class="toast-card" id="toastBox">
+        <span class="tcheck" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
+        <span><span class="tt">وصل الدليل إلى مساحتك</span><br /><span class="ts" id="toastSub">٠ خطوات</span></span>
+      </div>
+      <div class="flash" id="flashBox">
+        <div class="shot" aria-hidden="true">
+          <div class="shot-grid"></div>
+          <img class="shot-img" id="shotImg" alt="" />
+          <span class="shot-ring" id="shotRing"></span>
+        </div>
+        <div class="frow">
+          <span class="fstep" id="flashStep">الخطوة ١</span>
+          <span class="fvoice" id="flashVoice" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            تعليق صوتي
+          </span>
+          <button class="undo" id="btnUndo" type="button">تراجع</button>
+        </div>
+      </div>
+      <div class="pillzbox" id="pillzBox">
+        <span class="train-tag">أول جولتين ثم تنطوي</span>
+        <div class="pillz-head">
+          <button class="gear" id="pillzGear" type="button" title="الإعدادات" aria-label="الإعدادات" style="width:26px;height:26px;border:none;border-radius:4px;background:transparent;color:#5d5d5d;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">
+            <svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+        <div class="cap-ctas">
+          <button class="cap-btn primary" id="btnPillz" type="button"><b>ابدأ الالتقاط</b></button>
+          <button class="cap-btn secondary" id="btnPillzV" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            ابدأ مع تعليق صوتي
+          </button>
+        </div>
+      </div>
+      <div class="setcard" id="settingsBox">
+        <button class="mrow" id="rowLink" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          الربط
+          <span class="st" id="linkState">…</span>
+        </button>
+        <button class="mrow danger" id="rowExit" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+          إنهاء التطبيق
+        </button>
+      </div>
+      <div class="acct" id="accountBox">
+        <div class="phead">
+          <h3>الحساب</h3>
+          <span class="pstate" id="acctState">…</span>
+          <span class="pdot"></span>
+        </div>
+        <div class="pbody">
+          <div data-show="unknown">جارٍ قراءة حالة الربط…</div>
+          <div data-show="unpaired">
+            اربط هذا الجهاز بحسابك كي تُشحن الأدلّة التي توثّقها إلى مساحتك تلقائيًّا.
+            <button class="cap-btn primary" id="btnPair" type="button"><b>ربط هذا الجهاز</b></button>
+          </div>
+          <div data-show="pairing">
+            أكّد هذا الرمز من حسابك:
+            <div class="pcode" id="pairCode">····-····</div>
+            <button class="cap-btn secondary" id="btnOpenVerify" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>
+              فتح صفحة الموافقة
+            </button>
+            <div class="hint">الصفحة تفتح حسابك على الموقع — والرمز يتجدّد تلقائيًّا إن تأخّرت.</div>
+            <button class="ptext" id="btnCancelPair" type="button">إلغاء</button>
+          </div>
+          <div data-show="paired">
+            <div class="prow">
+              <span class="tcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
+              <span><span class="pmail" id="acctMail">…</span><br />الأدلّة تُشحن إلى مساحتك تلقائيًّا وتُفتح في الويب.</span>
+            </div>
+            <button class="ptext" id="btnForget" type="button">فك الربط</button>
+          </div>
+        </div>
+      </div>
+      <span class="recdot" id="recDot"></span>
+      <svg class="picon picon-mic" viewBox="0 0 24 24" fill="none" stroke="#ff9b93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+      <svg class="picon picon-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5l11 6.5-11 6.5z"/></svg>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

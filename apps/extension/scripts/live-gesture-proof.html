@@ -1,0 +1,82 @@
+<title>Toggle event matrix</title>
+<style>
+  body { font: 14px system-ui; padding: 20px; }
+  fieldset { margin: 10px 0; }
+  .sw { display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+  .hidden-input { position:absolute; width:2px; height:2px; margin:-2px; opacity:0; pointer-events:none; }
+  .pill { display:inline-block; padding:8px 16px; border:1px solid #999; border-radius:20px; cursor:pointer; }
+  #log { white-space:pre; font:12px monospace; background:#f4f4f4; padding:10px; height:300px; overflow:auto; }
+</style>
+
+<fieldset><legend>A native checkbox (bare)</legend>
+  <input type="checkbox" id="a">
+</fieldset>
+
+<fieldset><legend>B label-wrapped checkbox</legend>
+  <label id="bl"><input type="checkbox" id="b"> wrapped</label>
+</fieldset>
+
+<fieldset><legend>C label[for] + checkbox</legend>
+  <input type="checkbox" id="c"><label for="c" id="cl">for-label</label>
+</fieldset>
+
+<fieldset><legend>D claude-style: hidden input + sibling span[role=radio]</legend>
+  <div class="sw" id="dwrap">
+    <input type="radio" name="d" id="d" class="hidden-input">
+    <span role="radio" aria-checked="false" id="dspan" class="pill">Chat</span>
+  </div>
+</fieldset>
+
+<fieldset><legend>E div[role=switch], no input at all</legend>
+  <div role="switch" aria-checked="false" id="e" class="pill">Switch</div>
+</fieldset>
+
+<fieldset><legend>F label-wrapped + visually-hidden input (aside style)</legend>
+  <label id="fl" class="sw"><input type="checkbox" id="f" class="hidden-input"><span class="pill">code</span></label>
+</fieldset>
+
+<div id="log"></div>
+
+<script>
+const log = document.getElementById('log')
+const t0 = Date.now()
+function line(s) { log.textContent += s + '\n'; log.scrollTop = 1e9 }
+
+const INTERACTIVE_ROLES = ['button','link','tab','menuitem','menuitemcheckbox','menuitemradio','option','switch','checkbox','radio','treeitem','combobox','textbox','searchbox','slider','spinbutton']
+const INTERACTIVE_SELECTOR = ['button','a','input','select','textarea','summary','label','[contenteditable="true"]','[contenteditable=""]','[tabindex]:not([tabindex="-1"])','[onclick]','[aria-haspopup]','[draggable="true"]', ...INTERACTIVE_ROLES.map(r=>`[role="${r}"]`)].join(',')
+
+function pickInteractive(el) {
+  const strong = el.closest(INTERACTIVE_SELECTOR)
+  if (strong) return strong
+  let cur = el
+  for (let h=0; cur && h<14; h++, cur = cur.parentElement) {
+    const tag = cur.tagName?.toUpperCase()
+    if (!tag || tag==='HTML' || tag==='BODY') continue
+    if (getComputedStyle(cur).cursor === 'pointer') return cur
+  }
+  return null
+}
+function desc(el) {
+  if (!el) return 'null'
+  const r = el.getBoundingClientRect()
+  return `${el.tagName.toLowerCase()}#${el.id||'-'}${el.getAttribute('role')?'[role='+el.getAttribute('role')+']':''} rect{${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.width)},${Math.round(r.height)}}`
+}
+function rec(type, e) {
+  if (e.target && e.target.id === 'log') return
+  const first = e.composedPath()[0]
+  const el = first instanceof Element ? first : null
+  const picked = el ? pickInteractive(el) : null
+  line(`+${String(Date.now()-t0).padStart(5)}ms ${type.padEnd(12)} target=${desc(el)}  picked=${desc(picked)}`)
+}
+for (const t of ['pointerdown','mousedown','click','change','input']) {
+  document.addEventListener(t, (e)=>rec(t,e), true)
+}
+document.getElementById('dspan').addEventListener('click', () => {
+  const i = document.getElementById('d'); i.checked = true; i.dispatchEvent(new Event('change', {bubbles:true}))
+})
+document.getElementById('e').addEventListener('click', (ev) => {
+  const on = ev.currentTarget.getAttribute('aria-checked') === 'true'
+  ev.currentTarget.setAttribute('aria-checked', on ? 'false':'true')
+})
+line('ready — click each control, one at a time')
+</script>

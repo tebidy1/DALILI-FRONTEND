@@ -1,0 +1,509 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+html { font-size: 15px; }
+body {
+  margin: 0; /* الاتجاه يورَّث من <html dir> الذي يبدّله applyDocLocale (I18N-01) */
+  font-family: 'IBM Plex Sans', 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+  background: var(--dl-surface); color: var(--dl-ink); line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+#root { height: 100%; }
+.wrap { display: flex; flex-direction: column; min-height: 100%; }
+
+/* ——— علامة «إتقان» ————————————————————————————————————————
+   الألف هي الحرف الوحيد الملوّن في الشعار. الطينيّ #8A5447 يعمل على الورق،
+   ويُستبدل بأفتح منه في الليل وإلا هبط تبايُنه تحت 4.5:1 على أرضية داكنة. */
+:root { --itqan-alif: #8A5447; }
+@media (prefers-color-scheme: dark) { :root { --itqan-alif: #C9877A; } }
+
+/* القفل: خطّان رفيعان يبتلعان ما تبقّى من عرض الشعار، فيصير المجموع = عرضه بالضبط.
+   كل المقادير مشتقّة من --lk-w (عرض الشعار) كما في الموقع — نسبة واحدة عند أي مقاس. */
+.itqan-lockup { display: flex; flex-direction: column; align-items: center; color: var(--dl-ink); }
+.itqan-lk-row {
+  width: 100%; display: flex; align-items: center; justify-content: center;
+  /* ١٠٫٥٪ من عرض الشعار — نفس الإيقاع المقيس في الموقع بين الشعار وقفله */
+  gap: calc(var(--lk-w) * .032); margin-top: calc(var(--lk-w) * .105);
+}
+.itqan-lk-rule { flex: 1 1 0; min-width: 0; height: 1px; background: var(--dl-line); }
+.itqan-lk-line {
+  flex: 0 0 auto; direction: ltr; unicode-bidi: isolate; white-space: nowrap;
+  /* النسبة .0425 هي نسبة الموقع، لكن للوحة الجانبية أرضية: تحت ١٠px لا يُقرأ السطر
+     مهما كانت النسبة صحيحة — والخطّان هما اللذان يتنازلان عن العرض، لا الحروف */
+  font-size: max(10px, calc(var(--lk-w) * .0425)); font-weight: 500;
+  letter-spacing: .3em; margin-inline-end: -.3em;   /* يلغي فراغ التراك المعلّق فيتوسّط الحبر */
+}
+.itqan-lk-line b { font-weight: 500; color: var(--itqan-alif); }
+.itqan-lk-line i { font-style: normal; color: var(--dl-ink); margin-inline-start: .55em; }
+
+/* ——— الترويسة ——— */
+.head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; }
+.brand { display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; }
+.brand > svg { color: var(--dl-ink); flex: none; display: block; }
+/* السطر اللاتيني المضغوط تحت الشعار في الترويسة — 7.5px بتراك .18em كي يلائم
+   عرض الشعار المصغّر 65px (نِسب القفل الرسمية .0425/.3em تُقرأ فقط من 110px
+   فأكثر، ولهذا لا يُستعمل القفل كاملًا هنا). محاذاة للوسط تحت حبر الشعار كما في القفل. */
+.brand-latin {
+  direction: ltr; unicode-bidi: isolate; white-space: nowrap; line-height: 1;
+  font-size: 7.5px; font-weight: 500; letter-spacing: .18em; margin-inline-end: -.18em;
+  color: var(--dl-muted);
+}
+.brand-latin b { font-weight: 500; color: var(--itqan-alif); }
+.brand-latin i { font-style: normal; color: var(--dl-muted); margin-inline-start: .55em; }
+.chip { font-size: .72rem; font-weight: 500; border: 1px solid var(--dl-line); background: var(--dl-surface2); border-radius: 999px; padding: 4px 11px; color: var(--dl-muted); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.chip.rec { color: var(--dl-danger); border-color: color-mix(in srgb, var(--dl-danger) 28%, transparent); background: color-mix(in srgb, var(--dl-danger) 7%, transparent); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dl-danger); animation: pulse 1.3s infinite; }
+.dot.paused { background: var(--dl-accent); animation: none; }
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+
+/* زرّا الترويسة (2026-09-10): رمز الحالة ثم الجرس ثم الترس — أيقونيان هادئان بلا إطار،
+   لا يزيدان شيئًا على جدار شاشة البدء */
+.head-side { display: flex; align-items: center; gap: 4px; }
+.head-side .chip { margin-inline-end: 4px; }
+button.head-ic {
+  position: relative; width: 30px; height: 30px; padding: 0; border: none; border-radius: 8px;
+  background: transparent; color: var(--dl-muted); display: inline-flex; align-items: center; justify-content: center;
+  transition: background .14s ease, color .14s ease;
+}
+button.head-ic:hover { filter: none; background: var(--dl-surface2); color: var(--dl-ink); }
+button.head-ic svg { width: 17px; height: 17px; }
+/* نقطة «جديد» فوق الجرس — تُطفأ بفتحه */
+.head-dot { position: absolute; top: 5px; inset-inline-end: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--dl-danger); box-shadow: 0 0 0 2px var(--dl-surface); }
+
+/* ——— اللوحات المنزلقة: الإعدادات / التنبيهات ——— */
+.sheet { position: fixed; inset: 0; z-index: 30; background: var(--dl-surface); display: flex; flex-direction: column; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px 12px 18px; border-bottom: 1px solid var(--dl-line); }
+.sheet-title { margin: 0; font-size: 1rem; font-weight: 600; }
+.sheet-body { flex: 1; overflow-y: auto; padding: 20px 18px 24px; display: flex; flex-direction: column; gap: 22px; }
+.set-sec { display: flex; flex-direction: column; gap: 9px; }
+.set-label { font-size: .76rem; font-weight: 600; color: var(--dl-muted); }
+.set-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: .86rem; color: var(--dl-ink); }
+.set-line bdi { direction: ltr; unicode-bidi: isolate; }
+/* خيار من اثنين — مقطعان في إطار واحد، الفعّال جرافيت صلب كالزر الأساسي */
+.seg { display: flex; border: 1px solid var(--dl-line); border-radius: 10px; overflow: hidden; }
+.seg button { flex: 1; padding: 9px 8px; border: none; border-radius: 0; background: var(--dl-surface); color: var(--dl-ink); font-size: .86rem; }
+.seg button + button { border-inline-start: 1px solid var(--dl-line); }
+.seg button:hover { filter: none; background: var(--dl-surface2); }
+.seg button.on, .seg button.on:hover { background: var(--dl-ink); color: var(--dl-surface); }
+.kbd { direction: ltr; unicode-bidi: isolate; font-family: inherit; font-size: .74rem; border: 1px solid var(--dl-line); background: var(--dl-surface2); border-radius: 6px; padding: 2px 8px; color: var(--dl-ink); white-space: nowrap; }
+button.ghost.danger-text { color: var(--dl-danger); }
+button.ghost.danger-text.armed { border-color: var(--dl-danger); background: color-mix(in srgb, var(--dl-danger) 8%, transparent); }
+/* سجل التنبيهات — الأحدث أعلى، وما كان جديدًا لحظة الفتح يحمل شريطًا جانبيًا */
+.bell-empty { padding: 28px 8px; line-height: 1.7; }
+.bell-list { display: flex; flex-direction: column; }
+.bell-item { display: flex; flex-direction: column; gap: 3px; padding: 11px 10px; border-bottom: 1px solid var(--dl-line); border-inline-start: 3px solid transparent; }
+.bell-item.fresh { border-inline-start-color: var(--dl-danger); background: color-mix(in srgb, var(--dl-danger) 4%, transparent); }
+.bell-meta { display: flex; align-items: center; justify-content: space-between; font-size: .72rem; color: var(--dl-muted); }
+.bell-kind { font-weight: 600; }
+.bell-tx { font-size: .88rem; color: var(--dl-ink); line-height: 1.55; }
+
+/* ——— الجسم (خامل / حفظ / مسودة) ——— */
+/* مساحة تنفّس سخية أعلى الشاشة مثل اسكرايب — البداية تتنفّس لا تزدحم */
+.body { padding: 28px 18px 20px; display: flex; flex-direction: column; gap: 20px; }
+
+/* الزر الأساسي — جرافيت صلب يعكس للأبيض عند المرور (لونان فقط) */
+.cta {
+  font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer; border-radius: 12px;
+  padding: 15px; background: var(--dl-ink); color: var(--dl-surface); border: 1px solid var(--dl-ink);
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  transition: background .15s ease, color .15s ease;
+}
+.cta:hover { filter: none; background: var(--dl-surface); color: var(--dl-ink); }
+.cta:disabled { opacity: .55; cursor: default; }
+.cta svg { width: 19px; height: 19px; }
+/* الزر الثانوي (تعليق صوتي): محدَّد يعكس للجرافيت عند المرور */
+.cta.cta-2 {
+  background: var(--dl-surface); color: var(--dl-ink);
+  border: 1px solid var(--dl-line); font-size: .92rem; font-weight: 500; padding: 13px;
+}
+.cta.cta-2:hover { filter: none; background: var(--dl-ink); color: var(--dl-surface); border-color: var(--dl-ink); }
+
+/* فراغ ثابت مكان سطر الاختصار المحذوف — نفس ارتفاعه تقريبًا كي يتنفس أعلى الشاشة */
+.kbd-gap { height: 22px; }
+
+/* صندوق البحث */
+.search {
+  display: flex; align-items: center; gap: 9px; padding: 0 13px;
+  background: var(--dl-surface2); border: 1px solid var(--dl-line); border-radius: 11px;
+  transition: border-color .14s ease;
+}
+.search:focus-within { border-color: var(--dl-brand); }
+.search svg { width: 16px; height: 16px; color: var(--dl-muted); flex: none; }
+.search input {
+  flex: 1; border: none; background: transparent; font: inherit; font-size: .9rem; color: var(--dl-ink);
+  padding: 11px 0; outline: none;
+}
+.search input::placeholder { color: var(--dl-muted); }
+
+/* الأدلة الأخيرة — الحاوية هنا (طلب المالك 2026-09-09): إطار رفيع وخلفية مسندة خفيفة،
+   والمطابقة للشاشة أعلاها صفوف مكشوفة على الحائط بلا حاوية — بداية أهدأ */
+.recent {
+  display: flex; flex-direction: column; padding: 10px 12px;
+  border: 1px solid var(--dl-line); border-radius: 12px;
+  background: color-mix(in srgb, var(--dl-brand) 4%, transparent);
+}
+.recent-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .76rem; font-weight: 600; color: var(--dl-ink); padding: 2px 2px 6px;
+}
+.recent-head a { font-size: .74rem; font-weight: 500; color: var(--dl-muted); }
+.small { font-size: .8rem; }
+.doc {
+  display: flex; align-items: center; gap: 12px; padding: 13px 4px;
+  text-decoration: none; color: inherit; font-weight: 400;
+  transition: background .14s ease;
+}
+.recent .doc-row + .doc-row, .discover .doc-row + .doc-row { border-top: 1px solid var(--dl-line); }
+.doc:hover { background: var(--dl-surface2); text-decoration: none; }
+.doc-ic {
+  width: 30px; height: 30px; border-radius: 9px; flex: none; display: grid; place-items: center;
+  background: var(--dl-surface2); border: 1px solid var(--dl-line); color: var(--dl-muted);
+}
+.doc-ic svg { width: 15px; height: 15px; }
+.doc-tx { flex: 1; min-width: 0; font-size: .88rem; line-height: 1.4; }
+.doc-tx bdi { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dl-ink); }
+.doc-tx small { display: block; color: var(--dl-muted); font-size: .74rem; margin-top: 3px; }
+
+/* PNL-01: زر ↵ «اعرضه هنا» — يظهر بالمرور وبالتركيز، ودائمًا على اللمس */
+.doc-row { position: relative; }
+.doc-row .doc { padding-inline-end: 44px; }
+.doc-row:hover .doc { background: var(--dl-surface2); }
+.doc-enter {
+  position: absolute; inset-inline-end: 6px; top: 50%; margin-top: -15px;
+  width: 30px; height: 30px; padding: 0; display: grid; place-items: center;
+  border-radius: 8px; background: var(--dl-surface); color: var(--dl-ink); border: 1px solid var(--dl-line);
+  opacity: 0; transition: opacity .12s ease, background .12s ease;
+}
+.doc-enter svg { width: 15px; height: 15px; }
+.doc-enter:hover { filter: none; background: var(--dl-brand); color: #fff; border-color: var(--dl-brand); }
+.doc-row:hover .doc-enter, .doc-row:focus-within .doc-enter { opacity: 1; }
+@media (hover: none) { .doc-enter { opacity: 1; } }
+
+/* حالة عدم الدخول */
+.signin { display: flex; flex-direction: column; gap: 11px; }
+/* أول لقاء بالعلامة: القفل يتنفّس، ثم العبارة بحروفها الأربعة بارزةً بالحبر */
+.signin-brand { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 26px 0 18px; }
+.signin-phrase { margin: 0; text-align: center; font-size: .84rem; line-height: 1.9; color: var(--dl-muted); font-weight: 500; }
+.signin-phrase b { font-weight: 700; color: var(--dl-ink); box-shadow: 0 2px 0 var(--dl-muted); }
+button {
+  font: inherit; font-weight: 500; cursor: pointer;
+  background: var(--dl-brand); color: #fff; border: 1px solid var(--dl-brand);
+  border-radius: 10px; padding: 10px 16px;
+}
+button:hover { filter: brightness(1.04); }
+button:disabled { opacity: .5; cursor: default; }
+button.ghost { background: transparent; color: var(--dl-ink); border-color: var(--dl-line); }
+button.ghost:hover { filter: none; background: var(--dl-surface2); }
+button.danger { background: transparent; color: var(--dl-danger); border-color: color-mix(in srgb, var(--dl-danger) 40%, var(--dl-line)); }
+button.danger:hover { filter: none; background: color-mix(in srgb, var(--dl-danger) 8%, transparent); }
+/* المرحلة ٢: «حذف المسودة» المسلَّح — نفس نبض تأكيد الإلغاء */
+button.danger.armed { background: var(--dl-danger); color: #fff; animation: dl-arm-pulse 1.2s ease-in-out infinite; }
+.muted { color: var(--dl-muted); font-size: .84rem; }
+.center { text-align: center; }
+.row { display: flex; gap: 9px; }
+.row > * { flex: 1; }
+.err { background: color-mix(in srgb, var(--dl-danger) 11%, transparent); color: var(--dl-danger); border-radius: 10px; padding: 9px 12px; font-size: .84rem; }
+.ok { background: color-mix(in srgb, var(--dl-finish) 13%, transparent); color: var(--dl-finish); border-radius: 10px; padding: 9px 12px; font-size: .84rem; }
+a { color: var(--dl-brand); text-decoration: none; font-weight: 500; }
+a:hover { text-decoration: underline; }
+.spin { width: 42px; height: 42px; margin: 6px auto; border: 4px solid var(--dl-line); border-top-color: var(--dl-brand); border-radius: 50%; animation: sp 1s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg) } }
+
+/* ——— الالتقاط الحيّ ——— */
+.countline { padding: 14px 18px 6px; font-size: .84rem; color: var(--dl-muted); }
+.countline b { color: var(--dl-ink); font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; margin-inline-end: 3px; }
+.notice { margin: 0 18px 6px; font-size: .8rem; color: var(--dl-accent); }
+
+/* AUTH-LIVE: عبارة وصول الدخول من الويب — ظهور هادئ من الأعلى يوازي لحظة النجاح ثم تفتك */
+.auth-hello {
+  color: var(--dl-brand);
+  font-weight: 600;
+  animation: auth-hello-in .45s cubic-bezier(.2, .8, .3, 1) both;
+}
+@keyframes auth-hello-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-hello { animation: none; }
+}
+
+/* SRCH-04: شارة الاكتشاف — بلا حاوية (طلب المالك 2026-09-09): صفوف على الحائط بفواصل
+   رفيعة، وترويستها بأسلوب ترويسة «الأدلة الأخيرة» */
+.discover { display: flex; flex-direction: column; }
+.discover-head { display: flex; align-items: center; gap: 7px; font-size: .76rem; font-weight: 600; color: var(--dl-ink); margin-bottom: 5px; padding: 2px 2px 4px; }
+.discover-badge { background: color-mix(in srgb, var(--dl-brand) 13%, transparent); color: var(--dl-brand); font-weight: 600; border-radius: 999px; padding: 2px 10px; font-size: .72rem; }
+.discover .doc { padding: 10px 4px; }
+
+/* CAP-19: قائمة القدرات المعلنة — مطويّة هادئة */
+.caps { border: 1px solid var(--dl-line); border-radius: 12px; padding: 10px 13px; font-size: .8rem; }
+.caps summary { cursor: pointer; color: var(--dl-muted); font-weight: 600; font-size: .8rem; }
+.caps ul { list-style: none; margin: 9px 0 2px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.caps li { color: var(--dl-ink); line-height: 1.45; }
+.caps li span { font-weight: 700; margin-inline-end: 4px; }
+.caps li.cap-ok span { color: var(--dl-finish); }
+.caps li.cap-no { color: var(--dl-muted); }
+.caps li.cap-no span { color: var(--dl-muted); }
+.caps .caps-note { margin: 7px 0 0; color: var(--dl-muted); font-size: .74rem; line-height: 1.5; }
+
+/* قائمة الخطوات — بطاقة لكل خطوة؛ الأحدث تعرض لقطتها، والسابقة عنوان فقط يُكشف بالمثلث */
+.steps { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.empty { color: var(--dl-muted); font-size: .84rem; text-align: center; padding: 28px 16px; line-height: 1.6; }
+.step { display: flex; flex-direction: column; gap: 9px; padding: 10px; border-radius: 12px; border: 1px solid transparent; transition: background .14s ease; }
+.step:hover { background: var(--dl-surface2); }
+.step.fresh { background: var(--dl-surface2); border-color: var(--dl-line); }
+/* البطاقة الأحدث تنزلق صاعدة من الأسفل لتدخل أمام السابقة — إيحاء وصول لقطة جديدة */
+.step.fresh { animation: stepRise .3s cubic-bezier(.22,.61,.36,1); }
+@keyframes stepRise {
+  from { opacity: 0; transform: translateY(18px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.step-row { display: flex; align-items: center; gap: 10px; }
+.step .n { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--dl-line); color: var(--dl-muted); display: grid; place-items: center; font-size: .72rem; font-weight: 600; flex: none; font-family: 'IBM Plex Mono', monospace; }
+.step.fresh .n { background: var(--dl-ink); border-color: var(--dl-ink); color: var(--dl-surface); }
+.step .tx { flex: 0 1 auto; min-width: 0; line-height: 1.4; }
+/* عناوين أكبر قليلًا — أوضح للقراءة كما في اسكرايب */
+.step .tx .ttl { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dl-ink); font-size: .95rem; font-weight: 500; }
+.step .tx small { display: block; color: var(--dl-muted); font-size: .74rem; margin-top: 3px; }
+.step.sensitive .tx small { color: var(--dl-danger); }
+/* المثلث: بعد آخر كلمة مباشرة — المرحلة ٤: يبقى مرئيًا خفيفًا دائمًا، كاملًا بالمرور أو الكشف */
+.step .reveal { opacity: 0.35; flex: none; width: 26px; height: 26px; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--dl-muted); display: grid; place-items: center; padding: 0; transition: opacity .14s ease, color .14s ease, background .14s ease, transform .16s ease; }
+.step:hover .reveal, .step.expanded .reveal, .reveal:focus-visible { opacity: 1; }
+.step .reveal:hover { filter: none; background: color-mix(in srgb, var(--dl-ink) 8%, transparent); color: var(--dl-ink); }
+.step .reveal.open { transform: rotate(180deg); }
+.step .reveal svg { width: 14px; height: 14px; }
+/* السلة: في آخر مساحة السطر — ظاهرة على الأحدث، وتظهر بالمرور على السابقة */
+.step .del { opacity: 0; margin-inline-start: auto; flex: none; width: 28px; height: 28px; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--dl-muted); display: grid; place-items: center; padding: 0; transition: opacity .14s, color .14s, background .14s; }
+.step.fresh .del, .step:hover .del { opacity: 1; }
+.step .del:hover { background: color-mix(in srgb, var(--dl-danger) 11%, transparent); color: var(--dl-danger); filter: none; }
+.step .del svg { width: 15px; height: 15px; }
+/* المرحلة ٢: الحذف خطوتان — الزر المسلَّح أحمر نابض وتسميته «اضغط مجددًا للتأكيد» */
+.step .del.armed { opacity: 1; background: var(--dl-danger); color: #fff; animation: dl-arm-pulse 1.2s ease-in-out infinite; }
+/* المرحلة ٤: رقم العدّاد داخل الزر المسلَّح — الأربع ثوانٍ تُرى */
+.step .del .arm-n { font-size: .72rem; font-weight: 700; margin-inline-start: 2px; font-style: normal; }
+/* لقطة الخطوة داخل البطاقة */
+.step-shot { position: relative; border: 1px solid var(--dl-line); border-radius: 10px; overflow: hidden; background: var(--dl-surface); }
+/* بلا قصّ (object-fit) — تُعرض اللقطة كاملةً بارتفاع تلقائي كي يظهر الحقل المحدَّد
+   دائمًا وينطبق الإطار الأحمر عليه بدقّة. لقطات النافذة أفقية فيبقى الارتفاع مقاربًا. */
+.step-shot img { display: block; width: 100%; height: auto; }
+/* إطار الهدف الأحمر — خط رفيع احترافي بلا توهّج (طلب المالك 2026-09-01) */
+.step-shot .shot-mark {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #e11d48;
+  border-radius: 3px;
+  pointer-events: none;
+}
+/* التكبير التكيّفي (2026-09-11): نافذة بنسبة ثابتة تقصّ اللقطة العريضة، وطبقة
+   مكبّرة تضمّ الصورة والإطار معًا فيظهر العنصر المحدَّد كبيرًا وسط البطاقة لا مضغوطًا.
+   القصّ يقع على .step-shot الأساس (overflow:hidden). */
+.step-shot.zoom { aspect-ratio: 4 / 3; }
+.step-shot.zoom .shot-zoom { position: absolute; top: 0; left: 0; width: 100%; will-change: transform; }
+/* الطبقة تُحرّك ككل — لا نقطع رسم الصورة على حواف النافذة بزوايا مستديرة داخلية */
+.step-shot.zoom .shot-zoom img { border-radius: 0; }
+
+/* PNL-01: طبقة اللقطة موحّدة — نسبية خارج التكبير (تحتضن الإطار والطمس)، مطلقة داخله (القاعدة أعلاه) */
+.step-shot .shot-zoom { position: relative; }
+/* القصّ: الطبقة تأخذ نسبة القصّ والصورة مُزاحة فيزيائيًا (left/top) — فخّ RTL موثّق */
+.step-shot .shot-zoom.cropped { overflow: hidden; }
+.step-shot .shot-zoom.cropped img { position: absolute; max-width: none; height: auto; }
+/* الطمس معتم إلزاميًا: الملف المخزَّن غير مطموس — لا نعتمد backdrop-filter وحده */
+.step-shot .shot-blur {
+  position: absolute; border-radius: 3px; pointer-events: none;
+  background: repeating-linear-gradient(45deg, var(--dl-surface2) 0 6px, var(--dl-line) 6px 12px);
+}
+.shot-toggle {
+  position: absolute; bottom: 8px; inset-inline-start: 8px;
+  padding: 4px 10px; font-size: .72rem; border-radius: 999px;
+  background: color-mix(in srgb, var(--dl-surface) 92%, transparent); color: var(--dl-ink);
+  border: 1px solid var(--dl-line);
+}
+.shot-toggle:hover { filter: none; background: var(--dl-surface); }
+
+/* العنصر النائب «يرسم التحديد…»: يملأ نفس نافذة التكبير كي لا يقفز التخطيط عند
+   وصول اللقطة، بوميض قطري خافت يوحي بأن التطبيق يرسم التحديد ويفكّر. */
+.step-shot.pending {
+  aspect-ratio: 4 / 3;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--dl-surface2, var(--dl-surface));
+}
+.step-shot.pending .pending-sheen {
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg,
+    transparent 30%,
+    color-mix(in srgb, var(--dl-ink) 8%, transparent) 50%,
+    transparent 70%);
+  background-size: 220% 100%;
+  animation: dl-sheen 1.1s ease-in-out infinite;
+}
+.step-shot.pending .pending-cap {
+  position: relative; z-index: 1;
+  color: var(--dl-muted, var(--dl-ink)); font-size: .78rem; font-weight: 600;
+  opacity: .78; animation: dl-cap-pulse 1.1s ease-in-out infinite;
+}
+@keyframes dl-sheen { from { background-position: 140% 0; } to { background-position: -40% 0; } }
+@keyframes dl-cap-pulse { 50% { opacity: .4; } }
+
+/* ——— شريط التحكم السفلي الثابت (أسلوب اسكرايب) ——— */
+.capbar {
+  position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--dl-line); background: var(--dl-surface);
+}
+.capbar-tools { display: flex; gap: 8px; }
+.capbar-tools .tool {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 40px; border-radius: 10px; border: 1px solid var(--dl-line);
+  background: var(--dl-surface); color: var(--dl-ink); font: inherit; font-size: .82rem; font-weight: 600;
+  cursor: pointer; padding: 0; transition: background .14s ease, border-color .14s ease, color .14s ease;
+}
+.capbar-tools .tool:hover { filter: none; background: var(--dl-surface2); }
+.capbar-tools .tool svg { width: 16px; height: 16px; }
+.capbar-tools .tool.on {
+  color: var(--dl-surface); border-color: var(--dl-ink); background: var(--dl-ink);
+}
+.capbar-tools .tool.danger { color: var(--dl-danger); }
+.capbar-tools .tool.danger:hover { background: color-mix(in srgb, var(--dl-danger) 8%, transparent); border-color: color-mix(in srgb, var(--dl-danger) 40%, var(--dl-line)); }
+/* CAP-02: حالة التسليح — «انقر مجددًا لتأكيد الإلغاء» بصريًا واضحة لا تُخطئها العين */
+.capbar-tools .tool.armed {
+  color: var(--dl-surface); background: var(--dl-danger); border-color: var(--dl-danger);
+  animation: dl-arm-pulse 1.2s ease-in-out infinite;
+}
+@keyframes dl-arm-pulse { 50% { filter: brightness(1.18); } }
+.capbar-tools .tool:disabled { opacity: .45; cursor: default; }
+.cap-finish {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; height: 46px; border-radius: 12px; border: 1px solid var(--dl-ink); cursor: pointer;
+  font: inherit; font-size: .98rem; font-weight: 600;
+  color: var(--dl-surface); background: var(--dl-ink);
+  transition: background .15s ease, color .15s ease;
+}
+.cap-finish:hover { filter: none; background: var(--dl-surface); color: var(--dl-ink); }
+.cap-finish svg { width: 19px; height: 19px; }
+
+/* ——— VOX-09 «ميك الخطوة»: زر الميك + شريط التسجيل الحي + شارة 🎙 ——— */
+.capbar-tools .tool.mic-tool.live {
+  color: var(--dl-surface); background: var(--dl-danger); border-color: var(--dl-danger);
+  animation: dl-arm-pulse 1.2s ease-in-out infinite;
+}
+.memo-timer { font-variant-numeric: tabular-nums; font-weight: 700; }
+/* إطار هادئ ثابت حول معاينة الخطوة قيد التسجيل — الحركة للشريط الموجي وحده */
+.memo-live .step-shot { outline: 2px solid color-mix(in srgb, var(--dl-danger) 55%, transparent); outline-offset: 2px; }
+/* شريط التسجيل الحي (2026-09-14): موجة أفقية متحركة أعلى البطاقة تسمّي النشاط
+   «تسجيل صوت» بدل مجرد احمرار. ٣٦ عمودًا بإيقاف واحد وأطوار مزاحة (تأخير سالب
+   لكل عمود) ترسم موجة سفر أفقيًا — transform فقط بلا rAF، وشريط مضاف ١٨px
+   فلا يُغطّى أي محتوى من البطاقة. */
+.memo-wave {
+  display: flex; align-items: center; gap: 8px;
+  height: 18px; margin: -10px -10px 0; padding: 0 10px;
+  border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--dl-danger) 7%, var(--dl-surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--dl-danger) 18%, transparent);
+}
+.memo-wave-label { flex: none; color: var(--dl-danger); font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.memo-wave-bars { flex: 1; display: flex; align-items: center; gap: 2px; height: 100%; overflow: hidden; }
+.memo-wave-bars i {
+  flex: 1 1 auto; min-width: 1.5px; max-width: 3px; height: 100%;
+  border-radius: 2px; background: var(--dl-danger); opacity: .75;
+  animation: dl-memo-wave 1.15s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -85ms);
+}
+@keyframes dl-memo-wave { 0%, 100% { transform: scaleY(.22); } 50% { transform: scaleY(1); } }
+/* شارة 🎙 بالمدة على بطاقة الخطوة — قابلة للحذف قبل النشر */
+.voice-badge {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 4px;
+  padding: 1px 6px; border-radius: 999px; border: 1px solid var(--dl-line);
+  background: var(--dl-surface2); color: var(--dl-muted); font-size: .72rem; font-weight: 600;
+}
+.voice-badge .voice-del {
+  border: 0; background: none; color: var(--dl-muted); cursor: pointer; font-size: .72rem;
+  padding: 0 2px; line-height: 1; border-radius: 4px;
+}
+.voice-badge .voice-del:hover { color: var(--dl-danger); }
+.voice-badge .voice-del.armed { background: var(--dl-danger); color: #fff; animation: dl-arm-pulse 1.2s ease-in-out infinite; }
+
+/* المرحلة ٣: سطر الاسم الاختياري قبل النشر — سطر واحد لا نموذج */
+.ask-title { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--dl-line); border-radius: 10px; background: var(--dl-surface); }
+.ask-title label { font-size: .78rem; font-weight: 600; display: grid; gap: 6px; }
+.ask-title input { width: 100%; }
+
+/* المرحلة ٣: بطاقة «دليلك جاهز» — النجاح يُرى */
+.success-card { display: grid; gap: 8px; padding: 14px; border: 1px solid color-mix(in srgb, #16a34a 35%, var(--dl-line)); border-radius: 12px; background: color-mix(in srgb, #16a34a 7%, var(--dl-surface)); }
+.success-card .success-title { font-weight: 800; font-size: 1rem; color: #16a34a; }
+
+/* المرحلة ٣: فعل الجرس — كل تنبيه له حلّ بنقرة */
+.bell-act { margin-top: 6px; }
+.bell-act a, .bell-act button { font-size: .78rem; font-weight: 600; color: var(--dl-accent, var(--dl-ink)); background: none; border: none; padding: 0; cursor: pointer; }
+.bell-act a:hover, .bell-act button:hover { text-decoration: underline; }
+
+/* ——— PNL-01: قارئ الدليل داخل اللوحة ——— */
+.reader { display: flex; flex-direction: column; min-height: 0; }
+.reader-bar {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--dl-bg, var(--dl-surface)); border-bottom: 1px solid var(--dl-line);
+  padding: 10px 14px;
+}
+.reader-bar-row { display: flex; align-items: center; gap: 8px; }
+.reader-bar-gap { flex: 1; }
+.reader-back {
+  width: 34px; height: 34px; padding: 0; display: grid; place-items: center;
+  background: transparent; color: var(--dl-ink); border: 1px solid transparent; border-radius: 9px;
+}
+.reader-back:hover { filter: none; background: var(--dl-surface2); }
+.reader-back svg, .reader-train svg, .reader-copy svg { width: 16px; height: 16px; }
+.reader-train {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: .84rem;
+  background: transparent; color: var(--dl-ink); border-color: transparent;
+}
+.reader-train:hover { filter: none; background: var(--dl-surface2); }
+.reader-copy {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; font-size: .84rem; font-weight: 600;
+  background: var(--dl-ink); border-color: var(--dl-ink); color: var(--dl-surface);
+}
+.reader-msg { margin-top: 8px; font-size: .78rem; color: var(--dl-accent); }
+
+.reader-body { padding: 16px 16px 28px; display: flex; flex-direction: column; gap: 14px; }
+.reader-head { display: flex; flex-direction: column; gap: 8px; }
+.reader-title { margin: 0; font-size: 1.15rem; line-height: 1.45; color: var(--dl-ink); }
+.reader-desc { margin: 0; font-size: .86rem; line-height: 1.7; color: var(--dl-ink); }
+.reader-desc.clamped { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.reader-more { align-self: flex-start; padding: 0; background: none; border: 0; color: var(--dl-ink); font-size: .8rem; font-weight: 600; }
+.reader-more:hover { filter: none; text-decoration: underline; }
+.reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: .78rem; color: var(--dl-muted); }
+.reader-web { padding: 0; background: none; border: 0; color: var(--dl-brand); font-size: .78rem; }
+.reader-web:hover { filter: none; text-decoration: underline; }
+
+.reader-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.rcard {
+  background: var(--dl-surface); border: 1px solid var(--dl-line); border-radius: 14px;
+  padding: 12px; display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--dl-ink) 6%, transparent);
+}
+.rcard-head { display: flex; align-items: flex-start; gap: 10px; }
+.rcard-n {
+  flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--dl-brand) 12%, transparent); color: var(--dl-brand);
+  font-size: .8rem; font-weight: 700;
+}
+.rcard-title { font-size: .9rem; line-height: 1.6; color: var(--dl-ink); padding-top: 2px; }
+.rcard-note { margin: 0; font-size: .82rem; line-height: 1.7; color: var(--dl-muted); white-space: pre-line; }
+/* القارئ: نافذة أعرض من بطاقة الالتقاط — سياق كافٍ للمقارنة مع الصفحة */
+.rcard .step-shot.zoom { aspect-ratio: 16 / 10; }
+.reader-section { margin: 6px 2px 0; font-size: .92rem; color: var(--dl-ink); }
+.reader-callout { border-radius: 10px; padding: 9px 12px; font-size: .84rem; line-height: 1.6; }
+.reader-callout.tip { background: color-mix(in srgb, var(--dl-brand) 9%, transparent); color: var(--dl-ink); }
+.reader-callout.alert { background: color-mix(in srgb, var(--dl-accent) 12%, transparent); color: var(--dl-ink); }
+.reader-text { margin: 0; font-size: .86rem; line-height: 1.7; }
+.reader-divider { border: 0; border-top: 1px solid var(--dl-line); margin: 4px 0; }
+.reader-external { border: 1px dashed var(--dl-line); border-radius: 10px; padding: 9px 12px; }
+
+.reader-skeleton { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.rcard.sk .sk-line { display: block; height: 12px; width: 70%; border-radius: 6px; background: var(--dl-surface2); }
+.rcard.sk .sk-shot { display: block; aspect-ratio: 16 / 10; border-radius: 10px; background: var(--dl-surface2); animation: dl-sk 1.2s ease-in-out infinite; }
+@keyframes dl-sk { 50% { opacity: .55 } }
+
+@media (prefers-reduced-motion: reduce) { .spin, .dot, .step.fresh, .tool.armed, .tool.mic-tool.live, .memo-wave-bars i, .del.armed, .voice-del.armed, button.danger.armed, .step-shot.pending .pending-sheen, .step-shot.pending .pending-cap, .rcard.sk .sk-shot { animation: none } .step, .del, .doc, .doc-enter, .tool { transition: none } }
+/* بلا حركة: الموجة تتجمد نمطًا موجيًا ثابتًا (طويل/قصير/متوسط) لا خطًّا مسطحًا */
+@media (prefers-reduced-motion: reduce) {
+  .memo-wave-bars i:nth-child(3n) { height: 72%; }
+  .memo-wave-bars i:nth-child(3n+1) { height: 40%; }
+}

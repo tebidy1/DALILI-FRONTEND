@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#F6F5F2; --ink:#2B2A26; --muted:#625F58; --clay:#8A5447; --sage:#405B50;
+    --ease-settle:cubic-bezier(.22,1,.36,1); --ease-draw:cubic-bezier(.45,0,.25,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1920px;height:1080px;overflow:hidden;background:var(--ground)}
+  .stage{width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;
+    font-family:'IBM Plex Sans Arabic',sans-serif}
+  .latin{font-family:'IBM Plex Sans Arabic',sans-serif;font-weight:600;letter-spacing:.34em;font-size:34px;color:var(--sage);
+    opacity:0;transform:translateY(10px);animation:fin 700ms var(--ease-settle) 200ms both}
+  .mark{display:block;width:560px;height:264px;overflow:visible;color:var(--ink)}
+  .mark .ink{fill:none;stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;
+    stroke-dasharray:1 1;animation:ink-draw var(--dur,600ms) var(--ease-draw) var(--del,350ms) both}
+  .mark .detail{stroke-width:5}.mark .dot{stroke-width:8}
+  .mark .alif{stroke:var(--clay);stroke-width:7}
+  @keyframes ink-draw{from{stroke-dashoffset:1;opacity:0}4%{opacity:1}to{stroke-dashoffset:0;opacity:1}}
+  .tagline{font-family:'Amiri',serif;font-weight:700;font-size:46px;color:var(--ink);text-align:center;line-height:1.6;max-width:1200px;
+    opacity:0;transform:translateY(12px);animation:fin 900ms var(--ease-settle) 2600ms both}
+  .sub{font-size:22px;color:var(--muted);letter-spacing:.02em;opacity:0;animation:fin 900ms var(--ease-settle) 3100ms both}
+  @keyframes fin{to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <span class="latin">ITQAN</span>
+  <svg class="mark" viewBox="100 35 520 245" role="img" aria-label="إتقان">
+    <path class="ink" pathLength="1" style="--del:350ms;--dur:600ms" d="M 574 66 C 570 102, 575 144, 572 185"/>
+    <path class="ink detail" pathLength="1" style="--del:870ms;--dur:240ms" d="M 579 207 C 567 199, 558 208, 565 216 L 578 216 L 560 226"/>
+    <path class="ink" pathLength="1" style="--del:830ms;--dur:640ms" d="M 540 148 C 546 169, 531 185, 508 185 L 449 185"/>
+    <path class="ink dot" pathLength="1" style="--del:1300ms;--dur:160ms" d="M 519 124 L 518 126"/>
+    <path class="ink dot" pathLength="1" style="--del:1380ms;--dur:160ms" d="M 502 124 L 501 126"/>
+    <path class="ink" pathLength="1" style="--del:1340ms;--dur:490ms" d="M 449 185 C 466 175, 466 145, 449 143 C 430 140, 428 168, 445 174 C 449 176, 453 177, 457 176"/>
+    <path class="ink" pathLength="1" style="--del:1690ms;--dur:320ms" d="M 449 185 C 428 186, 400 186, 376 184"/>
+    <path class="ink dot" pathLength="1" style="--del:1750ms;--dur:160ms" d="M 452 116 L 451 118"/>
+    <path class="ink dot" pathLength="1" style="--del:1830ms;--dur:160ms" d="M 435 116 L 434 118"/>
+    <!-- الألف الخامسة (المعيار) بالطيني -->
+    <path class="ink alif" pathLength="1" style="--del:1810ms;--dur:430ms" d="M 373 66 C 371 103, 374 142, 376 184"/>
+    <path class="ink" pathLength="1" style="--del:2010ms;--dur:540ms" d="M 312 148 C 319 175, 317 205, 295 220 C 270 239, 222 239, 203 215 C 191 200, 192 183, 198 168"/>
+    <path class="ink dot" pathLength="1" style="--del:2360ms;--dur:190ms" d="M 257 151 L 256 153"/>
+  </svg>
+  <p class="tagline">نُعيد تعريف المعرفة المؤسسية التشاركية<br>بما يتناسب مع ثقافتنا</p>
+  <span class="sub">إتقان · Active SOP</span>
+</div>
+</body>
+</html>
