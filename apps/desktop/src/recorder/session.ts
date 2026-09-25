@@ -29,6 +29,7 @@ import {
   type ScreenshotMeta,
   type TargetMark,
 } from '@dalili/core'
+import { t } from '../i18n'
 
 // ───────────────── العقد: توأم TS لردّ frame_pick (events.rs §٣.٣) ─────────────────
 
@@ -133,11 +134,11 @@ function asFacts(p: unknown): DesktopFacts | { seq: number; error: string } | nu
   return null
 }
 
-/** أسباب الغياب بالعربيّ — القيم من عقد ٣ب، والصياغة قرار ٣ج-٢ (تُراجَع في ٣و) */
-const MISSING_REASONS: Record<string, string> = {
-  protected: 'نافذة محميّة',
-  elevated: 'نافذة مرفوعة الصلاحيّة',
-  no_frame: 'تعذّر الالتقاط',
+/** أسباب الغياب بوعي اللغة — القيم من عقد ٣ب، والصياغة قرار ٣ج-٢ (I18N-01: عبر t()) */
+function missingReason(kind: string): string {
+  if (kind === 'protected') return t('dt.winProtected')
+  if (kind === 'elevated') return t('dt.winElevated')
+  return t('dt.captureFail')
 }
 
 // ───────────────── الجلسة ─────────────────
@@ -317,7 +318,7 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
       const pick = await bridge.invoke('frame_pick', { seq: click.seq, which })
       let screenshot: RawStep['screenshot']
       if ('missing' in pick) {
-        screenshot = { missing: true, reason: MISSING_REASONS[pick.missing] ?? 'تعذّر الالتقاط' }
+        screenshot = { missing: true, reason: missingReason(pick.missing) }
         } else {
           const meta = buildScreenshot(pick, facts, click)
         // حرق الحسّاس على الجهاز (٣ج-٤) — قبل أيّ تسليم لاحق للطابور (٣د):
@@ -333,7 +334,7 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
             console.error('[session] frameBlur:', e)
             screenshot = {
               missing: true,
-              reason: 'تعذّر حرق الحقل الحسّاس — أُسقِطت اللقطة حمايةً للسرّ',
+              reason: t('dt.burnFail'),
             }
           }
         } else {

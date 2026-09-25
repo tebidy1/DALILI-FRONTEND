@@ -138,6 +138,30 @@
 .is-dark .inst-card { background: #2B2A26; color: var(--paper-on-dark); }
 
 /* ============================================================
+   مبدّل اللغة AR/EN — مكوّن مشترك بين institutional.html
+   وinstitutional-en.html (يقف بجوار زر الحجز في الترويسة)
+   ============================================================ */
+.lang-switch {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; line-height: 1;
+  color: var(--muted); text-decoration: none;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 8px 14px; white-space: nowrap;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+.lang-switch:hover { color: var(--ink); border-color: var(--ink); background: var(--surface); }
+.lang-switch:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+.header-action .lang-switch { margin-inline-end: 14px; }
+/* داخل قائمة الجوال تتغلب قواعد القائمة على .lang-switch — نرفع النوعية */
+.mobile-menu nav a.lang-switch {
+  display: inline-flex; margin-top: 12px; width: fit-content;
+  color: var(--muted); font-size: 13px; font-weight: 600;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 8px 14px;
+}
+.mobile-menu nav a.lang-switch:hover { color: var(--ink); border-color: var(--ink); background: var(--surface); }
+
+/* ============================================================
    القسم ١ — بطاقة الدليل (الصوت يصير نصًا / تغيّر الشخص / الوسام)
    ============================================================ */
 .ig-head { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }

@@ -181,6 +181,8 @@ export const ar = {
   'ext.copyFail': 'تعذّر النسخ إلى الحافظة — انسخ الرابط من صفحة الدليل',
   'ext.publishFirst': 'الدليل خاص — انشره من المحرر (فُتح في تبويب) ثم انسخ الرابط',
   'ext.staleCopy': 'نسخة محفوظة — تعذّر التحديث من الخادم',
+  // TRNS-01: شارة الترجمة الآلية في القارئ
+  'ext.readerAutoBadge': 'مترجم آليًا',
   'ext.guideNotFound': 'الدليل غير موجود — ربما حُذف أو نُقل إلى السلة',
   'ext.sessionExpired': 'انتهت جلستك — سجّل الدخول من جديد لعرض الدليل',
   'ext.guideLoadFail': 'تعذّر تحميل الدليل — أعد المحاولة',
@@ -463,6 +465,8 @@ export const en: Record<TKey, TValue> = {
   'ext.copyFail': 'Could not copy to the clipboard — copy the link from the guide page',
   'ext.publishFirst': 'The guide is private — publish it from the editor (opened in a tab), then copy the link',
   'ext.staleCopy': 'A saved copy — could not refresh from the server',
+  // TRNS-01: auto-translation badge in the reader
+  'ext.readerAutoBadge': 'Auto-translated',
   'ext.guideNotFound': 'The guide was not found — it may be deleted or moved to the Trash',
   'ext.sessionExpired': 'Your session expired — sign in again to view the guide',
   'ext.guideLoadFail': 'Could not load the guide — try again',

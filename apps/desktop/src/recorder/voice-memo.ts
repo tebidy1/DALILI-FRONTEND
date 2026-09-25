@@ -1,5 +1,6 @@
 import type { Guide } from '@dalili/core'
-import { SILENT_MIC_ERROR_AR, type MemoStopAck, type MemoStartAck } from './media-recorder'
+import { silentMicError, type MemoStopAck, type MemoStartAck } from './media-recorder'
+import { t } from '../i18n'
 
 /**
  * VOX-09 «ميك الخطوة» منقولًا من الإضافة — آلة حالة التعليق الصوتي في الودجة:
@@ -59,9 +60,9 @@ export function makeVoiceMemo(host: MemoHost) {
   }
 
   async function startMemo(stepIndex: number): Promise<MemoStartResult> {
-    if (active) return { ok: false, errorAr: 'تسجيل تعليق جارٍ بالفعل — أوقفه أولًا' }
+    if (active) return { ok: false, errorAr: t('dt.memoAlready') }
     // التعليق يدمج مع آخر خطوة مبنية — بلا خطوة لا معنى للتعليق (صدق قبل أي رسالة)
-    if (stepIndex < 0) return { ok: false, errorAr: 'التقط خطوة أولًا ثم علّق عليها بصوتك' }
+    if (stepIndex < 0) return { ok: false, errorAr: t('dt.needStep') }
     const memoId = crypto.randomUUID().replace(/-/g, '').slice(0, 10)
     const ack = await host.recorder.start()
     if (!ack.ok) return { ok: false, errorAr: ack.errorAr }
@@ -74,16 +75,16 @@ export function makeVoiceMemo(host: MemoHost) {
 
   async function stopMemo(reason: 'user' | 'cap' = 'user'): Promise<MemoStopResult> {
     const cur = active
-    if (!cur) return { ok: false, errorAr: 'لا تسجيل تعليق جارٍ' }
+    if (!cur) return { ok: false, errorAr: t('dt.memoNoSession') }
     clearTimer()
     active = null
     const ack = await host.recorder.stop()
     if (!ack.ok || typeof ack.durationMs !== 'number') {
-      return { ok: false, errorAr: ack.ok ? 'فشل تسجيل التعليق — جرّب من جديد' : ack.errorAr }
+      return { ok: false, errorAr: ack.ok ? t('dt.memoFail') : ack.errorAr }
     }
     // مقاطع فارغة = ميكروفون صامت: لا يُخزَّن تعليق ميت لا يُفرَّغ أبدًا (بلاغ المالك 2026-09-04)
     if (ack.chunks.length === 0) {
-      return { ok: false, errorAr: SILENT_MIC_ERROR_AR }
+      return { ok: false, errorAr: silentMicError() }
     }
     host.store.set(cur.stepIndex, { memoId: cur.memoId, chunks: ack.chunks, durationMs: ack.durationMs, pending: true })
     return { ok: true, capped: reason === 'cap', stepIndex: cur.stepIndex, durationMs: ack.durationMs }

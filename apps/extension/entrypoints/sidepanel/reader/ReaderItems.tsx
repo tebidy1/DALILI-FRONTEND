@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { GuideDto } from '@dalili/shared'
+import type { GuideDto, TranslationOverlay } from '@dalili/shared'
 import { READER_ZOOM, staleAr, type ReaderItem } from '@/lib/reader'
 import { t } from '@/lib/i18n'
 import { relativeTimeAr } from '@/lib/recent'
@@ -9,22 +9,27 @@ import { PreviewShot } from '../Shot'
 /** PNL-01: رأس الدليل — عنوان، وصف مطويّ بعد ٣ أسطر، سطر إحصاءات، ورابط الويب */
 export function ReaderHead({
   guide,
+  ov,
   stepCount,
   stale,
   onOpenWeb,
 }: {
   guide: GuideDto
+  ov?: TranslationOverlay | null
   stepCount: number
   stale: boolean
   onOpenWeb: () => void
 }) {
   const [more, setMore] = useState(false)
   const long = (guide.description?.length ?? 0) > 140
+  const title = ov ? ov.guideTitle : guide.title
+  const desc = ov ? ov.description ?? guide.description : guide.description
   return (
     <header className="reader-head">
       {stale && <div className="notice">{staleAr()}</div>}
-      <h1 className="reader-title"><bdi>{guide.title}</bdi></h1>
-      {guide.description && (
+      {ov && <span className="reader-auto-badge">{t('ext.readerAutoBadge')}</span>}
+      <h1 className="reader-title"><bdi>{title}</bdi></h1>
+      {desc && (
         <>
           <p className={`reader-desc${long && !more ? ' clamped' : ''}`}>{guide.description}</p>
           {long && (

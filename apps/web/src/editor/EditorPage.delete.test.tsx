@@ -111,16 +111,17 @@ describe('VER-02: حذف الدليل من قائمة «المزيد»', () => {
     expect(screen.getByText('تعذّر نقل الدليل — أعد المحاولة')).toBeTruthy()
   })
 
-  it('العناصر الأربعة (كرّاسة/تكرار/ترجمة/نقل) معطّلة بـaria-disabled', async () => {
+  it('العناصر الثلاث (كرّاسة/تكرار/نقل) معطّلة بـaria-disabled — و«ترجمة» حُيّيت TRNS-01', async () => {
     mountAt()
     await screen.findByText('دليلي')
     fireEvent.click(screen.getByLabelText('المزيد من الخيارات'))
-    for (const label of ['إرسال لكرّاسة', 'تكرار', 'ترجمة', 'نقل إلى…']) {
+    for (const label of ['إرسال لكرّاسة', 'تكرار', 'نقل إلى…']) {
       const el = screen.getByText(label).closest('button')!
       expect(el.getAttribute('aria-disabled')).toBe('true')
     }
-    // «الإصدارات» و«نقل إلى السلة» ليستا معطّلتين
+    // «الإصدارات» و«نقل إلى السلة» و«ترجمة» ليستا معطّلتين
     expect(screen.getByText('الإصدارات').closest('button')!.getAttribute('aria-disabled')).toBeNull()
     expect(screen.getByText('نقل إلى السلة').closest('button')!.getAttribute('aria-disabled')).toBeNull()
+    expect(screen.getByText('ترجمة').closest('button')!.getAttribute('aria-disabled')).toBeNull()
   })
 })

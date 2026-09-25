@@ -3,7 +3,7 @@
  * التحويل من GuideDto إلى عناصر عرض، وقرار زر المشاركة (بلا تجديد رمز قائم)،
  * وأهلية «دربني». لا chrome.* ولا DOM.
  */
-import { DaliliApiError, type GuideDetailsDto, type GuideDto, type StepDto } from '@dalili/shared'
+import { DaliliApiError, translationOverlay, type GuideDetailsDto, type GuideDto, type StepDto, type TranslationOverlay } from '@dalili/shared'
 import { richToPlain, stepNumbers, type MarkRect, type RichText, type ZoomLimits } from '@dalili/core'
 import { buildTrainPlan } from './train'
 import { t } from './i18n'
@@ -52,22 +52,25 @@ function shotOf(s: StepDto, apiBase: string): { shot?: ReaderShot; missing?: str
   return { shot: { src: shotSrc(sh, apiBase), mark: sh.mark?.rect, crop: sh.crop, blur: sh.blurRects ?? [] } }
 }
 
-export function readerItems(guide: GuideDto, apiBase: string): ReaderItem[] {
+export function readerItems(guide: GuideDto, apiBase: string, ov?: TranslationOverlay | null): ReaderItem[] {
   const nums = stepNumbers(guide.steps)
+  // TRNS-01: تراكب الترجمة — نصوص العرض من الطبقة الإنجليزية مع سقوط لكل حقل نحو العربية
+  const title = (s: StepDto) => (ov ? ov.stepText(s.id, 'title', s.title) : s.title)
+  const note = (s: StepDto) => (ov ? ov.stepText(s.id, 'note', s.note ?? '') : s.note)
   return guide.steps.map((s, i): ReaderItem => {
     switch (s.block) {
       case 'header':
-        return { type: 'header', id: s.id, title: s.title }
+        return { type: 'header', id: s.id, title: title(s) }
       case 'tip':
       case 'alert':
         return {
           type: 'callout',
           id: s.id,
           tone: s.block,
-          text: s.rich?.length ? richToPlain(s.rich as RichText) : [s.title, s.note].filter(Boolean).join(' — '),
+          text: s.rich?.length ? richToPlain(s.rich as RichText) : [title(s), note(s)].filter(Boolean).join(' — '),
         }
       case 'text':
-        return { type: 'text', id: s.id, text: s.rich?.length ? richToPlain(s.rich as RichText) : s.title }
+        return { type: 'text', id: s.id, text: s.rich?.length ? richToPlain(s.rich as RichText) : title(s) }
       case 'divider':
         return { type: 'divider', id: s.id }
       case 'embed':
@@ -77,7 +80,7 @@ export function readerItems(guide: GuideDto, apiBase: string): ReaderItem[] {
       case 'video':
         return { type: 'external', id: s.id, label: externalMediaAr() }
       default:
-        return { type: 'step', id: s.id, n: nums[i] ?? i + 1, title: s.title, note: s.note, ...shotOf(s, apiBase) }
+        return { type: 'step', id: s.id, n: nums[i] ?? i + 1, title: title(s), note: note(s) || undefined, ...shotOf(s, apiBase) }
     }
   })
 }

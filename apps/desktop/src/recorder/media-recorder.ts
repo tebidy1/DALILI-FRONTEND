@@ -1,7 +1,8 @@
 /** تحويل b64 لمقاطع التعليق الصوتي — يرفعها/يخزنها مسار التعليقات (منقول من الإضافة) */
+import { t } from '../i18n'
 
-/** خطأ الميكروفون الصامت (صفر بايت) — الرسالة نفسها في المسجّل وآلة حالته */
-export const SILENT_MIC_ERROR_AR = 'لم يُسجَّل صوت — تأكد أن الميكروفون ليس صامتًا ثم أعد المحاولة'
+/** خطأ الميكروفون الصامت (صفر بايت) — الرسالة نفسها في المسجّل وآلة حالته. دالة: تُقرأ بلغة اللحظة */
+export const silentMicError = (): string => t('dt.memoSilent')
 
 export function bytesToB64(bytes: Uint8Array): string {
   let bin = ''
@@ -41,19 +42,19 @@ export function makeMemoRecorder(deps: MemoDeps = {}) {
   let t0 = 0
 
   async function start(): Promise<MemoStartAck> {
-    if (rec && rec.state !== 'inactive') return { ok: false, errorAr: 'تسجيل تعليق جارٍ بالفعل — أوقفه أولًا' }
+    if (rec && rec.state !== 'inactive') return { ok: false, errorAr: t('dt.memoAlready') }
     try {
       stream = await openMic({ audio: { echoCancellation: true } })
     } catch {
-      return { ok: false, errorAr: 'تعذر فتح الميكروفون — علّق على الخطوة بعد منح الإذن' }
+      return { ok: false, errorAr: t('dt.memoStartFail') }
     }
     let r: MediaRecorder
     try {
       r = new Ctor(stream, { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 32_000 })
     } catch {
-      stream.getTracks().forEach((t) => t.stop())
+      stream.getTracks().forEach((x) => x.stop())
       stream = null
-      return { ok: false, errorAr: 'متصفحك لا يدعم تسجيل webm/opus — التعليق الصوتي غير متاح' }
+      return { ok: false, errorAr: t('dt.memoUnsupported') }
     }
     blobs = []
     r.ondataavailable = (e) => {
@@ -66,7 +67,7 @@ export function makeMemoRecorder(deps: MemoDeps = {}) {
   }
 
   async function stop(): Promise<MemoStopAck> {
-    if (!rec || rec.state === 'inactive') return { ok: false, errorAr: 'لا تسجيل تعليق جارٍ' }
+    if (!rec || rec.state === 'inactive') return { ok: false, errorAr: t('dt.memoNoSession') }
     const r = rec
     const stopped = new Promise<void>((resolve) => {
       r.onstop = () => resolve()
@@ -82,7 +83,7 @@ export function makeMemoRecorder(deps: MemoDeps = {}) {
     blobs = []
     // ميكروفون صامت (مقطوع/مكتوم): صفر بايت طوال التسجيل — صدقٌ الآن خير من شارة
     // «بانتظار التفريغ» زومبية لا يفرّغها أحد أبدًا (بلاغ المالك 2026-09-04)
-    if (chunks.length === 0) return { ok: false, errorAr: SILENT_MIC_ERROR_AR }
+    if (chunks.length === 0) return { ok: false, errorAr: silentMicError() }
     return { ok: true, chunks, durationMs }
   }
 

@@ -15,6 +15,7 @@
     "core:window:allow-show",
     "core:window:allow-hide",
     "core:window:allow-current-monitor",
-    "core:window:allow-start-dragging"
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-title"
   ]
 }

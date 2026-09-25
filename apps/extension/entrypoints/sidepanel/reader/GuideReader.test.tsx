@@ -4,10 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DaliliApiError, type GuideDetailsDto, type StepDto } from '@dalili/shared'
 import { GuideReader, type ReaderDeps } from './GuideReader'
 import { clearReaderCache } from './useGuideReader'
+import { setI18nLocale } from '@/lib/i18n'
 
 afterEach(() => {
   cleanup()
   clearReaderCache()
+  setI18nLocale('ar')
 })
 
 const step = (over: Partial<StepDto> = {}): StepDto => ({
@@ -135,5 +137,37 @@ describe('GuideReader — PNL-01', () => {
     expect(await screen.findByRole('heading', { name: 'التجهيز' })).toBeTruthy()
     expect(screen.getByText('احفظ أولًا')).toBeTruthy()
     expect(screen.getByText('محتوى وسائط — يُعرض كاملًا في المتصفح')).toBeTruthy()
+  })
+
+  it('TRNS-01: قارئ EN يرى الترجمة والشارة، وغير المترجم يسقط لعربته، وقارئ AR يرى الأصل', async () => {
+    setI18nLocale('en')
+    const withTx = details()
+    withTx.guide.translations = {
+      en: {
+        title: 'Invoice Issuance',
+        items: { title: 'Invoice Issuance', 'steps/s1/title': 'Click "Save"' },
+        meta: { provider: 'groq:test', createdAt: '2026-09-01T00:00:00Z', sourceUpdatedAt: '2026-09-01T00:00:00Z' },
+      },
+    }
+    render(<GuideReader guideId="g1" deps={deps({ load: vi.fn().mockResolvedValue(withTx) })} onBack={() => {}} />)
+    expect(await screen.findByRole('heading', { name: 'Invoice Issuance' })).toBeTruthy()
+    expect(screen.getByText('Click "Save"')).toBeTruthy()
+    expect(screen.getByText('Auto-translated')).toBeTruthy()
+    expect(screen.queryByText('إصدار فاتورة')).toBeNull()
+  })
+
+  it('TRNS-01: قارئ AR يرى الأصل بلا شارة الترجمة', async () => {
+    setI18nLocale('ar')
+    const withTx = details()
+    withTx.guide.translations = {
+      en: {
+        title: 'Invoice Issuance',
+        items: { title: 'Invoice Issuance' },
+        meta: { provider: 'groq:test', createdAt: '2026-09-01T00:00:00Z', sourceUpdatedAt: '2026-09-01T00:00:00Z' },
+      },
+    }
+    render(<GuideReader guideId="g1" deps={deps({ load: vi.fn().mockResolvedValue(withTx) })} onBack={() => {}} />)
+    expect(await screen.findByRole('heading', { name: 'إصدار فاتورة' })).toBeTruthy()
+    expect(screen.queryByText('Auto-translated')).toBeNull()
   })
 })

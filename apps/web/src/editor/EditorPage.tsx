@@ -10,6 +10,9 @@ import { StepCard, type ZoomCommand } from '../components/StepCard'
 import { ToolRail } from './ToolRail'
 import { BulkBar } from './BulkBar'
 import { UrlReplaceDialog } from './UrlReplaceDialog'
+import { TranslateDialog, type TranslatePhase } from './TranslateDialog'
+import { TranslationPreview } from './TranslationPreview'
+import { translationOverlay, translationStale } from '@dalili/shared'
 import { moveTo } from './reorder'
 import { DEFAULT_TOOL, type EditorTool } from './tools'
 import {
@@ -117,6 +120,11 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   const [sttFailed, setSttFailed] = useState(false)
   // VER-01/02: قائمة «المزيد» + حذف داخل الصفحة + سجل الإصدارات
   const [askDelete, setAskDelete] = useState(false)
+  // TRNS-01: ترجمة الدليل — البطاقة وحالتها، ومعاينة EN قراءة فقط لا تلمس آلية التحرير
+  const [txOpen, setTxOpen] = useState(false)
+  const [txPhase, setTxPhase] = useState<TranslatePhase>('info')
+  const [txError, setTxError] = useState<string | undefined>()
+  const [previewEn, setPreviewEn] = useState(false)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   // طلب المالك 2026-09-09: مبدّل «إظهار الأرقام» في قائمة «المزيد» — شارة رقم قرب علامة الهدف، مفعّل افتراضيًا
@@ -838,6 +846,27 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     URL.revokeObjectURL(a.href)
   }
 
+  /** TRNS-01: توليد/تجديد الترجمة الإنجليزية — الخادم يبنيها ويخزّنها كطبقة فوق الأصل */
+  const txOv = guide ? translationOverlay(guide, 'en') : null
+
+  async function runTranslate() {
+    if (!guide) return
+    setTxPhase('running')
+    try {
+      const { guide: updated } = await client.translateGuide(guide.id)
+      setGuide(updated)
+      setTxOpen(false)
+      setPreviewEn(false)
+      setTxPhase('info')
+      setDoneHint(true)
+      window.clearTimeout(doneHintTimer.current)
+      doneHintTimer.current = window.setTimeout(() => setDoneHint(false), 6000)
+    } catch (err) {
+      setTxError(err instanceof Error && err.message ? err.message : String(err))
+      setTxPhase('error')
+    }
+  }
+
   /** VIEW-10: نسخ غني بصور **مضمّنة** (data-URI) — الصق في Word/Google Docs/Confluence فتظهر الخطوات بصورها حتى دون اتصال */
   async function copyRichHtml() {
     if (!guide) return
@@ -972,7 +1001,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
                   { key: 'autoMask', label: t('editor.more.autoMask'), icon: <IconWand size={16} />, checked: autoMaskOn, onSelect: toggleAutoMask },
                   { key: 'sendToBooklet', label: t('editor.more.sendToBooklet'), icon: <IconBookOpen size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
                   { key: 'duplicate', label: t('editor.more.duplicate'), icon: <IconCopy size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
-                  { key: 'translate', label: t('editor.more.translate'), icon: <IconWand size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
+                  { key: 'translate', label: t('editor.more.translate'), icon: <IconWand size={16} />, onSelect: () => { setTxError(undefined); setTxPhase('info'); setTxOpen(true) } },
                   { key: 'versions', label: t('editor.more.versions'), icon: <IconClock size={16} />, onSelect: () => setVersionsOpen((v) => !v) },
                   { key: 'moveTo', label: t('editor.more.moveTo'), icon: <IconFolder size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
                   { key: 'delete', label: t('editor.more.delete'), icon: <IconTrash size={16} />, onSelect: () => setAskDelete(true), danger: true },
@@ -1156,6 +1185,18 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
           }}
         />
       )}
+
+      {/* TRNS-01: بطاقة الترجمة — صدق قبل التنفيذ، وحالات تقدم/خطأ */}
+      {txOpen && (
+        <TranslateDialog
+          phase={txPhase}
+          errorMsg={txError}
+          hasTranslation={!!translationOverlay(guide, 'en')}
+          stale={translationStale(guide)}
+          onTranslate={() => void runTranslate()}
+          onClose={() => setTxOpen(false)}
+        />
+      )}
       {loadError && guide && <div className="err no-print">{loadError}</div>}
       {trainMsg && (
         <div className={`card no-print append-msg ${trainMsg.kind}`} role="status">
@@ -1260,6 +1301,15 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
         </div>
       )}
 
+      {/* TRNS-01: شريحة معاينة EN — تظهر عند وجود ترجمة، تُبدّل عرض الخطوات قراءةً فقط */}
+      {translationOverlay(guide, 'en') && (
+        <div className="no-print">
+          <button className="editor-lang-chip" aria-pressed={previewEn} onClick={() => setPreviewEn((v) => !v)}>
+            {previewEn ? t('editor.translate.previewBack') : t('editor.translate.previewChip')}
+          </button>
+        </div>
+      )}
+
       <div className="col-stack editor-step-stack">
         {guide.steps.length === 0 && (
           <StateView
@@ -1282,6 +1332,9 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
         ) : (
           // نحو 28 خاصية تمرّ من هنا عبر GuideStepList إلى StepCard — سياق محرّر (useGuideEditor) يُلغي الطبقة الوسطى،
           // لكنه يلامس اختبارات المحرر فأُجّل لقرار المالك (فحص 2026-09-21).
+          previewEn && txOv ? (
+            <TranslationPreview guide={guide} ov={txOv} nums={nums} />
+          ) : (
           <GuideStepList
             guide={guide}
             guideId={id}
@@ -1312,6 +1365,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
             moveStepTo={moveStepTo}
             setDragFrom={setDragFrom}
           />
+          )
         )}
         {pickEmbedAt !== null && (
           <EmbedPicker

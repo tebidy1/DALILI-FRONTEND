@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { extractCapturedSites, nearestStepIndexAt, stepAudioMs, stepAudioRanges, stepNumbers } from '@dalili/core'
-import type { PublicGuideDto, StepCommentDto, StepDto } from '@dalili/shared'
+import type { PublicGuideDto, StepCommentDto, StepDto, TranslationOverlay } from '@dalili/shared'
+import { translationOverlay } from '@dalili/shared'
 import { client } from '../api'
+import { getLocale } from '../lib/locale'
 import { StepImage } from '../components/StepImage'
 import { GuideComments } from '../components/GuideComments'
 import { StepVoiceBadge } from '../components/StepVoiceBadge'
@@ -19,21 +21,23 @@ import { TrainButton } from './TrainButton'
 import { ViewerShare } from './ViewerShare'
 
 /** BLK-01: كتلة نداء/هيدر في العارض — نص فقط، سماوي/برتقالي، بلا رقم. مشترك بين نسختَي العرض والتضمين */
-function ViewerBlock({ step }: { step: StepDto }) {
+function ViewerBlock({ step, ov }: { step: StepDto; ov?: TranslationOverlay | null }) {
+  const title = ov ? ov.stepText(step.id, 'title', step.title) : step.title
+  const note = ov ? ov.stepText(step.id, 'note', step.note ?? '') : step.note
   if (step.block === 'header')
     return (
       <h2 className="viewer-section" dir="rtl">
-        <bdi>{step.title}</bdi>
+        <bdi>{title}</bdi>
       </h2>
     )
   return (
     <aside className={`viewer-callout ${step.block}`}>
       <strong dir="rtl">
-        <bdi>{step.title}</bdi>
+        <bdi>{title}</bdi>
       </strong>
-      {step.note && (
+      {note && (
         <p dir="auto">
-          <bdi>{step.note}</bdi>
+          <bdi>{note}</bdi>
         </p>
       )}
     </aside>
@@ -75,12 +79,15 @@ function ViewerNavigate({
   n,
   current = false,
   stepRef,
+  ov,
 }: {
   step: StepDto
   n?: number | null
   current?: boolean
   stepRef?: (el: HTMLDivElement | null) => void
+  ov?: TranslationOverlay | null
 }) {
+  const title = ov ? ov.stepText(step.id, 'title', step.title) : step.title
   return (
     <div
       className={`viewer-navigate${current ? ' current' : ''}`}
@@ -90,7 +97,7 @@ function ViewerNavigate({
     >
       <span className="viewer-navigate-num">{n ?? ''}</span>
       <span className="viewer-navigate-title">
-        <bdi>{step.title}</bdi>
+        <bdi>{title}</bdi>
       </span>
     </div>
   )
@@ -245,6 +252,8 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
   const { guide } = data
   // PERF-03: كسل التمرير للأدلة الطويلة — قرار واحد للصفحة كلها
   const virtual = needsVirtualScrolling(guide.steps.length)
+  // TRNS-01: تراكب الترجمة — قارئ التطبيق الإنجليزي يرى الإنجليزية إن وُجدت طبقتها
+  const ov = translationOverlay(guide, getLocale())
 
   // VIEW-04: نسخة التضمين — عنوان نحيل بلا أزرار/طباعة/مشغل، جاهزة داخل iframe
   // مسيرا الخطوات (المضمّن والكامل) يشاركان البنية لا شكل البطاقة — شكل العارض قرار مالك،
@@ -253,23 +262,23 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
     const embedNums = stepNumbers(guide.steps)
     const embedMarkColor = guideMarkColor(guide.steps)
     return (
-      <div className={`page embed-page${virtual ? ' cv-steps' : ''}`}>
+      <div className={`page embed-page${virtual ? ' cv-steps' : ''}`} dir={ov ? 'ltr' : undefined}>
         <h1 className="embed-title">
-          <bdi>{guide.title}</bdi>
+          <bdi>{ov ? ov.guideTitle : guide.title}</bdi>
         </h1>
         {/* BKL-01: توجيه الكرّاسة */}
         {guide.kind === 'booklet' && <ViewerBooklet guide={guide} embeds={data.embeds ?? {}} />}
         {guide.kind !== 'booklet' && guide.steps.map((s, i) => {
-          if (s.block) return <ViewerBlock key={s.id} step={s} />
-          if (s.kind === 'navigate') return <ViewerNavigate key={s.id} step={s} n={embedNums[i]} />
+          if (s.block) return <ViewerBlock key={s.id} step={s} ov={ov} />
+          if (s.kind === 'navigate') return <ViewerNavigate key={s.id} step={s} n={embedNums[i]} ov={ov} />
           return (
             <div className="viewer-step" key={s.id}>
               <h2>
-                {embedNums[i]}. <bdi>{s.title}</bdi>
+                {embedNums[i]}. <bdi>{ov ? ov.stepText(s.id, 'title', s.title) : s.title}</bdi>
               </h2>
               {s.note && (
                 <p className="muted viewer-note">
-                  <bdi>{s.note}</bdi>
+                  <bdi>{ov ? ov.stepText(s.id, 'note', s.note) : s.note}</bdi>
                 </p>
               )}
               <StepShot s={s} autoNumber={embedNums[i]} color={embedMarkColor} />
@@ -302,15 +311,16 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
         </div>
       </div>
 
-      <div className={`page viewer-page${guide.kind === 'booklet' ? ' booklet-page' : ''}${virtual ? ' cv-steps' : ''}`}>
-        {/* هوية الدليل: العنوان + الوصف + شارات المواقع */}
+      <div className={`page viewer-page${guide.kind === 'booklet' ? ' booklet-page' : ''}${virtual ? ' cv-steps' : ''}`} dir={ov ? 'ltr' : undefined}>
+        {/* هوية الدليل: العنوان + الوصف + شارة الترجمة الآلية + شارات المواقع */}
         <header className="guide-head viewer-guide-head">
-          <h1 className="guide-title-read" dir="rtl">
-            <bdi>{guide.title}</bdi>
+          <h1 className="guide-title-read" dir={ov ? 'ltr' : 'rtl'}>
+            <bdi>{ov ? ov.guideTitle : guide.title}</bdi>
+            {ov && <span className="viewer-auto-badge">{t('viewer.badge.auto')}</span>}
           </h1>
           {guide.description && (
             <p className="guide-desc-read" dir="auto">
-              <bdi>{guide.description}</bdi>
+              <bdi>{ov ? ov.description ?? guide.description : guide.description}</bdi>
             </p>
           )}
           {capturedSites.length > 0 && (
@@ -349,7 +359,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
         {/* BKL-01: توجيه الكرّاسة */}
         {guide.kind === 'booklet' && <ViewerBooklet guide={guide} embeds={data.embeds ?? {}} />}
         {guide.kind !== 'booklet' && guide.steps.map((s, i) => {
-          if (s.block) return <ViewerBlock key={s.id} step={s} />
+          if (s.block) return <ViewerBlock key={s.id} step={s} ov={ov} />
           if (s.kind === 'navigate')
             return (
               <ViewerNavigate
@@ -357,6 +367,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
                 step={s}
                 n={nums[i]}
                 current={current === i}
+                ov={ov}
                 stepRef={(el) => {
                   stepEls.current[i] = el
                 }}
@@ -376,7 +387,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
                     لا «2.» نصية داخل العنوان */}
                 <span className="viewer-step-num">{nums[i]}</span>
                 <h2>
-                  <bdi>{s.title}</bdi>
+                  <bdi>{ov ? ov.stepText(s.id, 'title', s.title) : s.title}</bdi>
                 </h2>
                 {s.url && (
                   <a
@@ -395,7 +406,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
               </div>
               {s.note && (
                 <p className="muted viewer-note">
-                  <bdi>{s.note}</bdi>
+                  <bdi>{ov ? ov.stepText(s.id, 'note', s.note) : s.note}</bdi>
                 </p>
               )}
               {audio && !s.voice && ranges[i] && ranges[i]!.endMs > ranges[i]!.startMs && (

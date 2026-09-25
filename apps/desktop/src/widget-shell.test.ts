@@ -234,8 +234,9 @@ describe('لحظة الالتقاط وعجلات التدريب (خطوتا ال
     expect(n).toContain('body[data-win="popout"][data-form="flash"] .flash { display: block; animation: pop-in 0.3s ease; }')
     expect(main).toContain('}, 2300)')
     expect(main).toContain('prepareFlash(')
-    expect(main).toContain("'الخطوة '")
-    expect(main).toContain('٠١٢٣٤٥٦٧٨٩')
+    // I18N-01: تسمية الخطوة والأرقام الشرقية عبر i18n.ts (السلسلة الشرقيّة هناك)
+    expect(main).toContain("t('dt.stepN'")
+    expect(readFileSync(join(here, 'i18n.ts'), 'utf8')).toContain('٠١٢٣٤٥٦٧٨٩')
     // اللقطة الحقيقيّة: البكسلات وحلقة العلامة تصلان حمولةَ بروتوكول
     expect(main).toContain('shot: thumbDataUrl ? { src: thumbDataUrl')
   })
@@ -278,7 +279,7 @@ describe('تجميد التصميم — عقد مرحلة الربط الحقي�
       'toast: { w: 224, h: 56 }',
       'flash: { w: 240, h: 172 }',
       'pillz: { w: 340, h: 168 }',
-      'settings: { w: 246, h: 80 }',
+      'settings: { w: 246, h: 114 }', // I18N-01: صفّ اللغة الثالث
       'account: { w: 260, h: 228 }',
     ]) {
       expect(expand).toContain(s)
@@ -472,7 +473,7 @@ describe('الإشارة الفوريّة ونقر الحصاة أثناء ال�
     expect(html).toContain('@keyframes shotwait')
     expect(main).toContain("shotBox.classList.toggle('wait', pending || !shot)")
     // الرقم يظهر من لحظة القفز كما طلب المالك («يظهر فيها مثلا رقم اللقطة»)
-    expect(main).toContain("'الخطوة ' + arDigits(step)")
+    expect(main).toContain("t('dt.stepN', { n: arDigits(step) })")
   })
   const main = readFileSync(join(here, 'main.ts'), 'utf8')
   const html = readHtml()

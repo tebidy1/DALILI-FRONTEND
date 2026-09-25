@@ -13,6 +13,7 @@ import type { DeliveryCommands, DeliveryEvents } from './deliver'
 import { makeMemoRecorder } from './media-recorder'
 import { applyMemosToGuide, makeVoiceMemo, type MemoRecorderHost, type StoredVoiceMemo } from './voice-memo'
 import { createAutoMemo } from './auto-memo'
+import { t } from '../i18n'
 
 /** أحداث البروتوكول الوحيدة التي تراها الواجهة — تنمو بالتزايد ولا تُكسر */
 export type AuthPhase = 'unknown' | 'unpaired' | 'pairing' | 'paired'
@@ -327,7 +328,7 @@ export function createWidgetController(deps: ControllerDeps): WidgetController {
     async toggleVoice(): Promise<void> {
       const stack = voiceStack
       if (!stack || session === null) {
-        emitVoice('لا جلسة التقاط جارية')
+        emitVoice(t('dt.noSession'))
         return
       }
       if (stack.autoMode) {
@@ -368,7 +369,7 @@ export function createWidgetController(deps: ControllerDeps): WidgetController {
       auth = { phase: 'pairing' }
       emitAuth()
       try {
-        const info = await deps.auth.pairStart('جهاز ويندوز — إتقان')
+        const info = await deps.auth.pairStart(t('dt.deviceName'))
         auth = { phase: 'pairing', userCode: info.userCode }
       } catch (e) {
         console.error('[controller] pairStart:', e)

@@ -1,4 +1,5 @@
 import type { MemoStopResult } from './voice-memo'
+import { t } from '../i18n'
 
 /**
  * ‏VOX-AUTO منقولًا من الإضافة — سياسة «التعليق التلقائي لكل بطاقة»:
@@ -102,14 +103,14 @@ export function createAutoMemo(deps: AutoMemoDeps) {
   /** زر الميك داخل الوضع التلقائي — مفتاح إيقاف/تشغيل للتعليق التلقائي كله */
   async function toggle(): Promise<AutoMemoToggleAck> {
     const meta = deps.meta()
-    if (!meta.capturing && !meta.paused) return { ok: false, errorAr: 'لا جلسة التقاط جارية' }
+    if (!meta.capturing && !meta.paused) return { ok: false, errorAr: t('dt.noSession') }
     if (meta.autoMemo) {
       await stopActive()
       deps.setAutoMemo(false)
-      deps.onNotice?.('أُوقف التعليق التلقائي — زر الميك يسجّل يدويًا')
+      deps.onNotice?.(t('dt.autoMemoOff'))
       return { ok: true, enabled: false }
     }
-    if (meta.stepCount === 0) return { ok: false, errorAr: 'التقط خطوة أولًا ثم علّق عليها بصوتك' }
+    if (meta.stepCount === 0) return { ok: false, errorAr: t('dt.needStep') }
     deps.setAutoMemo(true)
     if (deps.meta().capturing) await serialized(() => startOn(deps.meta().stepCount - 1))
     return { ok: true, enabled: true }

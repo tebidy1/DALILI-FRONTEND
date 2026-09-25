@@ -1,0 +1,98 @@
+/* ============================================================
+   ITQAN — English edition overrides (institutional-en.html)
+   Sits on top of site.css / site-v2.css / site-institutional.css.
+   Two jobs:
+   1. Typography: the Plex superfamily the brand already speaks —
+      IBM Plex Serif for display (as Amiri is for Arabic),
+      IBM Plex Sans for body (as IBM Plex Sans Arabic is).
+      Latin needs tighter leading and a smaller optical size.
+   2. Direction: the institutional stylesheet is written in
+      logical properties and flips on its own; only the handful of
+      hard-coded arrows and animation origins are flipped here.
+   ============================================================ */
+
+/* ——— Type families ——— */
+body {
+  font-family: 'IBM Plex Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16.5px;
+  line-height: 1.65;
+}
+h1, h2, h3 {
+  font-family: 'IBM Plex Serif', Georgia, 'Times New Roman', serif;
+  line-height: 1.22;
+  letter-spacing: -0.012em;
+}
+.inst-h {
+  line-height: 1.22;
+  letter-spacing: -0.012em;
+}
+.brand-phrase {
+  font-family: 'IBM Plex Serif', Georgia, serif;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.008em;
+}
+/* فيلم الهيرو: سطرا الترجمة فوق الفيلم */
+.film-line {
+  font-family: 'IBM Plex Serif', Georgia, serif;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.footer-derivation {
+  font-family: 'IBM Plex Serif', Georgia, serif;
+  line-height: 1.6;
+  max-width: 26rem;
+}
+/* سطر الاشتقاق العربي في تذييل النسخة الإنجليزية: يبقى بأحرف عربية
+   (dir=rtl لترتيب الحروف) لكنه يحاذي عمود علامته على اليسار */
+.footer-derivation[dir="rtl"] { text-align: left; }
+.latin-lockup { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+
+/* ——— Latin optical sizes: smaller, tighter, calmer ——— */
+.eyebrow { letter-spacing: .045em; font-size: 12px; }
+.inst-point-title { font-size: 16.5px; line-height: 1.45; }
+.inst-point-body > p { line-height: 1.68; font-size: 15px; }
+.inst-proof { font-size: 13px; line-height: 1.6; }
+.inst-value-lead { font-size: 16px; line-height: 1.72; }
+.brand-kicker { font-size: 14px; }
+.pvc-title { font-size: 17.5px; line-height: 1.42; }
+.pvc-kicker { letter-spacing: .02em; }
+.pvc-list li { line-height: 1.7; }
+.pvc-stat b { letter-spacing: -0.01em; }
+.footer-tagline { line-height: 1.6; }
+.ig-title { letter-spacing: -0.005em; }
+
+/* أرقام الجدول والبطاقات: أرقام لاتينية متساوية العرض حيث تتراص */
+.pvc-stat b, .iliv-tr, .ib-result-num { font-variant-numeric: tabular-nums; }
+
+/* ——— Direction flips: الأسهم ونقاط انطلاق الحركة ——— */
+/* شريط التقدّم يمتلئ من اليسار في النسخة الإنجليزية */
+.inst-bar { transform-origin: left; }
+.ib-branches-lines i { transform-origin: left; }
+
+/* سهم «يعمل به الآن» يتجه يمينًا وينزلق من اليسار */
+.ig-owner-now { transform: translateX(-14px); }
+.ig-owner-now::before { content: "→"; }
+
+/* بطاقات وشرائح تنزلق من جهة البداية المعكوسة */
+.igrid-copy { transform: translateX(-24px); }
+.iliv-owner { transform: translateX(-12px); }
+.iliv-v.is-new { transform: translateX(-16px); }
+.iloc-chip { transition: transform 600ms var(--ease-settle), opacity 400ms ease; }
+
+/* السهم الهارب من حدود البنية يخرج يمينًا */
+@keyframes ipriv-escape {
+  0% { opacity: .8; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(14px); }
+}
+
+/* رفّ الكتاب ينطوي حول حرفته اليسرى */
+.ipriv-book-cover { transform-origin: left center; }
+
+/* حرف الصورة الرمزية في بطاقة الدليل */
+.ig-avatar::after { content: "K"; }
+
+/* ——— استجابة: إعادة الأحجام المضبوطة على الجوال ——— */
+@media (max-width: 880px) {
+  .inst-h { font-size: clamp(25px, 6.6vw, 32px); }
+}

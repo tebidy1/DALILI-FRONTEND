@@ -1971,6 +1971,99 @@ textarea.guide-desc-input:focus {
   word-break: break-all;
   font-weight: 600;
 }
+/* TRNS-01: بطاقة الترجمة + المعاينة الإنجليزية */
+.translate-dialog p {
+  font-size: 0.88rem;
+  line-height: 1.7;
+  margin: 8px 0;
+}
+.translate-dialog .translate-stale {
+  color: var(--warn-ink);
+  font-weight: 600;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.translate-dialog .translate-privacy {
+  color: var(--muted);
+}
+.translate-dialog .translate-error {
+  color: var(--danger-ink, #b91c1c);
+  font-weight: 600;
+}
+.translate-dialog .translate-running {
+  font-weight: 700;
+  text-align: center;
+  margin: 14px 0 6px;
+}
+.editor-lang-chip {
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.editor-lang-chip[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--card);
+}
+.translate-preview {
+  display: grid;
+  gap: 16px;
+  max-width: 720px;
+}
+.translate-preview .tp-title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.translate-preview .tp-desc {
+  color: var(--muted);
+  margin: 0;
+}
+.translate-preview .tp-step {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+  background: var(--card);
+}
+.translate-preview .tp-step h4 {
+  margin: 0;
+  font-size: 1rem;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.translate-preview .tp-num {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.translate-preview .tp-note {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.translate-preview img {
+  max-width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+}
+/* TRNS-01: شارة «مترجم آليًا» في العارض — هادئة بصدق */
+.viewer-auto-badge {
+  display: inline-block;
+  vertical-align: middle;
+  margin-inline-start: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
 /* EDT-12: بطاقة اقتراح الطمس الذكي */
 .blur-suggest {
   border: 1px solid var(--line-strong);

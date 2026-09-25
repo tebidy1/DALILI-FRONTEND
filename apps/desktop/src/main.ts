@@ -24,15 +24,23 @@ import {
   createAppControls,
   createRecordingControls,
 } from './recorder/bridge'
-
-// محوّل الأرقام العربيّة محليًّا — اختبار المرجع ٤ يثبّت السلسلة حرفيًّا في هذا المصدر
-const arDigits = (n: number): string => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'.charAt(Number(d)))
+import { applyLocale, readLocale, setLocale, subscribeLocale, t, arDigits } from './i18n'
 
 const app = document.getElementById('app')
+
+// I18N-01: اللغة المحفوظة تُطبَّق قبل أول رسم (لا قفز اتجاه) — قبل أي نداء Tauri
+applyLocale(readLocale())
 
 const win = getCurrentWindow()
 const isPebble = win.label === 'main'
 document.body.dataset.win = isPebble ? 'main' : 'popout'
+
+// عنوان النافذة يتبع اللغة في شريط المهام؛ العربي يبقى على قيم tauri.conf الافتراضيّة
+void win.setTitle(t(isPebble ? 'dt.title' : 'dt.popTitle'))
+// التبديل الحيّ من المنبثقة يعيد عنوان هذه النافذة بلغة الجديدة
+subscribeLocale(() => {
+  void win.setTitle(t(isPebble ? 'dt.title' : 'dt.popTitle'))
+})
 
 if (isPebble) {
   // ───────────── نافذة الحصاة الدائمة — مرآة المتحكّم ومُصدِر الأوامر ─────────────
@@ -428,11 +436,12 @@ if (isPebble) {
   let flashTimer: ReturnType<typeof setTimeout> | null = null
   // مرآة الاقتران — تصل مع أمر العرض (الرمز السرّي لا يعبر أبدًا)
   let authSnapshot: { phase: string; userCode?: string; email?: string } = { phase: 'unknown' }
-  // نصوص حالة الاقتران — وما غاب عنها فالرجوع الصادق «غير مربوط»
-  const PHASE_LABEL: Record<string, string> = {
-    paired: 'مربوط',
-    pairing: 'بانتظار الموافقة',
-    unknown: '…',
+  // نصوص حالة الاقتران بوعي اللغة — وما غاب عنها فالرجوع الصادق «غير مربوط»
+  function phaseLabel(phase: string): string {
+    if (phase === 'paired') return t('dt.paired')
+    if (phase === 'pairing') return t('dt.pairing')
+    if (phase === 'unknown') return '…'
+    return t('dt.notLinked')
   }
 
   function render(): void {
@@ -440,7 +449,7 @@ if (isPebble) {
     document.body.classList.toggle('voice', voice)
     document.body.classList.toggle('paused', paused)
     const mic = document.getElementById('stripMic')
-    if (mic) mic.title = voice ? 'تعليق صوتي · يسجّل' : 'تعليق صوتي'
+    if (mic) mic.title = voice ? t('dt.micLive') : t('dt.mic')
   }
 
   /** تحوّلٌ داخل المنبثقة: البطاقة التالية بمقاسها وموضعها فوق الحصاة */
@@ -517,23 +526,26 @@ if (isPebble) {
   /** نصّ حالة صفّ الربط في الإعدادات — من المرآة الحيّة */
   function renderSettings(): void {
     const st = document.getElementById('linkState')
-    if (st) st.textContent = authSnapshot.phase === 'paired' ? 'مربوط' : authSnapshot.phase === 'unknown' ? '…' : 'غير مربوط'
+    if (st)
+      st.textContent =
+        authSnapshot.phase === 'paired' ? t('dt.paired') : authSnapshot.phase === 'unknown' ? '…' : t('dt.notLinked')
   }
 
   /** بطاقة الحساب: الحالة تُرسم من data-phase والرمز والبريد من المرآة */
   function prepareAccount(): void {
     document.body.dataset.phase = authSnapshot.phase
     const st = document.getElementById('acctState')
-    st!.textContent = PHASE_LABEL[authSnapshot.phase] ?? 'غير مربوط'
+    if (st) st.textContent = phaseLabel(authSnapshot.phase)
     const code = document.getElementById('pairCode')
     if (code) code.textContent = authSnapshot.userCode ?? '····-····'
     const mail = document.getElementById('acctMail')
     if (mail) mail.textContent = authSnapshot.email ?? ''
   }
 
-  /** عدّاد الخطوات الحقيقيّ يبثّه المتحكّم صدىً من الحصاة — للتأكيد والتوست */
-  void listen('widget-state', (e) => {
-    const p = e.payload as { steps?: number; voice?: boolean }
+  /** عدّاد الخطوات الحقيقيّ يبثّه المتحكّم صدىً من الحصاة — للتأكيد والتوست.
+   *  آخر حملة تُحفظ كي يعيد تبديلُ اللغة رسمها بالنصّ الجديد */
+  let lastStatePayload: { steps?: number; voice?: boolean } | null = null
+  function applyStatePayload(p: { steps?: number; voice?: boolean }): void {
     if (typeof p.voice === 'boolean') {
       // صدى الحالة من الحصاة: نقطة الميك في الشريط المفتوح تحيا فورًا
       voice = p.voice
@@ -541,9 +553,14 @@ if (isPebble) {
     }
     if (typeof p.steps !== 'number') return
     const n = document.getElementById('confirmN')
-    if (n) n.textContent = arDigits(p.steps) + ' خطوات'
+    if (n) n.textContent = t('dt.stepsN', { n: arDigits(p.steps) })
     const ts = document.getElementById('toastSub')
-    if (ts) ts.textContent = arDigits(p.steps) + ' خطوات'
+    if (ts) ts.textContent = t('dt.stepsN', { n: arDigits(p.steps) })
+  }
+  void listen('widget-state', (e) => {
+    const p = e.payload as { steps?: number; voice?: boolean }
+    lastStatePayload = p
+    applyStatePayload(p)
   })
 
   // أزرار الترس (القائمة والحبّة) تفتح الإعدادات — آليّة التطبيق الأول (طلب المالك)
@@ -553,11 +570,22 @@ if (isPebble) {
       apply('settings')
     })
   }
-  // صفّا الإعدادات: الربط يفتح بطاقة الحساب (ويبدأ الربط إن لزم — قرار
-  // الحصاة)، وإنهاء التطبيق هو الإغلاق الرسميّ الوحيد
+  // صفوف الإعدادات الثلاثة: الربط يفتح بطاقة الحساب (ويبدأ الربط إن لزم — قرار
+  // الحصاة)، واللغة تتبدّل فورًا، وإنهاء التطبيق هو الإغلاق الرسميّ الوحيد
   document.getElementById('rowLink')?.addEventListener('click', (e) => {
     e.stopPropagation()
     void emit('widget-state', { account: true })
+  })
+  // I18N-01: صفّ اللغة — تبديل عربي ⇄ إنجليزي يُطبَّق حيًّا على كل نصوص البطاقات
+  document.getElementById('rowLocale')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    setLocale(readLocale() === 'ar' ? 'en' : 'ar')
+  })
+  subscribeLocale(() => {
+    render()
+    if (document.getElementById('settingsBox')) renderSettings()
+    if (document.getElementById('accountBox')) prepareAccount()
+    if (lastStatePayload) applyStatePayload(lastStatePayload)
   })
   document.getElementById('rowExit')?.addEventListener('click', (e) => {
     e.stopPropagation()
@@ -593,7 +621,7 @@ if (isPebble) {
     pending = false,
   ): void {
     const label = document.getElementById('flashStep')
-    if (label) label.textContent = 'الخطوة ' + arDigits(step)
+    if (label) label.textContent = t('dt.stepN', { n: arDigits(step) })
     const fv = document.getElementById('flashVoice')
     if (fv) fv.hidden = !voice
     const img = document.getElementById('shotImg') as HTMLImageElement | null

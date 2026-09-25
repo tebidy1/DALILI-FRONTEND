@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
-import type { GuideDto, ShareInfoDto } from '@dalili/shared'
+import { translationOverlay, type GuideDto, type ShareInfoDto } from '@dalili/shared'
 import { readerItems } from '@/lib/reader'
-import { t } from '@/lib/i18n'
+import { t, i18nLocale } from '@/lib/i18n'
 import { useGuideReader, type ReaderLoad } from './useGuideReader'
 import { ReaderBar } from './ReaderBar'
 import { ReaderHead, ReaderItemView, ReaderSkeleton } from './ReaderItems'
@@ -38,7 +38,12 @@ export function GuideReader({ guideId, deps, onBack }: { guideId: string; deps: 
   }, [onBack])
 
   const details = state.details
-  const items = useMemo(() => (details ? readerItems(details.guide, deps.apiBase) : []), [details, deps.apiBase])
+  // TRNS-01: تراكب الترجمة — قارئ اللوحة الإنجليزي يرى الإنجليزية إن وُجدت طبقتها
+  const ov = useMemo(() => (details ? translationOverlay(details.guide, i18nLocale()) : null), [details])
+  const items = useMemo(
+    () => (details ? readerItems(details.guide, deps.apiBase, ov) : []),
+    [details, deps.apiBase, ov],
+  )
   const stepCount = items.filter((i) => i.type === 'step').length
   const openWeb = () => deps.openTab(`${deps.webBase}/g/${guideId}`)
 
@@ -59,8 +64,8 @@ export function GuideReader({ guideId, deps, onBack }: { guideId: string; deps: 
       {!details && state.status === 'loading' && <ReaderSkeleton />}
 
       {details && (
-        <div className="reader-body">
-          <ReaderHead guide={details.guide} stepCount={stepCount} stale={state.status === 'ready' && state.stale} onOpenWeb={openWeb} />
+        <div className="reader-body" dir={ov ? 'ltr' : undefined}>
+          <ReaderHead guide={details.guide} ov={ov} stepCount={stepCount} stale={state.status === 'ready' && state.stale} onOpenWeb={openWeb} />
           <ol className="reader-list">
             {items.map((it) => (
               <li key={it.id}>

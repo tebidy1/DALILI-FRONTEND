@@ -37,7 +37,7 @@ export const POPOUT_SIZES = {
   toast: { w: 224, h: 56 },
   flash: { w: 240, h: 172 },
   pillz: { w: 340, h: 168 },
-  settings: { w: 246, h: 80 },
+  settings: { w: 246, h: 114 }, // I18N-01: صفّ اللغة الثالث (٣×٣٤ + هوامش البطاقة)
   account: { w: 260, h: 228 },
 } as const
 
