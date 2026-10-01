@@ -90,6 +90,23 @@ export function makeVoiceMemo(host: MemoHost) {
     return { ok: true, capped: reason === 'cap', stepIndex: cur.stepIndex, durationMs: ack.durationMs }
   }
 
+  /**
+   * إلغاء التعليق الجاري — زرّ «إلغاء» على بطاقة اللقطة (مواصفة 2026-09-30).
+   * يوقف المسجّل (فلا ميكروفون يبقى مفتوحًا) ثم **يرمي المقطع**: لا يُخزَّن
+   * أصلًا فلا يُرفع ولا يُفرَّغ. مقابل `stopMemo` الذي يخزّن دائمًا.
+   * تعليقُ الخطوة السابق — إن وُجد — لا يُمسّ: الإلغاء يخصّ الجاري وحده.
+   */
+  async function cancelMemo(): Promise<{ ok: boolean; errorAr?: string }> {
+    if (!active) return { ok: false, errorAr: t('dt.memoNoSession') }
+    clearTimer()
+    active = null
+    // الإيقاف مطلوبٌ لذاته لا لناتجه: إخفاقه لا يجعل الإلغاء فاشلًا، فالمقصود
+    // ألّا يبقى تسجيلٌ حيّ — والمقطع مرميٌّ على كل حال
+    // المسجّل قد يردّ تزامنيًّا أو وعدًا (عقد MemoRecorderHost) — التسوية أوّلًا
+    await Promise.resolve(host.recorder.stop()).catch(() => undefined)
+    return { ok: true }
+  }
+
   function clearMemo(i: number): void {
     host.store.delete(i)
   }
@@ -102,6 +119,7 @@ export function makeVoiceMemo(host: MemoHost) {
   return {
     startMemo,
     stopMemo,
+    cancelMemo,
     clearMemo,
     purge,
     activeMemo: (): ActiveMemo | null => active,

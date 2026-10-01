@@ -45,6 +45,8 @@ const RESTRICTED_URLS: RegExp[] = [
   /^(chrome|edge|about|brave|vivaldi|opera|librewolf|waterfox|zen):/i,
   /^https?:\/\/(chromewebstore\.google\.com|chrome\.google\.com\/webstore|microsoftedge\.microsoft\.com\/addons)/i,
   /^https?:\/\/(localhost|127\.0\.0\.1):8787\//,
+  // خادمنا المنشور: لا توثيق لصفحاتنا نحن (العارض/الاقتران/الملفات)
+  /^https?:\/\/(apidaleel|daleel)\.sootnote\.com\//i,
 ]
 
 export function guardUrl(url: string): { ok: boolean; reason?: string } {

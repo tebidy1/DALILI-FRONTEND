@@ -248,6 +248,109 @@ describe('مرحلة الربط ١ — المتحكّم: الجلسة الحقي
     expect(delivery.queuedFiles).toEqual([])
   })
 
+  // علّة العلامة الغائبة (بلاغ المالك 2026-09-30): البطاقة كانت تتلقّى مستطيل
+  // العلامة ببكسل الشاشة الكاملة (1920) ثم تقيسه بمقياس المصغّرة (~480) فتضع
+  // الحلقة خارج صندوق اللقطة فتُقصّ ولا تُرى. العلاج: نِسَبٌ مئويّة من النواة
+  // (markBoxRect) — لا تعرف دقّةَ الصورة المعروضة فلا تخطئها
+  it('حدث step يحمل العلامة نِسَبًا مئويّة من الإطار الطبيعيّ لا بكسلات خامًا', async () => {
+    const { ctrl, emit } = await startedController()
+    const stepP = nextEvent(ctrl, 'step') as Promise<Extract<ControllerEvent, { t: 'step' }>>
+    // النقرة عند (640,105) وشاشة 1920×1080 ⇒ حلقة نصف قطرها 24 عند 96dpi:
+    // مستطيلها (616,81,48,48) ⇒ نِسَبها من الشاشة
+    down(emit, 7, 1000)
+    facts(emit, 7)
+    tick(emit, 1100)
+    const step = await stepP
+
+    expect(step.markPct).toBeTruthy()
+    expect(step.markPct!.left).toBeCloseTo((616 / 1920) * 100, 5)
+    expect(step.markPct!.top).toBeCloseTo((81 / 1080) * 100, 5)
+    expect(step.markPct!.width).toBeCloseTo((48 / 1920) * 100, 5)
+    expect(step.markPct!.height).toBeCloseTo((48 / 1080) * 100, 5)
+  })
+
+  it('لقطة غائبة ⇐ لا markPct تُدَّعى', async () => {
+    const { ctrl, emit, results } = await startedController()
+    results.set(8, { missing: 'protected' })
+    const stepP = nextEvent(ctrl, 'step') as Promise<Extract<ControllerEvent, { t: 'step' }>>
+    down(emit, 8, 1000)
+    facts(emit, 8)
+    tick(emit, 1100)
+    const step = await stepP
+    expect(step.markPct).toBeUndefined()
+  })
+
+  // ═══ مواصفة 2026-09-30: البطاقة دورةُ حياةٍ واحدة يملكها المتحكّم ═══
+  it('المتحكّم يبثّ card بحالة البطاقة — انتظارٌ ثم بكسلات', async () => {
+    const { ctrl, emit } = await startedController()
+    const seen: Array<{ n: number; pending: boolean; recording: boolean } | null> = []
+    ctrl.onEvent((e) => {
+      if (e.t === 'card') seen.push(e.view)
+    })
+    down(emit, 7, 1000)
+    facts(emit, 7)
+    tick(emit, 1100)
+    await waitUntil(() => seen.some((v) => v?.pending === false))
+    expect(seen[0]).toMatchObject({ n: 1, pending: true })
+    expect(seen[seen.length - 1]).toMatchObject({ n: 1, pending: false, recording: false })
+  })
+
+  // العلّة المُبلَّغة حرفيًّا: نقرة ثانية قبل ذوبان بطاقة الأولى
+  it('نقرةٌ ثانية والبطاقة معروضة ⇐ card جديد بانتظار اللقطة الثانية (لا تجمّد)', async () => {
+    const { ctrl, emit } = await startedController()
+    const seen: Array<{ n: number; pending: boolean } | null> = []
+    ctrl.onEvent((e) => {
+      if (e.t === 'card') seen.push(e.view)
+    })
+    down(emit, 7, 1000)
+    facts(emit, 7)
+    tick(emit, 1100)
+    await waitUntil(() => seen.some((v) => v?.n === 1 && v.pending === false))
+    // البطاقة الأولى معروضة الآن — والنقرة الثانية يجب أن تستبدلها فورًا
+    down(emit, 9, 2000)
+    facts(emit, 9)
+    tick(emit, 2100)
+    await waitUntil(() => seen.some((v) => v?.n === 2 && v.pending === false))
+    expect(seen.some((v) => v?.n === 2 && v.pending === true)).toBe(true)
+  })
+
+  it('المهلة تُقاد بنبض sensor://tick لا بمؤقّت WebView — البطاقة تذوب ببلوغها', async () => {
+    const { ctrl, emit } = await startedController()
+    const seen: Array<unknown> = []
+    ctrl.onEvent((e) => {
+      if (e.t === 'card') seen.push(e.view)
+    })
+    down(emit, 7, 1000)
+    facts(emit, 7)
+    tick(emit, 1100)
+    await waitUntil(() => seen.some((v) => v !== null && (v as { pending: boolean }).pending === false))
+    // نبضٌ يتجاوز المهلة ⇐ إخفاء. بلا نبضٍ لا ذوبان (وهذا هو المقصود)
+    tick(emit, 1100 + 8000)
+    await waitUntil(() => seen[seen.length - 1] === null)
+    expect(seen[seen.length - 1]).toBeNull()
+  })
+
+  // علّة كامنة: auto.onNewStep كان محروسًا بـautoOn، فالتسجيل اليدويّ يستمرّ
+  // ويُلصَق بالخطوة القديمة بينما تتوالى خطوات جديدة
+  it('جلسة عاديّة: تعليقٌ يدويّ جارٍ ⇐ خطوةٌ جديدة توقفه وتحفظه لخطوته', async () => {
+    const { ctrl, emit, recorder } = await startedController()
+    const built: number[] = []
+    ctrl.onEvent((e) => {
+      if (e.t === 'step') built.push(e.steps)
+    })
+    down(emit, 7, 1000)
+    facts(emit, 7)
+    tick(emit, 1100)
+    await waitUntil(() => built.length === 1) // الخطوة بُنيت — وإلّا فلا تعليق عليها
+    await ctrl.toggleVoice() // تعليق يدويّ على الخطوة ١
+    await waitUntil(() => recorder.starts() === 1)
+    down(emit, 9, 2000)
+    facts(emit, 9)
+    tick(emit, 2100)
+    await waitUntil(() => recorder.stops() === 1)
+    expect(recorder.stops()).toBe(1)
+  })
+
   it('البدء المزدوج محروس — recording.start مرّة واحدة', async () => {
     const { ctrl, recording } = await startedController()
     await ctrl.start(false)

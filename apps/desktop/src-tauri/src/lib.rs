@@ -56,8 +56,10 @@ fn recording_start(app: tauri::AppHandle) -> Result<StartAck, String> {
 fn recording_pause() {}
 
 /// فكّ نظيف بالترتيب العكسي: النبض ثم الحقائق ثم الحلقة ثم الخطّاف
-/// (التتبّع تشخيصيّ دائم — أي مرحلة تعلق يصرخ سجلُّها باسمها)
-#[tauri::command]
+/// (التتبّع تشخيصيّ دائم — أي مرحلة تعلق يصرخ سجلُّها باسمها).
+/// `(async)` — الانضمامات تحجب حتى ثانيتين، وهي لحظة ضغط «إنهاء» بالضبط
+/// (بلاغ «جارٍ بناء الدليل» المعلَّق): لا تجري على خيط الواجهة
+#[tauri::command(async)]
 fn recording_stop() {
     #[cfg(debug_assertions)]
     eprintln!("[stop] tick");
@@ -76,7 +78,15 @@ fn recording_stop() {
 }
 
 /// `frame_pick(seq, before|after)` — الحلقة تحفظ ٨ إطارات (~٥٠٠ms) على الـGPU (٣ب-٣)
-#[tauri::command]
+///
+/// **`(async)` — إصلاح عنق الزجاجة 2026-09-30.** كان متزامنًا، ومولّد الماكرو
+/// ينادي المتزامن **مباشرةً** على خيط معالجة IPC (خيط الواجهة على ويندوز).
+/// فكل التقاطٍ يجمّد الواجهة عشرات–مئات الميلي ثانية، فتتكدّس نبضات
+/// `sensor://tick` ⇒ تتجمّد ساعة الجلسة ⇒ لا تُغلق نافذة الإيماءة في موعدها
+/// ⇒ كلّ نقرةٍ سريعة تبطّئ التي بعدها (بلاغ المالك: «تتداخل وتتأخر»).
+/// الأمان: لا نداء هنا يشترط خيط الواجهة — `point_protected` استعلاماتُ USER32
+/// وحدها، والعمل الثقيل أصلًا على خيط الحلقة المملوك.
+#[tauri::command(async)]
 fn frame_pick(seq: u64, which: Which) -> FramePickResult {
     #[cfg(debug_assertions)]
     eprintln!("[pick] called seq={} {:?}", seq, which);
@@ -86,16 +96,20 @@ fn frame_pick(seq: u64, which: Which) -> FramePickResult {
 
 /// `frame_blur(localId, rects)` — حرق التمويه على الجهاز (٣ج-٤): بكسلات الحقل
 /// الحسّاس لا تغادر الجهاز قطّ. مستطيلات ببكسل الصورة تقرّرها الجلسة (سياسة
-/// في TS) والحرق آليّة هنا — ويمسّ ملفّ الإطار المؤقّت وحده لا شيء آخر
-#[tauri::command]
+/// في TS) والحرق آليّة هنا — ويمسّ ملفّ الإطار المؤقّت وحده لا شيء آخر.
+/// `(async)` — فكّ JPEG كامل ثم طمس ثم إعادة ترميز: مئات الميلي ثانية من عملٍ
+/// نقيٍّ على المعالج لا يجوز أن تُقضى على خيط الواجهة
+#[tauri::command(async)]
 fn frame_blur(local_id: String, rects: Vec<sensors::burn::BurnRect>) -> Result<(), String> {
     sensors::burn::blur_frame(&local_id, &rects)
 }
 
 /// `frame_thumb(localId)` — مصغّرة الخطوة الأحدث للودجة (المرحلة ١): بايتات
 /// الإطار المؤقّت data URL. خامٌ يمرّ لا فهم دليل (القاعدة الذهبيّة)، والحارس
-/// نفسه: localId من إنتاجنا حصرًا
-#[tauri::command]
+/// نفسه: localId من إنتاجنا حصرًا.
+/// `(async)` — قراءة ملفّ وترميز base64؛ ومسار السقوط يقرأ الإطار **الكامل**
+/// (ميغابايتات) فيصير الحجب محسوسًا على البطاقة نفسها التي ينتظرها المستخدم
+#[tauri::command(async)]
 fn frame_thumb(local_id: String) -> Result<sensors::burn::ThumbDto, String> {
     sensors::burn::frame_thumb(&local_id)
 }
@@ -136,17 +150,24 @@ fn auth_open_verify(code: String) -> Result<(), String> {
     transport::open::open_verify(&transport::pair::web_origin(), &code)
 }
 
-/// `facts_refresh(seq)` — قيمة الحقل بعد الكتابة عبر ‏BuildUpdatedCache (٣ب-٤)
-#[tauri::command]
+/// `facts_refresh(seq)` — قيمة الحقل بعد الكتابة عبر ‏BuildUpdatedCache (٣ب-٤).
+/// `(async)` — انتظارٌ صريح على خيط UIA حتى مهلة 250مث؛ على خيط الواجهة كان
+/// ربع ثانية تجميدٍ لكل خطوة إدخال
+#[tauri::command(async)]
 fn facts_refresh(seq: u64) -> FactsEvt {
     sensors::uia::refresh(seq)
 }
 
 /// `queue_file(sessionId, localId)` — §٣.٥: نسخ اللقطة **المحروقة** إلى ملكيّة
 /// الطابور على القرص وتوقيع السجلّ ثم إيقاظة العامل. العنصر من هذه اللحظة
-/// لا يُفقد مهما أُغلق التطبيق أو انقطعت الشبكة أو نُظِّف المؤقّت
-#[tauri::command]
+/// لا يُفقد مهما أُغلق التطبيق أو انقطعت الشبكة أو نُظِّف المؤقّت.
+/// `(async)` — `wait_pending_encoders` ينام بسقف **١٥ ثانية**: أخطر حجبٍ في
+/// الحدّ كلّه، وكان يجمّد الودجة كاملةً أثناء تسليم دليلٍ كبير
+#[tauri::command(async)]
 fn queue_file(app: tauri::AppHandle, session_id: String, local_id: String) -> Result<(), String> {
+    // تشخيص حدّ التسليم (2026-09-30): دخولُ الطلب معرّفًا فقط — هذا السطر وحده
+    // يفصل «الواجهة لم تطلب رفع اللقطة أصلًا» عن «طلبت وفشل النسخ»
+    log::info!("[queue] file-requested session={session_id} local={local_id}");
     // TAM-FIX (2026-09-21): الترميز الكامل صار خلفيًّا — التسليم ينتظر ترميز
     // إطار هذه الخطوة قبل قراءة ملفه (سقف 15ث ثم مضيّ بمسار الفشل الصادق)
     sensors::capture::wait_pending_encoders(std::time::Duration::from_secs(15));
@@ -155,7 +176,11 @@ fn queue_file(app: tauri::AppHandle, session_id: String, local_id: String) -> Re
         &transport::queue::queue_files_dir()?,
         &session_id,
         &local_id,
-    )?;
+    )
+    .map_err(|e| {
+        log::error!("[queue] file-rejected local={local_id}: {e}");
+        e
+    })?;
     transport::upload::wake(app);
     Ok(())
 }
@@ -193,6 +218,15 @@ fn queue_guide(
     guide_json: String,
     has_voice: bool,
 ) -> Result<(), String> {
+    // تشخيص: أعدادٌ فقط لا محتوى — الجسم يبقى معتِمًا (القاعدة الذهبيّة:
+    // ‏Rust لا يفكّكه ولا يفهرسه؛ العدّ هنا مسحُ نصٍّ لعدّاد تشخيصيّ لا فهرسة).
+    // `local_ids` هو السؤال الحاسم في بلاغ 2026-09-30: أيّ معرّف محلّيّ باقٍ
+    // في الجسم المُسلَّم يعني لقطةً لم يستبدلها حدث الرفع ⇒ صورةٌ مكسورة
+    let local_ids = guide_json.matches("\"fileId\":\"f-").count();
+    log::info!(
+        "[queue] guide-submitted session={session_id} bytes={} voice={has_voice} localIdsLeft={local_ids}",
+        guide_json.len()
+    );
     transport::guide_queue::queue_guide(
         &transport::guide_queue::guides_dir()?,
         &session_id,
@@ -404,13 +438,16 @@ pub fn run() {
           }
         });
       }
-      if cfg!(debug_assertions) {
-        app.handle().plugin(
-          tauri_plugin_log::Builder::default()
-            .level(log::LevelFilter::Info)
-            .build(),
-        )?;
-      }
+      // السجلّ في **كلّ** البناءات (2026-09-30): كان محصورًا بـdebug، فالنسخة
+      // المبنيّة التي يشغّلها المستخدم عمياء تمامًا — لا كونسول (windows_subsystem)
+      // ولا ملفّ. بلاغُ «اللقطات لا تظهر في الدليل» تعذّر الحكم فيه لهذا السبب
+      // وحده. الوجهة الافتراضيّة ملفٌّ في مجلّد سجلّات التطبيق، ومحتواه
+      // معرّفاتٌ وأحوال لا بيانات مستخدم
+      app.handle().plugin(
+        tauri_plugin_log::Builder::default()
+          .level(log::LevelFilter::Info)
+          .build(),
+      )?;
       Ok(())
     })
     .run(tauri::generate_context!())

@@ -6,8 +6,15 @@
  * القاعدة الذهبية باقية: لا بنية دليلٍ هنا — التجميع لِـassembleGuide والتحويلات
  * للنواة، والمتحكّم يركّب ولا يعيد تنفيذ قرار.
  */
-import { isMissingScreenshot, type MissingScreenshot, type ScreenshotMeta } from '@dalili/core'
+import {
+  isMissingScreenshot,
+  markBoxRect,
+  type MarkRectPct,
+  type MissingScreenshot,
+  type ScreenshotMeta,
+} from '@dalili/core'
 import { createRecorderSession, type Bridge, type RecorderSession } from './session'
+import { createFlashCard, type FlashCard, type FlashView } from './flash-card'
 import { deliverGuide } from './deliver'
 import type { DeliveryCommands, DeliveryEvents } from './deliver'
 import { makeMemoRecorder } from './media-recorder'
@@ -17,6 +24,12 @@ import { t } from '../i18n'
 
 /** أحداث البروتوكول الوحيدة التي تراها الواجهة — تنمو بالتزايد ولا تُكسر */
 export type AuthPhase = 'unknown' | 'unpaired' | 'pairing' | 'paired'
+
+/** شكل العلامة في البروتوكول (نِسَب مئويّة) — يُعاد تصديره من النواة كي
+ *  تقرأه الواجهة من المتحكّم وحده: ‏main.ts ممنوعةٌ من استيراد `@dalili/core`
+ *  مباشرةً (عقد «الواجهة صمّاء» المجمَّد) والحقيقة تبقى تعريفًا واحدًا */
+export type { MarkRectPct } from '@dalili/core'
+export type { FlashView } from './flash-card'
 
 export interface AuthState {
   phase: AuthPhase
@@ -31,9 +44,18 @@ export type ControllerEvent =
       steps: number
       title: string
       thumbDataUrl: string | null
-      /** حلقة العلامة ببكسل الصورة — ترسمها البطاقة الحيّة على موضعها */
-      mark?: { x: number; y: number; w: number; h: number }
+      /** حلقة العلامة **نِسَبًا مئويّة (٠–١٠٠)** من الإطار الطبيعيّ — لا بكسلات.
+       *  علّة 2026-09-30: البطاقة تعرض مصغّرة ~480px بينما إحداثيّات العلامة
+       *  ببكسل الشاشة (1920+)، فضربُها بمقياس المصغّرة كان يقذف الحلقة خارج
+       *  صندوق اللقطة (overflow:hidden) فلا تُرى أبدًا. النِّسَب لا تعرف دقّةَ
+       *  الصورة المعروضة فلا تخطئها — والتحويل من النواة (markBoxRect) */
+      markPct?: MarkRectPct
     }
+  /** حالة بطاقة اللقطة كاملةً (مواصفة 2026-09-30) — `null` ⇐ أخفِ البطاقة.
+   *  الواجهة **ترسم** هذا ولا تقرّر: قرارُ الاستبدال والمهلة والتسجيل كلّه في
+   *  آلةٍ واحدة (`flash-card.ts`)، وتوزّعُه سابقًا على ثلاثة أماكن هو العلّة
+   *  التي جعلت نقرةً ثانية تبدو ضائعة */
+  | { t: 'card'; view: FlashView | null }
   /** الإشارة الفوريّة (بلاغ المالك «المستخدم لا ينتظر»): الإيماءة قُبلت
    *  والبناء جارٍ — البطاقة تقفز بالرقم المتوقّع والبكسلات تتبعها في step */
   | { t: 'capturing'; steps: number }
@@ -61,6 +83,12 @@ export interface WidgetController {
   /** ميك الشريط: في الوضع التلقائي مفتاحُه كلّه، وفي العادية تعليقٌ يدويّ
    *  على آخر خطوة (بدءٌ ثم إيقاف — قرار VOX المجمد) */
   toggleVoice(): Promise<void>
+  /** ميك بطاقة اللقطة — يبدأ التعليق على الخطوة المعروضة أو ينهيه */
+  cardMic(): Promise<void>
+  /** «إلغاء» على بطاقة اللقطة — إيقافٌ بلا حفظ */
+  cardCancelMemo(): Promise<void>
+  /** فُتحت بطاقةُ مستخدم — بطاقةُ اللقطة تُسلّم مكانها ولا تعود تطويها */
+  cardYield(): void
   onEvent(cb: (e: ControllerEvent) => void): () => void
   /** المصادقة: جلب الحالة وبدء الربط وفتح صفحة الموافقة وفكّه — كلٌّ يبثّ auth */
   pairStart(): Promise<void>
@@ -115,6 +143,8 @@ export function createWidgetController(deps: ControllerDeps): WidgetController {
     ending: boolean
   }
   let voiceStack: VoiceStack | null = null
+  /** آلة بطاقة اللقطة — تحيا مع الجلسة وتموت معها */
+  let card: FlashCard | null = null
 
   const voiceMeta = () => ({
     capturing: session !== null && !voiceStack?.ending,
@@ -125,6 +155,9 @@ export function createWidgetController(deps: ControllerDeps): WidgetController {
   const voiceOn = (): boolean =>
     !!voiceStack && (voiceStack.autoOn || voiceStack.memo.activeMemo() !== null)
   const emitVoice = (notice?: string): void => {
+    // البطاقة تعكس التسجيل الجاري أيًّا كان بادئُه (الوضع التلقائي يبدأه وحده)
+    // — `syncRecording` يصف ولا ينادي الصوت فلا حلقة رجعيّة
+    card?.syncRecording(voiceOn())
     emit({ t: 'voice', on: voiceOn(), auto: voiceStack?.autoOn ?? false, ...(notice ? { notice } : {}) })
   }
 
@@ -161,6 +194,7 @@ export function createWidgetController(deps: ControllerDeps): WidgetController {
     title: string
     kind: string
     shot: ScreenshotMeta | MissingScreenshot | null
+    frame?: { w: number; h: number }
   }): Promise<void> {
     const rec = session
     if (!rec) return
@@ -173,12 +207,24 @@ export function createWidgetController(deps: ControllerDeps): WidgetController {
         console.error('[controller] thumb:', e)
       }
     }
+    // التحويل لنِسَب بالنواة وحدها (markBoxRect) — المتحكّم يركّب ولا يحسب.
+    // بلا أبعاد إطارٍ صادقة لا نِسَبَ تُدَّعى: علامةٌ في غير موضعها أسوأ من غيابها
+    const markPct =
+      meta?.mark && s.frame ? markBoxRect(meta.mark.rect, s.frame.w, s.frame.h) : null
+    // البكسلات وصلت ⇐ البطاقة تُملأ بالحقيقة. الآلة وحدها تقرّر ماذا يظهر:
+    // قد تكون في `recording` فتحدّث الصورة بلا قطعِ كلامٍ جارٍ
+    if (thumbDataUrl) {
+      card?.step(rec.stepCount(), { src: thumbDataUrl, ...(markPct ? { mark: markPct } : {}) })
+    } else {
+      // لا بكسلات (لقطة محميّة أو فشل مصغّرة) — البطاقة لا تعلّق منتظرةً للأبد
+      card?.dropped()
+    }
     emit({
       t: 'step',
       steps: rec.stepCount(),
       title: s.title,
       thumbDataUrl,
-      ...(meta?.mark ? { mark: meta.mark.rect } : {}),
+      ...(markPct ? { markPct } : {}),
     })
   }
 
@@ -186,6 +232,8 @@ export function createWidgetController(deps: ControllerDeps): WidgetController {
   function teardown(): void {
     for (const un of cancels) un()
     cancels = []
+    card?.reset() // لا بطاقةَ يتيمة تبقى بعد موت الجلسة، ولا مهلةَ معلّقة
+    card = null
     session = null
     sessionId = null
   }
@@ -223,20 +271,79 @@ export function createWidgetController(deps: ControllerDeps): WidgetController {
         factsRefresh: (seq) => deps.bridge.factsRefresh(seq),
         frameBlur: (localId, rects) => deps.bridge.frameBlur(localId, rects),
       }
+      // ساعة البطاقة من `sensor://tick` (Rust) لا من `setTimeout`: مؤقّتات
+      // WebView تُخنَق في نافذةٍ غير مركَّز عليها — والمستخدم بطبيعة العمل في
+      // تطبيقٍ آخر. نفس علّة ساعة الجلسة (خطّة ٣ج §٧)
+      let tickMs = 0
+      let dueList: Array<{ fn: () => void; at: number }> = []
+      cancels.push(
+        deps.bridge.listen('sensor://tick', (p) => {
+          const v = p as { qpcMs?: number }
+          if (typeof v.qpcMs !== 'number') return
+          tickMs = v.qpcMs
+          const due = dueList.filter((e) => tickMs >= e.at)
+          dueList = dueList.filter((e) => tickMs < e.at)
+          for (const e of due) e.fn()
+        }),
+      )
+      card = createFlashCard({
+        now: () => tickMs,
+        schedule: (fn, ms) => {
+          const e = { fn, at: tickMs + ms }
+          dueList.push(e)
+          return () => {
+            dueList = dueList.filter((x) => x !== e)
+          }
+        },
+        // الآلة تطلب ولا تملك — مصدر الحقيقة يبقى voiceStack واحدًا
+        voice: {
+          start: async () => {
+            const stack = voiceStack
+            const rec0 = session
+            if (!stack || !rec0) return false
+            const r = await stack.memo.startMemo(rec0.stepCount() - 1)
+            if (!r.ok) {
+              emitVoice(r.errorAr) // تدهور معلن لا صمت
+              return false
+            }
+            emitVoice()
+            return true
+          },
+          stop: async () => {
+            const stack = voiceStack
+            if (!stack || !stack.memo.activeMemo()) return
+            await stack.memo.stopMemo('user').catch(() => undefined)
+            emitVoice()
+          },
+          cancel: async () => {
+            const stack = voiceStack
+            if (!stack || !stack.memo.activeMemo()) return
+            await stack.memo.cancelMemo().catch(() => undefined)
+            emitVoice()
+          },
+        },
+        onView: (view) => emit({ t: 'card', view }),
+      })
       const rec = createRecorderSession(scoped, {
         ignorePoint,
         onStepBuilt: (s) => {
           void handleStep(s)
-          // خطوة جديدة في الوضع التلقائي ⇐ انقل التعليق إليها (توقف السابقة واحفظها)
-          if (voiceStack?.autoOn && !voiceStack.ending) {
-            void voiceStack.auto.onNewStep(rec.stepCount() - 1)
+          // إصلاح 2026-09-30: يُنادى **دائمًا** لا في الوضع التلقائي وحده.
+          // `auto-memo` موثَّق بأنّ «الجلسة العادية يعمل الخطّاف نفسه بإيقاف
+          // التعليق الجاري عند بطاقة جديدة» — والحراسة بـautoOn كانت تُبقي
+          // تعليقًا يدويًّا جاريًا يُلصَق بالخطوة **القديمة** وخطواتٌ جديدة تتوالى.
+          // الوحدة تحرس نفسها: بلا autoMemo توقف ولا تبدأ بديلًا
+          if (!voiceStack?.ending) {
+            void voiceStack?.auto.onNewStep(rec.stepCount() - 1)
           }
         },
         // الإشارة الفوريّة: تقفز البطاقة لحظة القبول، والإسقاط يغلقها بصدق
         onGestureAccepted: (n) => {
+          void card?.capturing(n)
           emit({ t: 'capturing', steps: n })
         },
         onGestureDropped: () => {
+          card?.dropped()
           emit({ t: 'dropped' })
         },
       })
@@ -353,6 +460,19 @@ export function createWidgetController(deps: ControllerDeps): WidgetController {
         return
       }
       emitVoice()
+    },
+
+    /** ميك البطاقة — الآلة تعرف حالتها فتبدأ أو تنهي؛ والمتحكّم يوصّل فقط */
+    async cardMic(): Promise<void> {
+      await card?.mic()
+    },
+
+    async cardCancelMemo(): Promise<void> {
+      await card?.cancel()
+    },
+
+    cardYield(): void {
+      void card?.userCard()
     },
 
     onEvent(cb: (e: ControllerEvent) => void): () => void {

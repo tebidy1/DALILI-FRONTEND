@@ -120,12 +120,19 @@ pub fn downscale_bgra(w: u32, h: u32, bgra: &[u8], target_w: u32) -> PixBuf {
     let out_w = w as usize / stride;
     let out_h = h as usize / stride;
     let in_w = w as usize;
+    // **عيّنات رأسيّة محدودة (٢٠٢٦-٠٩-٣٠):** الكتلة تُعيَّن أفقيًّا كاملةً —
+    // وهو ما يُبقي النصّ مقروءًا ولأجله اختير المتوسّط الصندوقي أصلًا — ورأسيًّا
+    // بصفَّين لا بـ`stride` صفًّا. عند 4K‏ (stride=8) ينزل العمل من ٦٤ عيّنة
+    // لكل بكسل خرجٍ إلى ١٦: ثمانية ملايين قراءة بدل ثلاثةٍ وثلاثين مليونًا لكل
+    // لقطة. الفرق البصريّ في مصغّرةٍ عرضها ٤٨٠ لا يُرى، والدقّة الأفقيّة محفوظة
+    let vsteps = stride.min(2);
+    let vgap = stride / vsteps; // توزيع الصفوف المعاينة على ارتفاع الكتلة
     let mut out = vec![0u8; out_w * out_h * 4];
     for oy in 0..out_h {
         for ox in 0..out_w {
             let (mut r, mut g, mut b) = (0u64, 0u64, 0u64);
-            for sy in 0..stride {
-                let row = (oy * stride + sy) * in_w;
+            for sy in 0..vsteps {
+                let row = (oy * stride + sy * vgap) * in_w;
                 for sx in 0..stride {
                     let p = (row + ox * stride + sx) * 4;
                     r += bgra[p] as u64;
@@ -133,7 +140,7 @@ pub fn downscale_bgra(w: u32, h: u32, bgra: &[u8], target_w: u32) -> PixBuf {
                     b += bgra[p + 2] as u64;
                 }
             }
-            let n = (stride * stride) as u64;
+            let n = (stride * vsteps) as u64;
             let q = (oy * out_w + ox) * 4;
             out[q] = (r / n) as u8;
             out[q + 1] = (g / n) as u8;
@@ -203,6 +210,12 @@ fn encode_jpeg(path: &str, buf: &PixBuf) -> Result<(), String> {
 /// `frame_blur(localId, rects)` — يقرأ الملفّ ويحرق كل مستطيل ويعيد كتابته مكانه
 pub fn blur_frame(local_id: &str, rects: &[BurnRect]) -> Result<(), String> {
     let path = local_frame_path(local_id)?;
+    // **سباقٌ قائم أُصلح ٢٠٢٦-٠٩-٣٠:** ترميز الإطار الكامل صار خلفيًّا (TAM-FIX
+    // ٢٠٢٦-٠٩-٢١)، والجلسة تنادي `frame_blur` فورَ عودة `frame_pick` — فكان
+    // الطمس يقرأ ملفًّا **ما زال الخيطُ الخلفيّ يكتبه**: غيابٌ أو بايتات ناقصة
+    // ⇒ «تعذّر الحرق» ⇒ **لقطة الحقل الحسّاس تُسقَط كليًّا**. الانتظار هنا هو
+    // الحارس نفسه الذي يستعمله التسليم قبل قراءة الملفّات
+    crate::sensors::capture::wait_pending_encoders(std::time::Duration::from_secs(10));
     let jpeg = std::fs::read(&path).map_err(|e| format!("قراءة الإطار: {e}"))?;
     let mut buf = decode_bgra(&jpeg)?;
     for r in rects {
@@ -219,6 +232,36 @@ pub fn blur_frame(local_id: &str, rects: &[BurnRect]) -> Result<(), String> {
 mod tests {
     use super::*;
     use crate::sensors::measure::{crop, mean_luma};
+
+    /// التصغير لا يلمس **كل** بكسل مصدر (٢٠٢٦-٠٩-٣٠): الكتلة تُعيَّن أفقيًّا
+    /// كاملةً — وهو ما يُبقي النصّ مقروءًا — ورأسيًّا بصفَّين لا بـ`stride`
+    /// صفًّا. عند 4K‏ (stride=8) ينزل العمل من ٦٤ عيّنة لكل بكسل خرجٍ إلى ١٦:
+    /// ٨ ملايين قراءة بدل ٣٣ مليونًا لكل لقطة، والفرق البصريّ في مصغّرةٍ
+    /// عرضها ٤٨٠ لا يُرى. **الدقّة الأفقيّة محفوظة حرفيًّا** فلا تعود عيّنةُ
+    /// أخذٍ تغلّف النصّ الرقيق (العلّة التي وُلد منها المتوسّط الصندوقيّ)
+    #[test]
+    fn التصغير_يعين_الصف_كاملا_أفقيا_وصفين_فقط_رأسيا() {
+        // ‏8×8 بصيغة BGRA: الصفّان 0و4 بيضاوان (وهما المعاينان) وسائر الصفوف سوداء.
+        // متوسّطٌ بصفَّين ⇒ أبيض خالص؛ ومتوسّطٌ بثمانية صفوف كان سيعطي ربعًا
+        let (w, h) = (8u32, 8u32);
+        let mut bgra = vec![0u8; (w * h * 4) as usize];
+        for y in 0..h {
+            for x in 0..w {
+                let p = (y * w + x) as usize * 4;
+                let v = if y == 0 || y == 4 { 255 } else { 0 };
+                bgra[p] = v;
+                bgra[p + 1] = v;
+                bgra[p + 2] = v;
+                bgra[p + 3] = 255;
+            }
+        }
+        let small = downscale_bgra(w, h, &bgra, 1); // stride=8 ⇒ خرج 1×1
+        assert_eq!((small.w, small.h), (1, 1));
+        assert_eq!(
+            small.bgra[0], 255,
+            "الصفّان المعاينان (0 و4) أبيضان — لو عوينت الثمانية لظهر ~٦٤"
+        );
+    }
 
     /// التصغير الصندوقي: نصف أحمر ونصف أزرق ⇒ الكتل الوسطى متوسّط صادق
     /// والأبعاد هدفيّة، والأصغر من الهدف يعود بلا نسخ

@@ -187,4 +187,41 @@ describe('voice-memo — تعليق الخطوة في الودجة (نقل VOX-0
     await vm.purge()
     expect(h.store.size).toBe(0)
   })
+
+  // زرّ «إلغاء» على بطاقة اللقطة (مواصفة 2026-09-30): المستخدم تكلّم ثم عدل
+  // — المقطع لا يُخزَّن أصلًا. `stopMemo` يخزّن دائمًا فلا يصلح لهذا
+  it('cancelMemo يوقف المسجّل ولا يخزّن شيئًا ويُبطل مؤقّت السقف', async () => {
+    const h = host()
+    const vm = makeVoiceMemo(h)
+    await vm.startMemo(0)
+    expect(vm.activeMemo()).not.toBeNull()
+    const r = await vm.cancelMemo()
+    expect(r.ok).toBe(true)
+    expect(h.store.size).toBe(0) // لا مقطعَ ملغى يُرفع ولا يُفرَّغ
+    expect(vm.activeMemo()).toBeNull()
+    expect(h.clearCapTimer).toHaveBeenCalled()
+    // المسجّل أُوقف فعلًا — لا ميكروفون يبقى مفتوحًا بعد الإلغاء
+    expect(h.recorder.stop).toHaveBeenCalled()
+  })
+
+  it('cancelMemo بلا تسجيل جارٍ ⇐ رفضٌ صادق بلا لمس المخزن', async () => {
+    const h = host()
+    const vm = makeVoiceMemo(h)
+    h.store.set(0, { memoId: 'keep', chunks: ['a'], durationMs: 1000, pending: true })
+    const r = await vm.cancelMemo()
+    expect(r.ok).toBe(false)
+    expect(h.store.get(0)?.memoId).toBe('keep') // تعليقٌ سابقٌ محفوظ لا يُمسّ
+  })
+
+  it('إلغاء ثم تسجيل جديد على الخطوة نفسها ⇐ الجديد وحده يُحفظ', async () => {
+    const h = host()
+    const vm = makeVoiceMemo(h)
+    await vm.startMemo(2)
+    await vm.cancelMemo()
+    await vm.startMemo(2)
+    const r = await vm.stopMemo('user')
+    expect(r.ok).toBe(true)
+    expect(h.store.size).toBe(1)
+    expect(h.store.get(2)?.durationMs).toBe(5000)
+  })
 })

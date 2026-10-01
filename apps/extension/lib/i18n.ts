@@ -32,7 +32,7 @@ export const ar = {
   'ext.notSignedIn': 'غير مسجّل الدخول — الالتقاط يعمل، والنشر وعرض أدلتك يحتاجان دخولًا',
   'ext.stepsCount': '{count} خطوة',
   'ext.recentError': 'تعذّر جلب الأدلة الأخيرة',
-  'ext.serverUnreachable': 'تعذر الوصول للخادم — تأكد من تشغيله على المنفذ 8787',
+  'ext.serverUnreachable': 'تعذر الاتصال بالخادم — تحقق من اتصالك بالإنترنت وحاول مجددًا',
   'ext.extNotResponding': 'لا يستجيب — أعد تحميل الامتداد',
 
   // رأس اللوحة وشريط الالتقاط
@@ -325,7 +325,7 @@ export const en: Record<TKey, TValue> = {
   'ext.notSignedIn': 'Not signed in — capture works; publishing and browsing your guides need sign-in',
   'ext.stepsCount': (v) => (Number(v.count) === 1 ? '1 step' : `${v.count} steps`),
   'ext.recentError': 'Could not fetch recent guides',
-  'ext.serverUnreachable': 'Cannot reach the server — make sure it is running on port 8787',
+  'ext.serverUnreachable': 'Cannot reach the server — check your internet connection and try again',
   'ext.extNotResponding': 'Not responding — reload the extension',
 
   'ext.stateReady': '● Ready',

@@ -458,6 +458,9 @@
          تذوب بعد ٢.٣ث — اللقطة مكبَّرة على العلامة والدائرة الحمراء على
          الزر المقصود، وتحتها «الخطوة ١» + شارة الصوت + «تراجع». تكييف
          WDA: سطح مصمت ‏#FCFCFC بلا ضباب ولا ظلّ ═══ */
+      /* عمودٌ مرن لا كتلة (طلب المالك 2026-09-30/ب: «مساحة بيضاء كبيرة لا
+         داعي لها»): صندوق اللقطة يأكل كلّ ما يفيض، فلا فراغَ تحت الصفّ حين
+         تختفي الموجة — تنكمش اللقطة ١٨px وتعود، والنافذة لا تقفز */
       .flash {
         display: none;
         width: 100%;
@@ -465,12 +468,14 @@
         box-sizing: border-box;
         background: #fcfcfc;
         border: 1px solid rgba(0, 0, 0, 0.057);
-        padding: 6px;
+        padding: 4px;
+        flex-direction: column;
       }
-      body[data-win="popout"][data-form="flash"] .flash { display: block; animation: pop-in 0.3s ease; }
+      body[data-win="popout"][data-form="flash"] .flash { display: flex; animation: pop-in 0.3s ease; }
       .flash .shot {
         position: relative;
-        height: 118px;
+        flex: 1 1 auto;
+        min-height: 0;
         border-radius: 4px;
         overflow: hidden;
         border: 1px solid rgba(0, 0, 0, 0.057);
@@ -495,7 +500,10 @@
       .flash .shot-ring {
         display: none;
         position: absolute;
-        border: 2.5px solid #c4453d;
+        border: 1.5px solid #ea580c;
+        /* طبقة زجاجية بلون الإطار: تمييز بلا إخفاء ما خلف الدائرة (طلب المالك 2026-09-27)؛
+           السمك أُخفّض بطلب المالك 2026-09-29 — خط رفيع لا حلقة ثقيلة */
+        background: rgba(234, 88, 12, 0.14);
         border-radius: 50%;
         pointer-events: none;
       }
@@ -517,32 +525,125 @@
           background-color: #e9e4d7;
         }
       }
-      .flash .frow {
+      /* ——— أزرار الصفّ الواحد (طلب المالك 2026-09-30/ب: «زر التعليق الصوتي
+         ليس كلمة بل مايك»): مربّعات أيقونةٍ ٢٤ بتلميح ويندوز الأصليّ يسمّي
+         الفعل — لا كلمةَ تزاحم رقم اللقطة في صفٍّ عرضه ٢٣٠ ——— */
+      .flash .mic-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        flex: none;
+        font-family: inherit;
+        border-radius: 5px;
+        border: 1px solid rgba(0, 0, 0, 0.09);
+        background: #fcfcfc;
+        color: #1c2b33;
+        cursor: pointer;
+      }
+      .flash .mic-btn svg {
+        width: 13px;
+        height: 13px;
+      }
+      .flash .mic-btn:hover {
+        background: #f4f2ec;
+      }
+      /* «إنهاء» أحمر مصمت: الفعل الحاسم يُقرأ قبل أن يُضغط */
+      .flash .mic-btn.stop {
+        background: #c4453d;
+        border-color: #c4453d;
+        color: #fff;
+      }
+      .flash .mic-btn.stop:hover {
+        filter: brightness(1.08);
+        background: #c4453d;
+      }
+      .flash .mic-btn.ghost {
+        border-color: transparent;
+        background: none;
+        color: #5d5d5d;
+      }
+      .flash .mic-btn.ghost:hover {
+        background: #f4f2ec;
+      }
+      .flash .mic-btn[hidden] {
+        display: none;
+      }
+      /* ——— موجة التسجيل الحيّ — منقولة حرفيًّا من الإضافة (sidepanel.css):
+         ٣٦ عمودًا بإيقافٍ واحد وأطوارٍ مزاحة (تأخير سالب لكل عمود) ترسم موجة
+         تسافر أفقيًّا. transform وحده بلا rAF، وشريط ١٨px لا يغطّي محتوى ——— */
+      .flash .memo-wave {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 7px 5px 3px;
+        height: 18px;
+        flex: none;
+        margin: -4px -4px 0;
+        padding: 0 10px;
+        border-radius: 5px 5px 0 0;
+        background: rgba(196, 69, 61, 0.07);
+        border-bottom: 1px solid rgba(196, 69, 61, 0.18);
+      }
+      .flash .memo-wave[hidden] {
+        display: none;
+      }
+      .flash .memo-wave-label {
+        flex: none;
+        color: #c4453d;
+        font-size: 10.5px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .flash .memo-wave-bars {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 100%;
+        overflow: hidden;
+      }
+      .flash .memo-wave-bars i {
+        flex: 1 1 auto;
+        min-width: 1.5px;
+        max-width: 3px;
+        height: 100%;
+        border-radius: 2px;
+        background: #c4453d;
+        opacity: 0.75;
+        animation: dl-memo-wave 1.15s ease-in-out infinite;
+        animation-delay: calc(var(--i) * -85ms);
+      }
+      @keyframes dl-memo-wave {
+        0%,
+        100% {
+          transform: scaleY(.22);
+        }
+        50% {
+          transform: scaleY(1);
+        }
+      }
+      /* الحركة تُحترم تفضيل التقليل — الشريط يبقى معلنًا بلا نبض */
+      @media (prefers-reduced-motion: reduce) {
+        .flash .memo-wave-bars i {
+          animation: none;
+          transform: scaleY(.6);
+        }
+      }
+      /* الصفّ الواحد (طلب المالك 2026-09-30/ب): رقم اللقطة · المايك · إلغاء —
+         صفٌّ واحد أسفل الإشعار بدل صفَّين كانا يبتلعان ٣٠px بلا فائدة */
+      .flash .frow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: none;
+        padding: 6px 2px 0;
         font-size: 12px;
       }
       .flash .fstep {
         font-weight: 700;
         color: #1c2b33;
-      }
-      .flash .fvoice {
-        color: #c4453d;
-        font-size: 10.5px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-      .flash .fvoice svg {
-        width: 11px;
-        height: 11px;
-      }
-      /* قاعدة hidden تعلو CSS — شارة الصوت لا تظهر بلا جلسة صوتيّة */
-      .flash .fvoice[hidden] {
-        display: none;
       }
       /* «تراجع» بنمط زر الرابط في ويندوز: نصّ ملون بلا إطار، تعبئة خفيفة عند المرور */
       .flash .undo {
@@ -879,17 +980,31 @@
         <span><span class="tt">وصل الدليل إلى مساحتك</span><br /><span class="ts" id="toastSub">٠ خطوات</span></span>
       </div>
       <div class="flash" id="flashBox">
+        <!-- موجة التسجيل الحيّ — منقولة من الإضافة (VOX-09): تسمّي النشاط
+             «يسجّل صوتًا» بدل مجرّد احمرار. الأعمدة تُولَّد في main.ts -->
+        <div class="memo-wave" id="flashWave" role="status" hidden>
+          <span class="memo-wave-label" id="flashWaveLabel">يسجّل صوتًا…</span>
+          <span class="memo-wave-bars" id="flashWaveBars" aria-hidden="true"></span>
+        </div>
         <div class="shot" aria-hidden="true">
           <div class="shot-grid"></div>
           <img class="shot-img" id="shotImg" alt="" />
           <span class="shot-ring" id="shotRing"></span>
         </div>
+        <!-- صفٌّ واحد أسفل الإشعار (طلب المالك 2026-09-30/ب): رقم اللقطة ·
+             مايكٌ أيقونةً بلا كلمة · إلغاء. وعند الضغط على المايك يحلّ محلّه
+             زرّا التحكّم في التسجيل (إنهاء · إلغاء) في الصفّ نفسه -->
         <div class="frow">
           <span class="fstep" id="flashStep">الخطوة ١</span>
-          <span class="fvoice" id="flashVoice" hidden>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-            تعليق صوتي
-          </span>
+          <button class="mic-btn" id="flashMic" type="button" title="تعليق صوتي" aria-label="تعليق صوتي">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          </button>
+          <button class="mic-btn stop" id="flashStop" type="button" hidden title="إنهاء" aria-label="إنهاء">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+          </button>
+          <button class="mic-btn ghost" id="flashCancel" type="button" hidden title="إلغاء" aria-label="إلغاء">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
           <button class="undo" id="btnUndo" type="button">تراجع</button>
         </div>
       </div>

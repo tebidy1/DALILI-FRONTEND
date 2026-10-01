@@ -171,6 +171,12 @@ export interface SessionOptions {
     title: string
     kind: string
     shot: ScreenshotMeta | MissingScreenshot | null
+    /** أبعاد الإطار الطبيعيّة التي وُلدت فيها إحداثيّات `shot.mark` — بكسل
+     *  الشاشة الملتقطة كاملةً. تلزم كلَّ عارضٍ يعرض **صورةً بدقّةٍ أخرى**
+     *  (الودجة تعرض مصغّرة ~480px): بدونها لا سبيل لتحويل العلامة لنِسَب،
+     *  وضربُها بمقياس المصغّرة يقذف الحلقة خارج الصندوق (علّة 2026-09-30).
+     *  غائبة حين لا لقطة — لا صفرٌ كاذب */
+    frame?: { w: number; h: number }
   }) => void
   /** قبول الإيماءة (بلاغ المالك «المستخدم لا ينتظر»): يُندّى لحظة فتح
    *  نافذة الإيماءة — بعد بوّابتي الإيقاف والودجة — بالرقم المتوقّع
@@ -317,10 +323,14 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
       const which = desktopShotPolicy(facts.element.controlType)
       const pick = await bridge.invoke('frame_pick', { seq: click.seq, which })
       let screenshot: RawStep['screenshot']
+      // فضاء إحداثيّات العلامة — أبعاد الشاشة الملتقطة؛ يُنقل مع الخطوة كي
+      // يحوّله العارض لنِسَب مهما كانت دقّة الصورة التي يعرضها (علّة 2026-09-30)
+      let frame: { w: number; h: number } | undefined
       if ('missing' in pick) {
         screenshot = { missing: true, reason: missingReason(pick.missing) }
         } else {
           const meta = buildScreenshot(pick, facts, click)
+          frame = { w: pick.monitor.w, h: pick.monitor.h }
         // حرق الحسّاس على الجهاز (٣ج-٤) — قبل أيّ تسليم لاحق للطابور (٣د):
         // مستطيل العنصر ببكسل الصورة يحرق في ملفّ الإطار المؤقّت ويسجَّل في
         // blurRects (إحداثيات الصورة الطبيعية بعقد ScreenshotMeta) مع autoBlurred.
@@ -336,6 +346,7 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
               missing: true,
               reason: t('dt.burnFail'),
             }
+            frame = undefined // لا لقطة ⇐ لا فضاء إحداثيّات يُدَّعى
           }
         } else {
           screenshot = meta
@@ -383,6 +394,7 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
         }),
         kind: last.kind,
         shot: last.screenshot ?? null,
+        ...(frame ? { frame } : {}),
       })
     }
   }

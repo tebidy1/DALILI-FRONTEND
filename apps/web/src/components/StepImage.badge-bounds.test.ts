@@ -23,6 +23,7 @@ function textCtx() {
     save() {},
     restore() {},
     beginPath() {},
+    arc() {},
     moveTo() {},
     lineTo() {},
     quadraticCurveTo() {},

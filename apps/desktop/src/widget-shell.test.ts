@@ -222,23 +222,30 @@ describe('لحظة الالتقاط وعجلات التدريب (خطوتا ال
   const n = norm(readHtml())
   const main = readFileSync(join(here, 'main.ts'), 'utf8')
 
-  it('٤ بطاقة اللقطة الحقيقيّة: بكسلات الخطوة الفعلية وحلقة العلامة على موضعها و«تراجع» — وتذوب بعد ٢.٣ث', () => {
+  it('٤ بطاقة اللقطة الحقيقيّة: بكسلات الخطوة الفعلية وحلقة العلامة على موضعها و«تراجع»', () => {
     expect(n).toContain('id="flashBox"')
     expect(n).toContain('<img class="shot-img" id="shotImg" alt="" />')
     expect(n).toContain('<span class="shot-ring" id="shotRing"></span>')
     expect(n).toContain('.flash .shot-ring {')
-    expect(n).toContain('border: 2.5px solid #c4453d;')
+    expect(n).toContain('border: 1.5px solid #ea580c;')
+    // الزجاجية: تعبئة خفيفة بلون الإطار تميّز دون إخفاء (طلب المالك 2026-09-27)؛ السمك أرفع بطلبه 2026-09-29
+    expect(n).toContain('background: rgba(234, 88, 12, 0.14);')
     expect(n).toContain('<button class="undo" id="btnUndo" type="button">تراجع</button>')
     expect(n).toContain('id="flashStep"')
-    expect(n).toContain('id="flashVoice"')
-    expect(n).toContain('body[data-win="popout"][data-form="flash"] .flash { display: block; animation: pop-in 0.3s ease; }')
-    expect(main).toContain('}, 2300)')
+    // شارة `flashVoice` رُفعت 2026-09-30/ب: زرّ المايك في الصفّ نفسه يقول ما
+    // كانت تقوله، والموجة أثناء التسجيل أوضح منها — وبقاؤها كان يزاحم صفًّا
+    // واحدًا عرضه ٢٣٠. تبقى الشهادة بغيابها كي لا تعود سهوًا
+    expect(n).not.toContain('id="flashVoice"')
+    // block ⇐ flex بالقرار نفسه: البطاقة عمودٌ مرن تأكل اللقطةُ فيه الفائض
+    // فلا تبقى مساحةٌ بيضاء تحت الصفّ حين تختفي الموجة
+    expect(n).toContain('body[data-win="popout"][data-form="flash"] .flash { display: flex; animation: pop-in 0.3s ease; }')
     expect(main).toContain('prepareFlash(')
     // I18N-01: تسمية الخطوة والأرقام الشرقية عبر i18n.ts (السلسلة الشرقيّة هناك)
     expect(main).toContain("t('dt.stepN'")
     expect(readFileSync(join(here, 'i18n.ts'), 'utf8')).toContain('٠١٢٣٤٥٦٧٨٩')
-    // اللقطة الحقيقيّة: البكسلات وحلقة العلامة تصلان حمولةَ بروتوكول
-    expect(main).toContain('shot: thumbDataUrl ? { src: thumbDataUrl')
+    // اللقطة الحقيقيّة: البكسلات وحلقة العلامة تصلان حمولةَ بروتوكول — وهي
+    // الآن جزءٌ من `FlashView` الذي تبنيه الآلة، والواجهة تمرّره كما هو
+    expect(main).toContain('shot: view.shot')
   })
 
   it('٩ الحبّة الكاملة: شارة «أول جولتين ثم تنطوي» وزران مكتوبان — ثم تنطوي للقائمة', () => {
@@ -255,9 +262,12 @@ describe('لحظة الالتقاط وعجلات التدريب (خطوتا ال
     expect(n).toContain('.pillzbox .train-tag {')
   })
 
+  // ثم صغرت إلى ١٥٨ بقرار المالك 2026-09-30/ب («مساحة بيضاء كبيرة لا داعي
+  // لها»): الصفّان صفٌّ واحد (−٣٠) والحشو ٦⇐٤ (−٤) وفراغُ الموجة لم يعد
+  // يُحجَز (−١٨) — العمود المرن يعطيها من اللقطة ساعةَ تظهر بلا قفزةِ نافذة
   it('البطاقتان بمقاسَي المرجع في عقد المنبثقة', () => {
     const src = readFileSync(join(here, 'recorder', 'expand.ts'), 'utf8')
-    expect(src).toContain('flash: { w: 240, h: 172 }')
+    expect(src).toContain('flash: { w: 240, h: 158 }')
     expect(src).toContain('pillz: { w: 340, h: 168 }')
   })
 })
@@ -277,7 +287,7 @@ describe('تجميد التصميم — عقد مرحلة الربط الحقي�
       'confirm: { w: 252, h: 150 }',
       'build: { w: 210, h: 60 }',
       'toast: { w: 224, h: 56 }',
-      'flash: { w: 240, h: 172 }',
+      'flash: { w: 240, h: 158 }', // −٦٠: صفٌّ واحد وحشوٌ أضيق وعمودٌ مرن (2026-09-30/ب)
       'pillz: { w: 340, h: 168 }',
       'settings: { w: 246, h: 114 }', // I18N-01: صفّ اللغة الثالث
       'account: { w: 260, h: 228 }',
@@ -297,9 +307,19 @@ describe('تجميد التصميم — عقد مرحلة الربط الحقي�
     expect(n).toContain("'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif")
   })
 
-  it('المدّد المجمّدة: ذوبان اللقطة ٢.٣ث وتوست الوصول ٣.٤ث', () => {
-    expect(main).toContain('}, 2300)')
+  // المدّة تغيّرت بقرار المالك 2026-09-30: ٢.٣ث كانت تُعجّل المستخدم عن زرّ
+  // المايك — وسببُ بقاء البطاقة أصلًا أن يبلغه. والمهلة انتقلت من مؤقّت
+  // المنبثقة إلى آلة `flash-card` المقودة بـsensor://tick (مؤقّتات WebView
+  // تُخنَق في نافذةٍ غير مركَّز عليها، والمستخدم في تطبيقٍ آخر بطبيعة العمل)
+  it('المدّد المجمّدة: توست الوصول ٣.٤ث — وذوبان اللقطة لم يعد مؤقّتَ منبثقة', () => {
     expect(main).toContain('}, 3400)')
+    expect(main).not.toContain('}, 2300)')
+    // العدد نفسه يسكن الآلة لا الواجهة — وهو ٣ث بقرار المالك 2026-09-30/ب
+    // («الانتظار يفترض ألّا يتعدّى الثلاث ثوانٍ»): ٨ث كانت تحجب العمل، وبدء
+    // التسجيل يُلغي المهلة أصلًا فلا تقطع الثلاثُ تعليقًا جاريًا
+    expect(readFileSync(join(here, 'recorder', 'flash-card.ts'), 'utf8')).toContain(
+      'FLASH_HOLD_MS = 3000',
+    )
   })
 
   it('main.ts واجهةٌ فقط: ممنوع استيراد منطق التشغيل مباشرةً — الربط الحقيقيّ عبر المتحكّم (والجسور سطورُ توصيلٍ مسموحة يمرّرها للمتحكّم) لا عبر تسرّب الوحدات إلى الواجهة', () => {
@@ -447,33 +467,92 @@ describe('الإشارة الفوريّة ونقر الحصاة أثناء ال�
     // البلاغ: النقر أثناء الالتقاط كان يخفي اللقطة المفتوحة فيبدو كأن القائمة لا تظهر،
     // ثم تقفز لقطة الخطوة التالية متأخرة فيبدو كأن النقر «يحسب لقطة»
     expect(main).toContain("if (openForm === 'flash' || openForm === 'toast')")
-    expect(main).toContain('pendingCapture = false\n        void openPopout()')
+    // `cardYield` حلّ محلّ علم `pendingCapture`: الآلة تُسلّم مكانها لبطاقة
+    // المستخدم وتحفظ أيّ تعليقٍ جارٍ — بدل علمٍ في الواجهة لا يعرف عن الصوت شيئًا
+    expect(main).toContain('controller.cardYield()\n        void openPopout()')
     // بطاقة المستخدم (قائمة/شريط/حساب…) تظل بالتناوب كالمرجع
     expect(main).toContain('hidePopout()\n      return\n    }\n    void openPopout()')
   })
 
-  it('capturing يقفز البطاقة فورًا بالرقم المتوقّع — والبكسلات تتبع في step فتحدّثها في مكانها', () => {
-    expect(main).toContain("e.t === 'capturing'")
-    expect(main).toContain('pendingCapture = true')
-    expect(main).toContain('openFlash(null, undefined, { pending: true, n: e.steps })')
-    // الحقيقة وصلت: البطاقة المؤقّتة وحدها تتحدث — بطاقة مستخدم مفتوحة لا تُطوى
-    expect(main).toContain('if (pendingCapture && openForm === \'flash\')')
-    expect(main).toContain('openFlash(e.thumbDataUrl, e.mark, { n: e.steps })')
+  // مواصفة 2026-09-30: الواجهة **ترسم** ولا تقرّر. توزُّعُ قرار البطاقة على
+  // ثلاثة أماكن (أعلامٌ هنا · مؤقّتٌ في المنبثقة · صوتٌ في المتحكّم) هو ما جعل
+  // نقرةً ثانية قبل ذوبان الأولى تبدو ضائعة — والقرار كلّه في الآلة الآن
+  it('البطاقة حدثٌ واحد يُرسم: main.ts بلا أعلام قرارٍ خاصّة بها', () => {
+    expect(main).toContain("e.t === 'card'")
+    // الأعلام الثلاثة القديمة ماتت — لا قرار في الواجهة
+    expect(main).not.toContain('pendingCapture')
+    expect(main).not.toContain("e.t === 'capturing'")
+    expect(main).not.toContain("e.t === 'dropped'")
   })
 
-  it('dropped يغلق بطاقة الانتظار بصدق وحدها — لا خطوة وُلدت فلا رقم يبقى معلّقًا', () => {
-    expect(main).toContain("e.t === 'dropped'")
-    expect(main).toContain("if (pendingCapture && popoutOpen && openForm === 'flash')")
-    expect(main).toContain("void emit('widget-popout', { action: 'hide' })")
+  it('البطاقة تُستبدل فورًا بلقطةٍ أحدث — الآلة تملك الانتقال لا الواجهة', () => {
+    const fc = readFileSync(join(here, 'recorder', 'flash-card.ts'), 'utf8')
+    // الحالات الأربع بأسمائها، والمهلة تُلغى عند كل التقاطٍ جديد
+    for (const s of ["'idle'", "'pending'", "'shown'", "'recording'"]) {
+      expect(fc).toContain(s)
+    }
+    expect(fc).toContain('saveIfRecording')
+  })
+
+  // علّة العلامة الغائبة (بلاغ المالك 2026-09-30): الحلقة كانت تُوضع بضرب
+  // إحداثيّ الشاشة الكاملة (1920) في مقياس المصغّرة (~480) فتقع مئات البكسلات
+  // خارج صندوق اللقطة (`overflow:hidden`) فلا تُرى قطّ. النِّسَب المئويّة من
+  // النواة تُضرب في **الصورة المعروضة** فتصيب مهما اختلفت الدقّة
+  it('حلقة العلامة تُوضع من نِسَب الإطار على الصورة المعروضة — لا بكسلات خامًا', () => {
+    // لا ضربَ إحداثيّ بكسل في مقياس المصغّرة بعد اليوم
+    expect(main).not.toContain('(m.x + m.w / 2) * scale')
+    // النِّسَب تُضرب في أبعاد الصورة كما رُسمت (rw/rh)
+    expect(main).toContain('(m.left + m.width / 2) / 100) * rw')
+    expect(main).toContain('(m.top + m.height / 2) / 100) * rh')
+  })
+
+  it('حدٌّ أدنى لقطر الحلقة كي تبقى مرئيّة: ٤٨px على شاشة 1920 داخل صندوق ٢٣٦ تصير ٦px', () => {
+    expect(main).toContain('RING_MIN_PX')
+    expect(main).toContain('Math.max(')
   })
 
   it('بطاقة الانتظار في المنبثقة: صندوق اللقطة ينبض مصمتًا بلا بكسلات (تكييف WDA) ثم تمتلئ', () => {
-    expect(main).toContain('prepareFlash(p.steps ?? 1, p.shot ?? null, p.pending === true)')
     expect(html).toContain('.flash .shot.wait')
     expect(html).toContain('@keyframes shotwait')
     expect(main).toContain("shotBox.classList.toggle('wait', pending || !shot)")
     // الرقم يظهر من لحظة القفز كما طلب المالك («يظهر فيها مثلا رقم اللقطة»)
     expect(main).toContain("t('dt.stepN', { n: arDigits(step) })")
+  })
+
+  // ميك الخطوة على البطاقة (طلب المالك 2026-09-30): «زر المايك اسفل اشعار
+  // الشاشة الملتقطة، وعند التسجيل يظهر نفس الانميشن الذي في اضافة الكروم»
+  // ثم صار صفًّا **واحدًا** بطلبه 2026-09-30/ب: «زر التعليق الصوتي ليس كلمة
+  // بل مايك، واجعل سطر الأزرار سطرًا واحدًا أسفل شاشة الإشعار به زر إلغاء
+  // وتسجيل ورقم اللقطة، وعند الضغط على المايك تظهر أزرار التحكّم في التسجيل»
+  it('صفٌّ واحد أسفل اللقطة: رقمها · مايكٌ أيقونةً · إلغاء — وأثناء التسجيل زرّاه', () => {
+    const n = norm(html)
+    expect(n).toContain('id="flashMic"')
+    expect(n).toContain('id="flashStop"')
+    expect(n).toContain('id="flashCancel"')
+    // الثلاثة مع الرقم و«تراجع» في `frow` وحدها — لا صفَّ `mrow` ثانٍ في البطاقة
+    const frow = n.slice(n.indexOf('<div class="frow">'), n.indexOf('</div>', n.indexOf('id="btnUndo"')))
+    for (const id of ['flashStep', 'flashMic', 'flashStop', 'flashCancel', 'btnUndo'])
+      expect(frow).toContain(`id="${id}"`)
+    expect(n).not.toContain('<div class="mrow">')
+    // أيقونةٌ بلا كلمة: لا عنصرَ نصٍّ داخل الزرّ، والاسم في تلميح i18n
+    expect(n).not.toContain('flashMicLabel')
+    expect(readFileSync(join(here, 'i18n.ts'), 'utf8')).toContain(
+      "['#flashBox #flashMic', 'title', 'dt.memoAdd']",
+    )
+    // ضغطُها يعود بالقناة القائمة إلى المتحكّم — لا آليّة جديدة
+    expect(main).toContain("emit('widget-state', { micToggle: true })")
+    expect(main).toContain("emit('widget-state', { memoCancel: true })")
+    expect(main).toContain('controller.cardMic()')
+    expect(main).toContain('controller.cardCancelMemo()')
+  })
+
+  it('موجة التسجيل منقولة من الإضافة كما هي: transform وحده بلا rAF', () => {
+    const n = norm(html)
+    expect(n).toContain('memo-wave')
+    expect(n).toContain('@keyframes dl-memo-wave')
+    expect(n).toContain('transform: scaleY(.22)')
+    // التأخير السالب المتدرّج هو ما يصنع سفر الموجة أفقيًّا
+    expect(n).toContain('animation-delay: calc(var(--i) * -85ms)')
   })
   const main = readFileSync(join(here, 'main.ts'), 'utf8')
   const html = readHtml()

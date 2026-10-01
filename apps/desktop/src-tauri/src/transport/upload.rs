@@ -583,6 +583,21 @@ struct AppSink<R: tauri::Runtime> {
 impl<R: tauri::Runtime> UploadSink for AppSink<R> {
     fn on_event(&self, ev: WorkerEvent) {
         use tauri::Emitter;
+        // تشخيص حدود المكوّنات (2026-09-30، بلاغ «اللقطات لا تظهر في الدليل»):
+        // **معرّفات وأحوال فقط** — لا مسار ولا محتوى ولا جسم دليل (القاعدة
+        // الذهبيّة: Rust لا يفهرس ما ينقل). هذا ما يفصل «لم يُطلب رفعٌ أصلًا»
+        // عن «رُفع ونجح» عن «رُفع وفشل»، وهو الفصل الذي يتعذّر بلا سجلّ
+        match &ev {
+            WorkerEvent::Uploaded { session_id, local_id, file_id, thumb_file_id } => log::info!(
+                "[queue] uploaded session={session_id} local={local_id} file={file_id} thumb={}",
+                thumb_file_id.as_deref().unwrap_or("-")
+            ),
+            WorkerEvent::GuideCreated { session_id, guide_id } => {
+                log::info!("[queue] guide-created session={session_id} guide={guide_id}")
+            }
+            WorkerEvent::Lost { reason_ar } => log::warn!("[queue] auth-lost: {reason_ar}"),
+            WorkerEvent::Status(_) => {}
+        }
         let _ = match ev {
             WorkerEvent::Uploaded { session_id, local_id, file_id, thumb_file_id } => self.app.emit(
                 "queue://uploaded",

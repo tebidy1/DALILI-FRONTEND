@@ -153,8 +153,35 @@ pub struct MonitorInfo {
 /// رسائل خيط الحلقة — شكل `RingMsg` المنقول، والقراءة للمختار وحده
 enum CaptureMsg {
     Frame(Direct3D11CaptureFrame),
-    Pick { t_hns: i64, which: Which, reply: mpsc::Sender<Option<CpuShot>> },
+    /// **تحضيرٌ مبكّر (٢٠٢٦-٠٩-٣٠)** — يُرسَل لحظة الضغط من `note_click`: يقرأ
+    /// إطار «قبل» **الآن** بدل أن ينتظر `frame_pick` الذي لا يصل إلا بعد نافذة
+    /// الإيماءة (٦٠–١١٠مث) وانتظار حقائق UIA (وسيط ٦٢مث). القراءة كانت تقع
+    /// كلّها على المسار الحرِج؛ صارت تجري أثناء ذلك الانتظار.
+    /// **وبه يسقط شرط عمق الحلقة:** الإطار يُقرأ عند النقرة فلا يُطرَد بعدها،
+    /// فجاز تسريع `MinUpdateInterval` بلا كسر اختيار «قبل»
+    Prepare { seq: u64, t_hns: i64 },
+    Pick { seq: u64, t_hns: i64, which: Which, reply: mpsc::Sender<Option<CpuShot>> },
     Stop,
+}
+
+/// سقف اللقطات المحضَّرة — كلٌّ إطارٌ كامل على المعالج (~٨ ميغابايت عند 1080p
+/// و~٣٣ عند 4K)، فالسقف حارس ذاكرة لا ضبط أداء: نقراتٌ متلاحقة لا تُراكم
+const PREPARED_CAP: usize = 3;
+
+/// يضيف لقطةً محضَّرة ويُسقط الأقدم عند التجاوز — نقيّة ومُختبَرة.
+/// إعادة تحضير النقرة نفسها تستبدل القديمة لا تُضاعفها
+fn push_prepared<T>(buf: &mut Vec<(u64, T)>, seq: u64, shot: T, cap: usize) {
+    buf.retain(|(s, _)| *s != seq);
+    buf.push((seq, shot));
+    while buf.len() > cap {
+        buf.remove(0);
+    }
+}
+
+/// يسحب لقطة نقرةٍ بعينها — السحب يحرّر ذاكرتها فلا تبقى بعد استهلاكها
+fn take_prepared<T>(buf: &mut Vec<(u64, T)>, seq: u64) -> Option<T> {
+    let i = buf.iter().position(|(s, _)| *s == seq)?;
+    Some(buf.remove(i).1)
 }
 
 // ───────────────── الآليّة — المنقول من السبايك موسَّعًا ─────────────────
@@ -289,8 +316,18 @@ fn ring_body(rx: mpsc::Receiver<CaptureMsg>, tx: mpsc::Sender<CaptureMsg>) {
         let session = pool.CreateCaptureSession(&item).expect("session");
         let _ = session.SetIsBorderRequired(false);
         let _ = session.SetIsCursorCaptureEnabled(false);
-        // ‏66ms كما قيس — هذا إيقاع وصول الإطارات نفسه لا أمر جماليّ
-        let _ = session.SetMinUpdateInterval(TimeSpan { Duration: 666_666 });
+        // إيقاع وصول الإطارات — **16.6ms (٦٠/ث) منذ ٢٠٢٦-٠٩-٣٠** بعد أن كان
+        // 66ms. المكسب: طلب «بعد» (الحقول والمبدّلات) كان ينتظر حتى ٦٦مث
+        // للإطار التالي فصار ≤١٧مث. الثمن نسخُ GPU إضافيّ **مقيس بـ0.17ms**
+        // للإطار ⇒ ~١٠مث في الثانية كلّها.
+        //
+        // **الشرط الذي جعله آمنًا:** عمق الحلقة ثمانٍ، فتاريخها = ٨ × الإيقاع
+        // — ٥٢٨مث عند 66 وتصير ١٢٨مث عند 16.6. واختيار «قبل» (سياسة الأزرار
+        // وأغلب العناصر) كان يقرأ الإطار **بعد** نافذة الإيماءة وانتظار
+        // الحقائق، فكان ١٢٨مث يطرد ما يحتاجه. التحضير المبكّر في `note_click`
+        // يقرأ إطار «قبل» **لحظة الضغط**، فلم يعد عمق الحلقة شرطًا له أصلًا.
+        // خفضُ الإيقاع دون ذلك التحضير يكسر «قبل» — البندان متلازمان
+        let _ = session.SetMinUpdateInterval(TimeSpan { Duration: 166_666 });
         let tx_handler = tx.clone();
         // المقبض يُحتفظ به محليًّا — إلغاء تسجيله قبل إغلاق المسبت (تشخيص 0xc0000005)
         let frame_handler = TypedEventHandler::<Direct3D11CaptureFramePool, IInspectable>::new(
@@ -316,6 +353,8 @@ fn ring_body(rx: mpsc::Receiver<CaptureMsg>, tx: mpsc::Sender<CaptureMsg>) {
         let mut desc = D3D11_TEXTURE2D_DESC::default();
         // انتظار «بعد» السبايك: طلب إطار لم يصل بعد ⇒ يُجاب بإطار الواصل التالي (نمط waiting_after)
         let mut waiting: Option<(mpsc::Sender<Option<CpuShot>>, i64)> = None;
+        // لقطات «قبل» المقروءة سلفًا لحظة الضغط — مفتاحها تسلسل النقرة
+        let mut prepared: Vec<(u64, CpuShot)> = Vec::new();
         while let Ok(m) = rx.recv() {
             match m {
                 CaptureMsg::Frame(f) => {
@@ -355,7 +394,35 @@ fn ring_body(rx: mpsc::Receiver<CaptureMsg>, tx: mpsc::Sender<CaptureMsg>) {
                         // إن كان أقدم (لا يحدث — الأختام رتيبة) فالطلب سقط بلا ردّ كحارس زمن في pick
                     }
                 }
-                CaptureMsg::Pick { t_hns, which, reply } => {
+                // التحضير المبكّر: يقرأ إطار «قبل» لحظة الضغط فيخرج زمن القراءة
+                // (~34مث وأضعافها عند 4K) من المسار الحرِج إلى نافذة الإيماءة.
+                // حلقةٌ باردة أو بلا إطارٍ مطابق ⇐ صمت: `pick` يسلك مساره المعتاد
+                CaptureMsg::Prepare { seq, t_hns } => {
+                    if stamps.is_empty() {
+                        continue;
+                    }
+                    let valid: Vec<usize> = (0..RING_DEPTH).filter(|&i| stamps[i] != i64::MIN).collect();
+                    let view: Vec<i64> = valid.iter().map(|&i| stamps[i]).collect();
+                    if let Some(slot) = pick_frame(&view, t_hns, Which::Before).map(|k| valid[k]) {
+                        let (w, h, bgra) = read_slot(&dev, &ctx, &desc, &slots[slot]);
+                        push_prepared(
+                            &mut prepared,
+                            seq,
+                            CpuShot { hns: stamps[slot], w, h, bgra, monitor: mon_info },
+                            PREPARED_CAP,
+                        );
+                    }
+                }
+                CaptureMsg::Pick { seq, t_hns, which, reply } => {
+                    // حُضِّرت سلفًا ⇐ جوابٌ فوريّ بلا قراءةٍ ثانية ولا بحثٍ في الحلقة
+                    if which == Which::Before {
+                        if let Some(shot) = take_prepared(&mut prepared, seq) {
+                            #[cfg(debug_assertions)]
+                            eprintln!("[capture] pick seq={} من التحضير المبكّر", seq);
+                            let _ = reply.send(Some(shot));
+                            continue;
+                        }
+                    }
                     // **الحلقة قبل التمهيد** (بلاغ المالك 2026-09-17): مصفوفتا الحلقة
                     // لا تُمهَّدان إلا في معالج Frame الأول، وأي Pick قبل ذلك كان يفهرس
                     // stamps[i] على شريحة طولها صفر فيهلِك خيط الالتقاط كله بموته
@@ -442,8 +509,12 @@ pub static FRAME_ARRIVALS: std::sync::atomic::AtomicU64 = std::sync::atomic::Ato
 
 /// طابع حائط (ms) لآخر وصول إطار — مقياس سكون الشاشة في كشف الإسقاط الفوري
 static LAST_ARRIVAL_MS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-/// هدوء يثبت سكون الشاشة: لا إطار بعد النقرة ولا وصول منذ 120ms ⇐ اسقاط فوري
-const STATIC_QUIET_MS: u64 = 120;
+/// هدوء يثبت سكون الشاشة: لا إطار بعد النقرة ولا وصولَ منذ هذه المدّة ⇐ إسقاط
+/// فوريّ لإطار «قبل». **٥٠مث منذ ٢٠٢٦-٠٩-٣٠** بعد أن كانت ١٢٠: العتبة تُقاس
+/// بفواصل الوصول لا بالمطلق، وقد صار الفاصل 16.6ms بدل 66 — فـ٥٠مث = ثلاثة
+/// فواصل كاملة، وهو ما كانت ١٢٠مث تمثّله سابقًا. إبقاؤها ١٢٠ كان يعني انتظارًا
+/// زائدًا بلا معنى على كل سطحٍ ساكن
+const STATIC_QUIET_MS: u64 = 50;
 
 fn now_ms_u64() -> u64 {
     std::time::SystemTime::now()
@@ -491,9 +562,15 @@ pub fn ring_newest_hns() -> i64 {
 /// النقطة (بكسل فيزيائي من الخطّاف) لازمة لفحص المحميّ قبل أيّ قراءة بكسل (٣ب-٥)
 static CLICK_STAMPS: LazyLock<Mutex<HashMap<u64, (i64, i32, i32)>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
 
-/// يسجّل ختم النقرة ونقطتَها — يستدعيه الخطّاف عند كل ضغط ماوس (٣ب-٢)
+/// يسجّل ختم النقرة ونقطتَها — يستدعيه الخطّاف عند كل ضغط ماوس (٣ب-٢) —
+/// **ويوقظ التحضير المبكّر** (٢٠٢٦-٠٩-٣٠): إطار «قبل» يُقرأ الآن لا بعد
+/// نافذة الإيماءة وانتظار الحقائق. الإرسال على قناةٍ غير محدودة: دفعٌ بلا
+/// انتظار فلا يمسّ ميزانيّة نداء الخطّاف (<1ms)
 pub fn note_click(seq: u64, qpc_raw: i64, x: i32, y: i32) {
     CLICK_STAMPS.lock().unwrap().insert(seq, (qpc_raw, x, y));
+    if let Some(tx) = CAPTURE_TX.lock().unwrap().as_ref() {
+        let _ = tx.send(CaptureMsg::Prepare { seq, t_hns: qpc_to_hns(qpc_raw) });
+    }
 }
 
 /// يبدأ حلقة الالتقاط (جلسة قائمة ⇐ تُفكّ أوّلًا)
@@ -561,7 +638,7 @@ pub fn pick(seq: u64, which: Which) -> crate::sensors::events::FramePickResult {
         return FramePickResult::Missing { missing: MissingReason::Protected };
     }
     let (rtx, rrx) = mpsc::channel();
-    if tx.send(CaptureMsg::Pick { t_hns, which, reply: rtx }).is_err() {
+    if tx.send(CaptureMsg::Pick { seq, t_hns, which, reply: rtx }).is_err() {
         return FramePickResult::Missing { missing: MissingReason::NoFrame };
     }
     // «بعد» بانتظار أقصر ثم سقوطٌ لآخر «قبل» — فقدٌ زائف على سطحٍ ساكن أشدّ
@@ -571,7 +648,7 @@ pub fn pick(seq: u64, which: Which) -> crate::sensors::events::FramePickResult {
         .recv_timeout(if which == Which::After { AFTER_FALLBACK_WAIT } else { PICK_TIMEOUT });
     if answered.is_err() && which == Which::After {
         let (btx, brx) = mpsc::channel();
-        if tx.send(CaptureMsg::Pick { t_hns, which: Which::Before, reply: btx }).is_ok() {
+        if tx.send(CaptureMsg::Pick { seq, t_hns, which: Which::Before, reply: btx }).is_ok() {
             answered = brx.recv_timeout(PICK_TIMEOUT);
         }
     }
@@ -633,6 +710,59 @@ pub fn pick(seq: u64, which: Which) -> crate::sensors::events::FramePickResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// التحضير المبكّر (٢٠٢٦-٠٩-٣٠): الدفتر يسلّم لقطة نقرتها بعينها ويحرّرها،
+    /// والسقف يحرس الذاكرة فلا تُراكم نقراتٌ متلاحقة إطاراتٍ كاملة
+    #[test]
+    fn دفتر_التحضير_يسلم_لصاحبه_ويحترم_السقف() {
+        let mut buf: Vec<(u64, &str)> = Vec::new();
+        push_prepared(&mut buf, 1, "a", 3);
+        push_prepared(&mut buf, 2, "b", 3);
+        push_prepared(&mut buf, 3, "c", 3);
+        // السحب بالتسلسل لا بالترتيب — نقرةٌ تُبنى قبل أختها أحيانًا
+        assert_eq!(take_prepared(&mut buf, 2), Some("b"));
+        assert_eq!(buf.len(), 2, "السحب يحرّر الذاكرة لا يكتفي بالنسخ");
+        assert_eq!(take_prepared(&mut buf, 2), None, "لا تُسلَّم مرّتين");
+        assert_eq!(take_prepared(&mut buf, 99), None, "تسلسلٌ غريب لا يُسلَّم شيئًا");
+    }
+
+    #[test]
+    fn تجاوز_السقف_يسقط_الأقدم_لا_الأحدث() {
+        let mut buf: Vec<(u64, &str)> = Vec::new();
+        for (s, v) in [(1u64, "a"), (2, "b"), (3, "c"), (4, "d"), (5, "e")] {
+            push_prepared(&mut buf, s, v, 3);
+        }
+        assert_eq!(buf.len(), 3);
+        assert_eq!(take_prepared(&mut buf, 1), None, "الأقدم سقط");
+        assert_eq!(take_prepared(&mut buf, 2), None);
+        // الأحدث ثلاثة باقون — وهم الأقرب لأن يُطلبوا
+        assert_eq!(take_prepared(&mut buf, 5), Some("e"));
+        assert_eq!(take_prepared(&mut buf, 4), Some("d"));
+        assert_eq!(take_prepared(&mut buf, 3), Some("c"));
+    }
+
+    #[test]
+    fn إعادة_تحضير_النقرة_نفسها_تستبدل_لا_تضاعف() {
+        let mut buf: Vec<(u64, &str)> = Vec::new();
+        push_prepared(&mut buf, 7, "قديم", 3);
+        push_prepared(&mut buf, 7, "جديد", 3);
+        assert_eq!(buf.len(), 1);
+        assert_eq!(take_prepared(&mut buf, 7), Some("جديد"));
+    }
+
+    /// عتبة السكون تُقاس بفواصل الوصول: بعد خفض الإيقاع إلى 16.6ms صارت ٥٠مث
+    /// ثلاثةَ فواصل — ولا يجوز أن تهبط تحت فاصلين وإلّا حكمت بالسكون على شاشةٍ حيّة
+    #[test]
+    fn عتبة_السكون_تبقى_فوق_فاصلين_من_إيقاع_الوصول() {
+        let frame_interval_ms = 17u64; // 166_666 وحدة 100ns ≈ 16.6ms
+        assert!(
+            STATIC_QUIET_MS >= frame_interval_ms * 2,
+            "عتبة {STATIC_QUIET_MS}مث دون فاصلين ({}مث) تكذب بالسكون",
+            frame_interval_ms * 2
+        );
+        assert!(after_should_fallback_instantly(1000, 1000 - STATIC_QUIET_MS - 1));
+        assert!(!after_should_fallback_instantly(1000, 1000 - frame_interval_ms));
+    }
 
     #[test]
     fn فك_النصف_دقة_قيم_معلومة() {

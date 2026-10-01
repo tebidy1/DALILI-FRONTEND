@@ -16,7 +16,12 @@ import { emit, listen } from '@tauri-apps/api/event'
 import { PhysicalPosition, PhysicalSize, currentMonitor, getCurrentWindow } from '@tauri-apps/api/window'
 import { POPOUT_SIZES, SQUARE_SIZE, popoutAbove, type AnchorRect, type PopoutForm } from './recorder/expand'
 import { restorePlacement, trackPlacement, bottomRightPosition, type WidgetWindow } from './recorder/placement'
-import { createWidgetController, type AuthState } from './recorder/controller'
+import {
+  createWidgetController,
+  type AuthState,
+  type FlashView,
+  type MarkRectPct,
+} from './recorder/controller'
 import {
   createTauriBridge,
   createDesktopAuth,
@@ -80,8 +85,6 @@ if (isPebble) {
   let popoutPhys: { x: number; y: number; w: number; h: number } | null = null
   // شكل البطاقة المعروضة الآن (لتحديثها حين تتغيّر حالتها وهي مفتوحة)
   let openForm: PopoutForm | null = null
-  // بطاقة الانتظار المؤقّتة (capturing): تُكمَل بالحقيقة عند step وتُغلق عند dropped
-  let pendingCapture = false
   // حالة الاقتران — مرآة من أحداث المتحكّم (الرمز السرّي لا يعبر هنا)
   let authState: AuthState = { phase: 'unknown' }
 
@@ -113,29 +116,17 @@ if (isPebble) {
       steps = e.steps
       // العدّاد يصل المنبثقة (تأكيد الإلغاء والتوست) — صدى الحالة نفسه
       void emit('widget-state', { steps: e.steps })
-      if (popoutOpen) {
-        // بطاقة الانتظار المؤقّتة مفتوحة ⇐ تُكمِل بالحقيقة في مكانها (الرقم
-        // يصحّ والبكسلات تصل)؛ بطاقةُ مستخدمٍ مفتوحة ⇐ لا تُطوى
-        if (pendingCapture && openForm === 'flash') {
-          pendingCapture = false
-          void openFlash(e.thumbDataUrl, e.mark, { n: e.steps })
-        }
+    } else if (e.t === 'card') {
+      // مواصفة 2026-09-30: الواجهة **ترسم** ولا تقرّر. كل قرار (الاستبدال
+      // بلقطةٍ أحدث · المهلة · التسجيل) في آلة flash-card التي يملكها
+      // المتحكّم — وتوزُّعُه سابقًا على ثلاثة أماكن هو ما جعل نقرةً ثانية
+      // قبل ذوبان الأولى تبدو ضائعة (الخطوة كانت تُسجَّل والبطاقة تتجمّد)
+      if (e.view === null) {
+        // بطاقةُ مستخدمٍ مفتوحة لا تُطوى — العقد القائم لم يتغيّر
+        if (popoutOpen && openForm === 'flash') void emit('widget-popout', { action: 'hide' })
       } else {
-        void openFlash(e.thumbDataUrl, e.mark)
+        void openFlash(e.view)
       }
-    } else if (e.t === 'capturing') {
-      // الإشارة الفوريّة (بلاغ المالك): البطاقة تقفز فورًا بالرقم المتوقّع
-      // والبكسلات تتبعها — المستخدم لا ينتظر الالتقاط ليرى أن نقرةً عُدّت
-      if (!popoutOpen) {
-        pendingCapture = true
-        void openFlash(null, undefined, { pending: true, n: e.steps })
-      }
-    } else if (e.t === 'dropped') {
-      // الإيماءة سقطت (لا حقائق) — البطاقة المؤقّتة وحدها تُغلق بصدق
-      if (pendingCapture && popoutOpen && openForm === 'flash') {
-        void emit('widget-popout', { action: 'hide' })
-      }
-      pendingCapture = false
     } else if (e.t === 'voice') {
       // المرحلة ٢: الحصاة ترتدّ بالحالة الصادقة من المتحكّم (المايك الأحمر)
       voice = e.on
@@ -228,6 +219,9 @@ if (isPebble) {
       paused?: boolean
       voice?: boolean
       voiceToggle?: boolean
+      /** ميك بطاقة اللقطة — غير `voiceToggle` (ميك الشريط): هذا يخصّ الخطوة المعروضة */
+      micToggle?: boolean
+      memoCancel?: boolean
       finish?: boolean
       account?: boolean
       openVerify?: string
@@ -252,6 +246,15 @@ if (isPebble) {
     }
     if (p.forget === true) {
       void controller.forget()
+      return
+    }
+    if (p.micToggle === true) {
+      // ميك البطاقة: الآلة تعرف حالتها فتبدأ أو تنهي — الواجهة لا تقرّر
+      void controller.cardMic()
+      return
+    }
+    if (p.memoCancel === true) {
+      void controller.cardCancelMemo()
       return
     }
     if (p.finish === true) {
@@ -306,7 +309,7 @@ if (isPebble) {
   function hidePopout(): void {
     if (!popoutOpen) return
     popoutOpen = false
-    pendingCapture = false
+    controller.cardYield()
     void emit('widget-popout', { action: 'hide' })
   }
 
@@ -325,7 +328,7 @@ if (isPebble) {
     }
     if (popoutOpen) {
       if (openForm === 'flash' || openForm === 'toast') {
-        pendingCapture = false
+        controller.cardYield()
         void openPopout()
         return
       }
@@ -377,21 +380,18 @@ if (isPebble) {
   /** بطاقة اللقطة الحيّة: بكسلات الخطوة الفعلية (data URL) وحلقة العلامة
    *  بموضعها — ولا تُعرض والبطاقات مفتوحة كي لا تُطويها. حالة الانتظار
    *  (pending) تقفز بالرقم المتوقّع قبل وصول البكسلات ثم تُحدَّث بالحقيقة */
-  async function openFlash(
-    thumbDataUrl: string | null,
-    mark?: { x: number; y: number; w: number; h: number },
-    opts?: { pending?: boolean; n?: number },
-  ): Promise<void> {
+  async function openFlash(view: FlashView): Promise<void> {
     await showCard('flash', {
-      ...(opts?.pending ? { pending: true } : {}),
-      ...(opts?.n !== undefined ? { steps: opts.n } : {}),
-      shot: thumbDataUrl ? { src: thumbDataUrl, ...(mark ? { mark } : {}) } : null,
+      pending: view.pending,
+      steps: view.n,
+      recording: view.recording,
+      shot: view.shot,
     })
   }
 
   /** عرضُ بطاقةٍ عامّ (توست/حساب/إعدادات لاحقًا) بحالتها من المرآة */
   async function showUserCard(form: PopoutForm): Promise<void> {
-    pendingCapture = false // بطاقة مستخدم تفتح — أي انتظارٍ مؤقّت انتهى
+    controller.cardYield() // بطاقةُ مستخدمٍ تفتح — بطاقةُ اللقطة تُسلّم مكانها
     await showCard(form)
   }
 
@@ -434,6 +434,11 @@ if (isPebble) {
   let anchor: AnchorRect | null = null
   let form: PopoutForm | null = null
   let flashTimer: ReturnType<typeof setTimeout> | null = null
+  /** أصغر قطرٍ تُرسم به حلقة العلامة داخل بطاقة اللقطة (بكسل CSS): اللقطة
+   *  شاشةٌ كاملة مضغوطة في صندوقٍ ارتفاعه ١١٨، فحلقةُ النقر الحقيقيّة تصير
+   *  ٦px — موضعها صحيح وعينُ المستخدم لا تراها. هذا حدُّ رؤيةٍ لا تزييفَ
+   *  موضع: المركز يبقى نقطة النقر حرفيًّا */
+  const RING_MIN_PX = 22
   // مرآة الاقتران — تصل مع أمر العرض (الرمز السرّي لا يعبر أبدًا)
   let authSnapshot: { phase: string; userCode?: string; email?: string } = { phase: 'unknown' }
   // نصوص حالة الاقتران بوعي اللغة — وما غاب عنها فالرجوع الصادق «غير مربوط»
@@ -499,9 +504,11 @@ if (isPebble) {
       voice?: boolean
       paused?: boolean
       steps?: number
-      shot?: { src: string; mark?: { x: number; y: number; w: number; h: number } } | null
+      shot?: { src: string; mark?: MarkRectPct } | null
       /** بطاقة الانتظار: تقفز بالرقم قبل وصول البكسلات ثم تُحدَّث */
       pending?: boolean
+      /** تعليق صوتي يجري الآن — الموجة وزرّا الإنهاء/الإلغاء */
+      recording?: boolean
       auth?: { phase: string; userCode?: string; email?: string }
     }
     if (p.action === 'hide') {
@@ -515,7 +522,8 @@ if (isPebble) {
     paused = !!p.paused
     apply(p.form)
     // الجدولة بعد apply حصرًا — apply يُطفئ أيّ مؤقّت سابق (علّة الذوبان)
-    if (p.form === 'flash') prepareFlash(p.steps ?? 1, p.shot ?? null, p.pending === true)
+    if (p.form === 'flash')
+      prepareFlash(p.steps ?? 1, p.shot ?? null, p.pending === true, p.recording === true)
     if (p.form === 'toast') armToast()
     authSnapshot = p.auth ?? { phase: 'unknown' }
     if (p.form === 'settings') renderSettings()
@@ -610,29 +618,72 @@ if (isPebble) {
     void emit('widget-state', { forget: true })
   })
 
-  /** لحظة الالتقاط: رقم الخطوة وشارة الصوت واللقطة الحقيقية بحلقة العلامة
-   *  على موضعها الفعلي — ثم ذوبان بعد ٢.٣ث (مدّة المرجع). الانتظار (pending)
-   *  يقفز أولًا بالرقم وحده: صندوق اللقطة ينبض هادئًا حتى تصل البكسلات في
-   *  إعادة عرضٍ تُحدّث البطاقة في مكانها ويعيد عدّاد الذوبان (بلاغ المالك:
-   *  المستخدم يرى أثر نقرته فورًا لا بعد ثانية) */
+  /** عدد أعمدة الموجة — كما الإضافة حرفيًّا (٣٦ عمودًا بأطوارٍ مزاحة) */
+  const WAVE_BARS = 36
+
+  /** صفّ ميك الخطوة والموجة: «تعليق صوتي» في الحالة العادية، و«إنهاء/إلغاء»
+   *  مع الموجة أثناء التسجيل. بطاقةُ انتظارٍ بلا بكسلات ⇒ لا ميك (لا تعليق
+   *  على خطوةٍ لم تكتمل بعد) */
+  function renderMemoRow(recording: boolean, waiting: boolean): void {
+    const wave = document.getElementById('flashWave')
+    const bars = document.getElementById('flashWaveBars')
+    const mic = document.getElementById('flashMic')
+    const stop = document.getElementById('flashStop')
+    const cancel = document.getElementById('flashCancel')
+    if (wave) wave.hidden = !recording
+    const lbl = document.getElementById('flashWaveLabel')
+    if (lbl) lbl.textContent = t('dt.memoRecording')
+    if (bars && bars.childElementCount === 0) {
+      // تُبنى مرّة واحدة — الحركة CSS خالصة بلا rAF ولا مؤقّت
+      for (let i = 0; i < WAVE_BARS; i++) {
+        const b = document.createElement('i')
+        b.style.setProperty('--i', String(i))
+        bars.appendChild(b)
+      }
+    }
+    // المايك يغيب لحظةَ التسجيل ليحلّ محلّه زرّاه في الصفّ نفسه (طلب المالك
+    // 2026-09-30/ب) — ولا كلمةَ عليه: اسمه في تلميح ويندوز الأصليّ يضعه i18n
+    if (mic) mic.hidden = recording || waiting
+    if (stop) stop.hidden = !recording
+    if (cancel) cancel.hidden = !recording
+  }
+
+  document.getElementById('flashMic')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    void emit('widget-state', { micToggle: true })
+  })
+  document.getElementById('flashStop')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    void emit('widget-state', { micToggle: true })
+  })
+  document.getElementById('flashCancel')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    void emit('widget-state', { memoCancel: true })
+  })
+
+  /** لحظة الالتقاط: رقم الخطوة واللقطة الحقيقية بحلقة العلامة على موضعها،
+   *  وصفّ ميك الخطوة أسفلها. الانتظار (pending) يقفز أولًا بالرقم وحده:
+   *  صندوق اللقطة ينبض هادئًا حتى تصل البكسلات.
+   *
+   *  **لا مؤقّت ذوبانٍ هنا بعد اليوم** (مواصفة 2026-09-30): العمر تملكه آلة
+   *  `flash-card` المقودة بـ`sensor://tick` — مؤقّتات WebView تُخنَق في
+   *  نافذةٍ غير مركَّز عليها، والمستخدم بطبيعة العمل في تطبيقٍ آخر. */
   function prepareFlash(
     step: number,
-    shot: { src: string; mark?: { x: number; y: number; w: number; h: number } } | null,
+    shot: { src: string; mark?: MarkRectPct } | null,
     pending = false,
+    recording = false,
   ): void {
     const label = document.getElementById('flashStep')
     if (label) label.textContent = t('dt.stepN', { n: arDigits(step) })
-    const fv = document.getElementById('flashVoice')
-    if (fv) fv.hidden = !voice
+    // شارة «تعليق صوتي» رُفعت 2026-09-30/ب: زرّ المايك في الصفّ نفسه صار يقول
+    // ما كانت تقوله، والموجة تقول الأوضح منه أثناء التسجيل
+    renderMemoRow(recording, pending || !shot)
     const img = document.getElementById('shotImg') as HTMLImageElement | null
     const ring = document.getElementById('shotRing')
     const shotBox = img?.parentElement ?? null
     if (shotBox) shotBox.classList.toggle('wait', pending || !shot)
     if (ring) ring.style.display = 'none'
-    flashTimer = setTimeout(() => {
-      flashTimer = null
-      hideSelf()
-    }, 2300)
     if (!shot || !img || !ring) return
     img.onload = () => {
       // احتواء الصورة في صندوق اللقطة ثم حلقة العلامة بمقياسها الفعلي
@@ -647,12 +698,20 @@ if (isPebble) {
       img.style.height = rh + 'px'
       const m = shot.mark
       if (m) {
-        const d = Math.max(m.w, m.h) * scale
+        // النِّسَب المئويّة تُضرب في **الصورة كما رُسمت** (rw/rh) — العلاقة
+        // لا تعرف دقّة الملفّ فلا تخطئها مصغّرةٌ ولا إطارٌ كامل. العلّة
+        // المصلَحة 2026-09-30: ضرب إحداثيّ بكسل الشاشة (1920) في مقياس
+        // المصغّرة (~480) كان يقذف الحلقة مئات البكسلات خارج الصندوق
+        const cx = ((m.left + m.width / 2) / 100) * rw
+        const cy = ((m.top + m.height / 2) / 100) * rh
+        // حدٌّ أدنى مرئيّ: حلقة ٤٨px فيزيائيًّا على شاشة 1920 تصير ~٦px داخل
+        // صندوقٍ عرضه ٢٣٦ — صحيحةُ الموضع وغيرُ مرئيّة عمليًّا
+        const d = Math.max((m.width / 100) * rw, (m.height / 100) * rh, RING_MIN_PX)
         ring.style.display = 'block'
         ring.style.width = d + 'px'
         ring.style.height = d + 'px'
-        ring.style.left = (m.x + m.w / 2) * scale + (box.clientWidth - rw) / 2 - d / 2 + 'px'
-        ring.style.top = (m.y + m.h / 2) * scale + (box.clientHeight - rh) / 2 - d / 2 + 'px'
+        ring.style.left = cx + (box.clientWidth - rw) / 2 - d / 2 + 'px'
+        ring.style.top = cy + (box.clientHeight - rh) / 2 - d / 2 + 'px'
       }
     }
     img.src = shot.src

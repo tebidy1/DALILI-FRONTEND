@@ -44,11 +44,26 @@ export function hitTextAnnotation(annotations: Annotation[], nx: number, ny: num
 }
 
 /**
- * إطار الهدف: خط صلب واحد بسمك أدوات الريشة نفسه (طلب المالك 2026-09-01).
+ * إطار الهدف: خط صلب واحد **بسمك رفيع مستقل عن أدوات الريشة** (طلب المالك
+ * 2026-09-29 يلغي «سمك الريشة نفسه» 2026-09-01 — الإطار يظهر مكبَّرًا في
+ * بطاقات العرض فكان السمك الكبير يبدو ثقيلًا)
+ * **مع طبقة زجاجية خفيفة داخل الشكل بلون الإطار نفسه** — تمييز المنطقة دون
+ * إخفاء ما خلفها (طلب المالك 2026-09-27).
  * `alpha` مُضاعِف شفافية (١ للمحفوظ، ٠٫٥ لمعاينة التحريك)، و`shape` يبدّل
  * المسار بين مستطيل وقطع ناقص يتوسّط الإطار (طلب المالك 2026-09-04).
  * المستطيل **قائم الزوايا** لا مدوّر (طلب المالك 2026-09-10).
  */
+export const MARK_GLASS_ALPHA = 0.14
+
+/**
+ * سمك إطار الهدف — خط رفيع مستقل عن أدوات الريشة (طلب المالك 2026-09-29):
+ * الإطار الذي يظهر مكبَّرًا في بطاقات العرض كان يُرسم بسمك الريشة (حتى 6px)
+ * فيبدو ثقيلًا؛ السماكة الجديدة تناسب التكبير وتظل مرئية بعد التصغير.
+ */
+export function markLineWidthFor(scale: number): number {
+  return Math.min(3, Math.max(1.25, scale * 0.0012))
+}
+
 export function drawMark(
   c: CanvasRenderingContext2D,
   r: Rect,
@@ -61,8 +76,8 @@ export function drawMark(
   const b = { x: r.x - pad, y: r.y - pad, w: r.w + pad * 2, h: r.h + pad * 2 }
   c.save()
   c.strokeStyle = color
-  c.globalAlpha = alpha
-  c.lineWidth = lineWidthFor(scale)
+  c.fillStyle = color
+  c.lineWidth = markLineWidthFor(scale)
   if (shape === 'ellipse') {
     // قطع ناقص محيط بالإطار — يصير دائرة تامّة حين يتساوى ضلعا الهدف
     c.beginPath()
@@ -70,6 +85,10 @@ export function drawMark(
   } else {
     roundRect(c, b, 0)
   }
+  // الزجاج أولًا بشفافية خفيفة ثم الخط الصلب فوقه — المسار نفسه للاثنين
+  c.globalAlpha = alpha * MARK_GLASS_ALPHA
+  c.fill()
+  c.globalAlpha = alpha
   c.stroke()
   c.restore()
 }
@@ -187,8 +206,12 @@ export function drawAnnotation(c: CanvasRenderingContext2D, a: Annotation, crop:
  *
  * القاعدة الجديدة (متوقَّعة في كل الحالات): الرقم **فوق الزر** متمركزًا أفقيًّا عليه،
  * والسهم قصير من الرقم إلى حافة الزر العليا. وإن كان الزر ملاصقًا لأعلى اللقطة
- * يُقلب الرقم أسفله والسهم يشير صعودًا. **رقم عاري بلا إطار** (الدائرة تسرق ضوء
- * الزر — طلب سابق) بحدّ أبيض رفيع للقراءة، و**السهم بلونه فقط بلا هالة بيضاء**
+ * يُقلب الرقم أسفله والسهم يشير صعودًا.
+ *
+ * **الرقم داخل دائرة** (طلب المالك 2026-09-28 — ينسخ قرار «الرقم العاري» القديم
+ * صراحةً): دائرة ممتلئة بلون العلامة ورقم أبيض، مطابقةً لشارة الخطوات بلا هدف
+ * (`.shot-step-num` — كالخطوة ١ لفتح الموقع) قياسًا وحسنًا، بحلقة بيضاء رفيعة
+ * تفصل الدائرة عن اللقطة حين يتشابه لوناها. **السهم بلونه فقط بلا هالة بيضاء**
  * (الهالة كانت كتلة بيضاء تشوّش على اللقطات الداكنة). معاينة حيّة لا محتوى محفوظًا.
  */
 export function drawStepBadge(
@@ -215,27 +238,36 @@ export function drawStepBadge(
   // السهم القصير: من طرف الرقم المواجه للزر إلى حافة الزر القريبة (بهامش لا يلامس خطه)
   const dirY = placeBelow ? -1 : 1 // رقم فوق ⇒ السهم ينزل للزر؛ رقم أسفل ⇒ يصعد إليه
   const sx = cx
-  const sy = cy + dirY * r * 1.4
+  const sy = cy + dirY * r * 1.18 // من حلقة الدائرة مباشرةً لا من بعيد عنها
   const ex = mcx
   const ey = placeBelow ? rect.y + rect.h + m : rect.y - m
 
   c.save()
-  // السهم بلون العلامة فقط — منحنٍ قليلًا (لا قوسًا)، بلا هالة بيضاء تشوّش الخلفية الداكنة
+  // سهم أوضح وأجمل (بلاغ المالك 2026-09-28: «صغير جدًّا ورأسه مشوّه»): جسم
+  // أسمك بنسبة نصف قطر الشارة لا بسمك الريشة، ورأس مثلث نصف زاويته ٣٠°
+  // يُقاس من **طول الجسم نفسه** فتبقى نسبه سليمة في كل المقاسات
   c.strokeStyle = color
   c.fillStyle = color
-  c.lineWidth = lw
-  strokeArrow(c, sx, sy, ex, ey, lw, true, 0.14)
+  c.lineWidth = Math.max(3, r * 0.16)
+  const shaft = Math.abs(ey - sy)
+  const head = Math.min(Math.max(shaft * 0.48, 9), r * 0.72)
+  strokeArrow(c, sx, sy, ex, ey, c.lineWidth, true, 0.14, head, Math.PI / 6)
   c.restore()
 
-  // الرقم العاري — بلون العلامة، وحدّ أبيض رفيع خلفه للقراءة على أي خلفية
+  // الرقم داخل دائرة ممتلئة بلون العلامة (طلب المالك 2026-09-28) — حلقة بيضاء
+  // رفيعة تفصلها عن اللقطة، والرقم أبيض كشارة الخطوات بلا هدف تمامًا
   c.save()
+  c.beginPath()
+  c.arc(cx, cy, r, 0, Math.PI * 2)
+  c.fillStyle = color
+  c.fill()
+  c.lineWidth = Math.max(2, r * 0.12)
+  c.strokeStyle = '#ffffff'
+  c.stroke()
   c.font = `700 ${Math.round(r * 1.05)}px 'IBM Plex Sans Arabic', system-ui, sans-serif`
   c.textAlign = 'center'
   c.textBaseline = 'middle'
-  c.lineWidth = Math.max(2, r * 0.14)
-  c.strokeStyle = '#ffffff'
-  c.strokeText(String(n), cx, cy + r * 0.05)
-  c.fillStyle = color
+  c.fillStyle = '#ffffff'
   c.fillText(String(n), cx, cy + r * 0.05)
   c.restore()
 }
@@ -310,7 +342,9 @@ export function drawStrokePreview(
   c.restore()
 }
 
-/** سهم مستقيم أو منحنٍ برأس مثلّث ممتلئ */
+/** سهم مستقيم أو منحنٍ برأس مثلّث ممتلئ — حجم الرأس وزاويته قابلان للضبط
+ *  (الافتراضي نسبةٌ لسمك الخط كما في أداة السهم؛ شارة الخطوة تمرّر قيمًا
+ *  محسوبة من طول جسمها كي تظل النسب سليمة) */
 function strokeArrow(
   c: CanvasRenderingContext2D,
   x0: number,
@@ -321,8 +355,11 @@ function strokeArrow(
   curved: boolean,
   /** نسبة تقويس المسار من طوله — الافتراضي كفاية لأداة السهم المنحني */
   bendRatio = 0.25,
+  /** طول رأس السهم من الرحم إلى طرفه — يُقاس بالبكسل الطبيعي */
+  head = Math.max(10, lw * 3.2),
+  /** نصف زاوية رأس السهم — الأضيق حِدّة والأوسع امتلاءً */
+  headAngle = Math.PI / 7,
 ) {
-  const head = Math.max(10, lw * 3.2)
   let angle: number
   c.beginPath()
   c.moveTo(x0, y0)
@@ -346,8 +383,8 @@ function strokeArrow(
   // رأس السهم
   c.beginPath()
   c.moveTo(x1, y1)
-  c.lineTo(x1 - head * Math.cos(angle - Math.PI / 7), y1 - head * Math.sin(angle - Math.PI / 7))
-  c.lineTo(x1 - head * Math.cos(angle + Math.PI / 7), y1 - head * Math.sin(angle + Math.PI / 7))
+  c.lineTo(x1 - head * Math.cos(angle - headAngle), y1 - head * Math.sin(angle - headAngle))
+  c.lineTo(x1 - head * Math.cos(angle + headAngle), y1 - head * Math.sin(angle + headAngle))
   c.closePath()
   c.fill()
 }

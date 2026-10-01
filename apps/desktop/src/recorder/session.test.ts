@@ -542,6 +542,42 @@ describe('مرحلة الربط ١ — onStepBuilt: لحظة بناء الخطو
     await settle(silent)
     expect(silent.stepCount()).toBe(1)
   })
+
+  // علّة العلامة الغائبة (بلاغ المالك 2026-09-30): إحداثيّات `mark` ببكسل
+  // الشاشة الكاملة، والودجة تعرض مصغّرة ~480px — فلا سبيل لها لقياس النسبة
+  // ما لم تُمرَّر أبعاد الإطار الطبيعيّة التي وُلدت فيها العلامة
+  it('لقطة ناجحة ⇐ أبعاد الإطار الطبيعيّة تُمرَّر مع الخطوة (فضاء إحداثيّات العلامة)', async () => {
+    const { bridge, emit } = makeBridge()
+    emit0 = emit
+    const built: Array<{ frame?: { w: number; h: number } }> = []
+    const session = createRecorderSession(bridge, {
+      onStepBuilt: (s) => built.push({ frame: s.frame }),
+    })
+    down(13, 1000)
+    emit('sensor://facts', insertTabFacts(13))
+    tick(1100)
+    await settle(session)
+
+    expect(built).toHaveLength(1)
+    expect(built[0]!.frame).toEqual({ w: 1920, h: 1080 })
+  })
+
+  it('لقطة غائبة ⇐ لا أبعاد إطارٍ تُدَّعى (الغياب صادق لا صفرٌ كاذب)', async () => {
+    const { bridge, emit, results } = makeBridge()
+    emit0 = emit
+    const built: Array<{ frame?: { w: number; h: number } }> = []
+    const session = createRecorderSession(bridge, {
+      onStepBuilt: (s) => built.push({ frame: s.frame }),
+    })
+    results.set(14, { missing: 'protected' })
+    down(14, 1000)
+    emit('sensor://facts', insertTabFacts(14))
+    tick(1100)
+    await settle(session)
+
+    expect(built).toHaveLength(1)
+    expect(built[0]!.frame).toBeUndefined()
+  })
 })
 
 describe('الإشارة الفوريّة (بلاغ المالك «المستخدم لا ينتظر») — onGestureAccepted/onGestureDropped', () => {
