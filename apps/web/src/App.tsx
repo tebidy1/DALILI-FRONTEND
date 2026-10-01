@@ -17,9 +17,6 @@ import { ShortcutsDialog } from './ui/ShortcutsDialog'
 import { TeamPage } from './team/TeamPage'
 import { BrandPage } from './brand/BrandPage'
 import { ConfirmProvider } from './components/ConfirmProvider'
-import { PracticePage } from './exam/PracticePage'
-import { ExamCenterPage } from './exam/ExamCenterPage'
-import { ExamRunnerPage } from './exam/ExamRunnerPage'
 
 export function App() {
   const [showShortcuts, setShowShortcuts] = useState(false)
@@ -59,12 +56,8 @@ export function App() {
           <Route path="/trash" element={<HomePage screen="trash" />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          {/* EXAM: التدريب والمركز داخل القشرة — المشغّل مركّز بلا شريط كظروف القاعة */}
-          <Route path="/practice" element={<PracticePage />} />
-          <Route path="/exam" element={<ExamCenterPage />} />
         </Route>
         <Route path="/search" element={<AuthGate><SearchPage /></AuthGate>} />
-        <Route path="/exam/run/:id" element={<AuthGate><ExamRunnerPage /></AuthGate>} />
         {/* DTOP-03: الموافقة على ربط جهاز — التطبيق يفتحها بـ/device?code=… */}
         <Route path="/device" element={<AuthGate><DevicePage /></AuthGate>} />
         {/* VER-01: عرض نسخة قديمة قراءةً فقط — لا استعادة في هذه المرحلة */}

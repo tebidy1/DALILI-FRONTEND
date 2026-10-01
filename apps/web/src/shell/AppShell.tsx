@@ -5,12 +5,10 @@ import { client } from '../api'
 import { Button } from '../ui/Button'
 import {
   IconBookmark,
-  IconClock,
   IconFolder,
   IconHome,
   IconInbox,
   IconSettings,
-  IconTarget,
   IconTrash,
   IconUser,
   IconUsers,
@@ -68,8 +66,6 @@ function Sidebar() {
     { to: '/mine', label: t('home.navMine'), icon: <IconUser size={17} /> },
     { to: '/saved', label: t('home.navSaved'), icon: <IconBookmark size={17} /> },
     { to: '/assigned', label: t('assigned.nav'), icon: <IconInbox size={17} />, badge: assignedNew },
-    { to: '/practice', label: t('practice.nav'), icon: <IconTarget size={17} /> },
-    { to: '/exam', label: t('exam.nav'), icon: <IconClock size={17} /> },
     { to: '/team', label: t('home.navTeam'), icon: <IconUsers size={17} /> },
     { to: '/settings', label: t('home.navSettings'), icon: <IconSettings size={17} /> },
   ]
