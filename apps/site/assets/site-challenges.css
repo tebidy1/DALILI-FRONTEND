@@ -9,6 +9,16 @@
    بلا JS تظهر الشاشات الست متتالية؛ معه تظهر واحدة (.is-current).
    ============================================================ */
 
+/* ——— عنوان الصفحة: عبارة الدفاتر التي كانت فوق البطاقات في الصفحة الرئيسية ——— */
+.chal-frame { background: var(--ink); color: var(--paper-on-dark); padding-block: 22px 6px; }
+.chal-frame .container { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
+.chal-frame h1 {
+  margin: 0; font-family: 'Amiri', serif; font-weight: 700; text-wrap: balance;
+  font-size: clamp(20px, 2.1vw, 25px); line-height: 1.5; color: var(--paper-on-dark);
+}
+.chal-frame h1 span:not(.sr-only) { color: var(--muted-on-dark); }
+.chal-frame p { margin: 0; font-size: var(--fs-small); color: var(--muted-on-dark); }
+
 /* ——— شريط التنقل بين الشاشات ——— */
 .chal-rail { background: var(--ink); color: var(--paper-on-dark); border-bottom: 1px solid var(--line-on-dark); }
 .chal-rail-in { display: flex; align-items: center; gap: 22px; padding-block: 12px; }
@@ -38,8 +48,8 @@
 
 /* ——— الشاشة ——— */
 .chal-js .chal-screen:not(.is-current) { display: none; }
-/* الوصول برابط (#quality…) يُبقي الترويسة وشريط التنقل ظاهرَين فوق الشاشة */
-.chal-screen { scroll-margin-top: 150px; }
+/* الوصول برابط (#quality…) يُبقي الترويسة وعنوان الصفحة وشريط التنقل ظاهرة فوق الشاشة */
+.chal-screen { scroll-margin-top: 300px; }
 .chal-screen + .chal-screen { border-top: 1px solid var(--line); }
 .chal-js .chal-screen + .chal-screen { border-top: 0; }
 

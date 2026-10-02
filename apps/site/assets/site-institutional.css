@@ -632,59 +632,82 @@
 
 /* >>> v4-pains */
 /* ============================================================
-   v4 — بطاقات التحديات (#inst-value): ست بطاقات مختصرة،
-   كل واحدة رابط إلى شاشتها في challenges.html. حلّت محل شريط
-   الأرقام (.inum-*) وحملت أرقامه داخلها.
+   v5 — بطاقات التحديات (#inst-value)، تحت الهيرو مباشرة وعلى
+   أرضيته الفاتحة: سؤال واحد، ثم ست بطاقات قصيرة — رمز، اسم
+   التحدي، وسطر واحد. كل بطاقة رابط إلى شاشتها في challenges.html
+   حيث الأرقام والشرح. (قواعد .inum-* أعلاه لم تعد مستعملة.)
+   الرمز بلونين: الحبر للشيء، والمريمي للجزء الذي يعبّر عن الألم؛
+   ولون الألف يظهر عند المرور فقط — جوابًا على فعل الزائر.
    ============================================================ */
-.ipain-section { padding-block: 96px 84px; }
-.ipain-section .inst-h { max-width: 46rem; margin-bottom: 14px; }
-.ipain-section .inst-value-lead { margin: 0 0 44px; color: var(--muted-on-dark); }
-.ipain-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ipain-section { background: var(--ground); padding-block: 40px 36px; }
+.ipain-q {
+  margin: 0 0 34px; text-align: center; text-wrap: balance;
+  font-family: 'Amiri', serif; font-weight: 700; font-size: clamp(25px, 2.5vw, 31px); line-height: 1.5; color: var(--ink);
+}
+.ipain-grid {
+  list-style: none; margin: 0; padding: 0 0 16px;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px;
+}
 .ipain-grid > li { display: flex; min-width: 0; }
+/* إيقاع: البطاقات الزوجية أدنى قليلًا، فلا يُقرأ الصف شريطًا من مستطيلات متطابقة */
+.ipain-grid > li:nth-child(even) { transform: translateY(16px); }
 .ipain {
-  flex: 1; min-width: 0; display: grid; grid-template-rows: auto auto 1fr auto;
-  padding: 24px 24px 20px; border: 1px solid var(--line-on-dark); border-radius: 14px;
-  background: rgba(243,241,236,.04); color: var(--paper-on-dark); text-decoration: none;
-  transition: border-color 200ms ease, background-color 200ms ease;
+  flex: 1; min-width: 0; display: grid; align-content: start;
+  grid-template-columns: 1fr auto; grid-template-areas: "ic go" "t t"; row-gap: 22px;
+  padding: 20px 18px 22px; border: 1px solid var(--line); border-radius: 18px;
+  background: #fff; color: var(--ink); text-decoration: none;
+  box-shadow: 0 1px 0 rgba(43,42,38,.04);
+  transition: border-color 200ms ease, box-shadow 260ms var(--ease-settle), transform 260ms var(--ease-settle);
 }
-.ipain:hover { border-color: rgba(231,179,166,.55); background: rgba(243,241,236,.07); }
-.ipain-top { display: flex; align-items: center; gap: 12px; }
 .ipain-ic {
-  flex: none; display: grid; place-items: center; width: 40px; height: 40px;
-  border: 1px solid var(--line-on-dark); border-radius: 10px; color: #A9C1B6;
+  grid-area: ic; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 13px;
+  background: var(--sage-tint); color: var(--ink); transition: background-color 200ms ease;
 }
-.ipain-ic svg { width: 21px; height: 21px; }
-.ipain-label { font-size: var(--fs-label); font-weight: 600; color: #A9C1B6; }
-.ipain-title {
-  display: block; margin-top: 18px;
-  font-family: 'Amiri', serif; font-size: 25px; font-weight: 700; line-height: 1.45; text-wrap: balance;
+.ipain-ic svg { display: block; width: 25px; height: 25px; stroke-width: 1.5; }
+.ipain-ic .ac { stroke: #5F8876; stroke-width: 1.9; transition: stroke 200ms ease; }
+.ipain:hover .ipain-ic, .ipain:focus-visible .ipain-ic { background: var(--alif-tint); }
+.ipain > .chev {
+  grid-area: go; align-self: start; width: 16px; height: 16px; margin-top: 2px;
+  color: var(--line-strong); transition: color 200ms ease, transform 260ms var(--ease-settle);
 }
-.ipain-stat {
-  align-self: end; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 16px;
-  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line-on-dark);
+.ipain-t { grid-area: t; min-width: 0; display: grid; gap: 6px; }
+.ipain-name { font-size: 16.5px; font-weight: 600; line-height: 1.5; }
+.ipain-line { font-size: 13.5px; line-height: 1.7; color: var(--muted); text-wrap: balance; }
+.ipain:hover, .ipain:focus-visible {
+  border-color: var(--ink); transform: translateY(-3px);
+  box-shadow: 0 1px 0 rgba(43,42,38,.06), 0 22px 36px -22px rgba(43,42,38,.42);
 }
-.ipain-stat b { font-family: 'Amiri', serif; font-size: 36px; font-weight: 700; line-height: 1; white-space: nowrap; }
-.ipain-stat b small { font-family: 'IBM Plex Sans Arabic', sans-serif; font-size: .36em; font-weight: 600; color: var(--muted-on-dark); }
-.ipain-stat > span { font-size: 13.5px; line-height: 1.65; color: var(--muted-on-dark); }
-.ipain-stat em { display: block; margin-top: 3px; font-style: normal; font-size: 11.5px; font-weight: 600; color: #A9C1B6; }
-.ipain-go {
-  display: inline-flex; align-items: center; gap: 6px; margin-top: 18px;
-  font-size: var(--fs-small); font-weight: 600; color: var(--muted-on-dark);
-  transition: color 200ms ease;
-}
-.ipain-go svg { width: 14px; height: 14px; transition: transform 200ms var(--ease-settle); }
-.ipain:hover .ipain-go { color: var(--alif-on-dark); }
-.ipain:hover .ipain-go svg { transform: translateX(-4px); }
-[dir="ltr"] .ipain-go svg { transform: scaleX(-1); }
-[dir="ltr"] .ipain:hover .ipain-go svg { transform: scaleX(-1) translateX(-4px); }
+.ipain:hover .ac, .ipain:focus-visible .ac { stroke: var(--alif); }
+.ipain:hover > .chev, .ipain:focus-visible > .chev { color: var(--alif); transform: translateX(-3px); }
+[dir="ltr"] .ipain > .chev { transform: scaleX(-1); }
+[dir="ltr"] .ipain:hover > .chev, [dir="ltr"] .ipain:focus-visible > .chev { transform: scaleX(-1) translateX(-3px); }
 /* بطاقة الغد: محدّدة بخط متقطّع — ما لم يأتِ بعد */
-.ipain.is-tomorrow { background: transparent; border-style: dashed; }
-.ipain-section .inum-note { margin-top: 28px; }
-@media (max-width: 1000px) { .ipain-grid { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 880px) { .ipain-section { padding-block: 64px 56px; } }
+.ipain.is-tomorrow { background: transparent; border-style: dashed; border-color: var(--line-strong); box-shadow: none; }
+.ipain.is-tomorrow .ipain-ic { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.ipain.is-tomorrow:hover, .ipain.is-tomorrow:focus-visible { background: #fff; border-style: solid; }
+@media (prefers-reduced-motion: reduce) {
+  .ipain, .ipain > .chev { transition: none; }
+  .ipain:hover, .ipain:focus-visible { transform: none; }
+}
+@media (max-width: 1100px) {
+  .ipain-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-bottom: 0; }
+  .ipain-grid > li:nth-child(even) { transform: none; }
+  .ipain { row-gap: 20px; }
+}
+@media (max-width: 880px) { .ipain-section { padding-block: 44px 28px; } }
+/* الجوال: صفوف — الرمز، فالاسم وسطره، فالسهم */
 @media (max-width: 640px) {
-  .ipain-grid { grid-template-columns: 1fr; gap: 12px; }
-  .ipain { padding: 20px 20px 18px; }
-  .ipain-title { font-size: 23px; margin-top: 14px; }
+  .ipain-q { margin-bottom: 22px; }
+  .ipain-grid { grid-template-columns: 1fr; gap: 8px; }
+  .ipain {
+    grid-template-columns: auto 1fr auto; grid-template-areas: "ic t go"; align-items: center; column-gap: 14px;
+    padding: 14px 16px; border-radius: 14px;
+  }
+  .ipain-ic { width: 42px; height: 42px; border-radius: 12px; }
+  .ipain-ic svg { width: 23px; height: 23px; }
+  .ipain > .chev { align-self: center; margin-top: 0; }
+  .ipain-t { gap: 1px; }
+  .ipain-name { font-size: 16px; }
+  .ipain:hover, .ipain:focus-visible { transform: none; }
 }
 /* <<< v4-pains */

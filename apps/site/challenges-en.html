@@ -15,10 +15,10 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css?v=5">
 <link rel="stylesheet" href="assets/site-v2.css?v=15">
-<link rel="stylesheet" href="assets/site-institutional.css?v=10">
+<link rel="stylesheet" href="assets/site-institutional.css?v=11">
 <link rel="stylesheet" href="assets/site-system.css?v=2">
-<link rel="stylesheet" href="assets/site-challenges.css?v=2">
-<link rel="stylesheet" href="assets/site-en.css?v=5">
+<link rel="stylesheet" href="assets/site-challenges.css?v=3">
+<link rel="stylesheet" href="assets/site-en.css?v=6">
 </head>
 <body class="chal-page">
 
@@ -63,18 +63,23 @@
 </header>
 
 <main id="main">
-<h1 class="sr-only">The challenges ITQAN addresses</h1>
+<header class="chal-frame">
+  <div class="container">
+    <h1><span class="sr-only">The challenges ITQAN addresses: </span>Every asset your organization owns is booked and audited. <span>Except the way work gets done.</span></h1>
+    <p>Here is what that absence costs, every working day.</p>
+  </div>
+</header>
 
 <nav class="chal-rail" aria-label="Challenges">
   <div class="container chal-rail-in">
     <a class="chal-back" href="institutional-en.html#inst-value"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg><span>Home</span></a>
     <ol class="chal-tabs">
-        <li><a href="#expert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4h4.5a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-4.5"/><path d="M14.5 12H4m3.5-3.5L4 12l3.5 3.5"/></svg><span>Departing expertise</span></a></li>
-        <li><a href="#onboarding"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.9-5 6-5s5.4 1.8 6 5"/><path d="M19 6.5v5M16.5 9h5"/></svg><span>New-hire onboarding</span></a></li>
-        <li><a href="#interruptions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v8a1.5 1.5 0 0 1-1.5 1.5h-6.5L8 19.5v-4H5A1.5 1.5 0 0 1 3.5 14V6A1.5 1.5 0 0 1 5 4.5z"/><path d="M10 8.6a2 2 0 1 1 2.9 1.8c-.6.3-.9.7-.9 1.3"/><path d="M12 13.3v.1"/></svg><span>Expert overload</span></a></li>
-        <li><a href="#consistency"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="12" r="1.6"/><path d="M6.1 12H20"/><path d="M8 12c3.5 0 3.5-6 7.5-6H20"/><path d="M8 12c3.5 0 3.5 6 7.5 6H20"/></svg><span>Uneven execution</span></a></li>
-        <li><a href="#quality"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9.5" r="5.5"/><path d="M9.6 9.6l1.7 1.7 3.1-3.3"/><path d="M8.6 13.9 7.2 21l4.8-2.6 4.8 2.6-1.4-7.1"/></svg><span>Quality certifications</span></a></li>
-        <li><a href="#tomorrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V4.5M9.5 13v1.5M14.5 13v1.5M2.5 13v2M21.5 13v2"/></svg><span>A goldmine for tomorrow</span></a></li>
+        <li><a href="#expert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4h4.5a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-4.5"/><path class="ac" d="M14.5 12H4m3.5-3.5L4 12l3.5 3.5"/></svg><span>Departing expertise</span></a></li>
+        <li><a href="#onboarding"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.9-5 6-5s5.4 1.8 6 5"/><path class="ac" d="M19 6.5v5M16.5 9h5"/></svg><span>New-hire onboarding</span></a></li>
+        <li><a href="#interruptions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v8a1.5 1.5 0 0 1-1.5 1.5h-6.5L8 19.5v-4H5A1.5 1.5 0 0 1 3.5 14V6A1.5 1.5 0 0 1 5 4.5z"/><path class="ac" d="M10 8.6a2 2 0 1 1 2.9 1.8c-.6.3-.9.7-.9 1.3"/><path class="ac" d="M12 13.3v.1"/></svg><span>Expert overload</span></a></li>
+        <li><a href="#consistency"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="12" r="1.6"/><path d="M6.1 12H20"/><path class="ac" d="M8 12c3.5 0 3.5-6 7.5-6H20"/><path class="ac" d="M8 12c3.5 0 3.5 6 7.5 6H20"/></svg><span>Uneven execution</span></a></li>
+        <li><a href="#quality"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9.5" r="5.5"/><path class="ac" d="M9.6 9.6l1.7 1.7 3.1-3.3"/><path d="M8.6 13.9 7.2 21l4.8-2.6 4.8 2.6-1.4-7.1"/></svg><span>Quality certifications</span></a></li>
+        <li><a href="#tomorrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M2.5 13v2M21.5 13v2"/><path class="ac" d="M12 8V4.5M9.5 13v1.5M14.5 13v1.5"/></svg><span>A goldmine for tomorrow</span></a></li>
     </ol>
   </div>
 </nav>
@@ -84,7 +89,7 @@
     <div class="container">
       <div class="chal-top">
         <div class="chal-top-text">
-          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4h4.5a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-4.5"/><path d="M14.5 12H4m3.5-3.5L4 12l3.5 3.5"/></svg></span>Departing expertise<i>1 of 6</i></p>
+          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4h4.5a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 18 20h-4.5"/><path class="ac" d="M14.5 12H4m3.5-3.5L4 12l3.5 3.5"/></svg></span>Departing expertise<i>1 of 6</i></p>
           <h2 class="chal-h" id="expert-h" tabindex="-1">When the expert leaves, the method leaves with them.</h2>
           <p class="chal-lead">“Ask them, they're the only one who knows.” Every time that sentence is said, part of your organization is living in one person's head.</p>
         </div>
@@ -123,7 +128,7 @@
       <div class="chal-end-in">
         <p class="chal-loss">Every procedure not yet documented belongs to your organization only while its owner is at their desk.</p>
         <div class="chal-cta"><a class="btn btn-primary" href="request.html">Request a demo</a><span>On one of your own procedures, in a thirty-minute session.</span></div>
-        <a class="chal-next" href="#onboarding"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.9-5 6-5s5.4 1.8 6 5"/><path d="M19 6.5v5M16.5 9h5"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>Every new hire starts from zero.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
+        <a class="chal-next" href="#onboarding"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.9-5 6-5s5.4 1.8 6 5"/><path class="ac" d="M19 6.5v5M16.5 9h5"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>Every new hire starts from zero.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
       </div>
     </div>
   </footer>
@@ -134,7 +139,7 @@
     <div class="container">
       <div class="chal-top">
         <div class="chal-top-text">
-          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.9-5 6-5s5.4 1.8 6 5"/><path d="M19 6.5v5M16.5 9h5"/></svg></span>New-hire onboarding<i>2 of 6</i></p>
+          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.9-5 6-5s5.4 1.8 6 5"/><path class="ac" d="M19 6.5v5M16.5 9h5"/></svg></span>New-hire onboarding<i>2 of 6</i></p>
           <h2 class="chal-h" id="onboarding-h" tabindex="-1">Every new hire starts from zero.</h2>
           <p class="chal-lead">The first week goes to slide decks and a colleague pulled off their own work to explain. Then the new hire sits in front of the system alone.</p>
         </div>
@@ -172,7 +177,7 @@
       <div class="chal-end-in">
         <p class="chal-loss">Every new hire without a documented path pays the same training cost all over again.</p>
         <div class="chal-cta"><a class="btn btn-primary" href="request.html">Request a demo</a><span>On one of your own procedures, in a thirty-minute session.</span></div>
-        <a class="chal-next" href="#interruptions"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v8a1.5 1.5 0 0 1-1.5 1.5h-6.5L8 19.5v-4H5A1.5 1.5 0 0 1 3.5 14V6A1.5 1.5 0 0 1 5 4.5z"/><path d="M10 8.6a2 2 0 1 1 2.9 1.8c-.6.3-.9.7-.9 1.3"/><path d="M12 13.3v.1"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>Your best people spend the day answering the same question.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
+        <a class="chal-next" href="#interruptions"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v8a1.5 1.5 0 0 1-1.5 1.5h-6.5L8 19.5v-4H5A1.5 1.5 0 0 1 3.5 14V6A1.5 1.5 0 0 1 5 4.5z"/><path class="ac" d="M10 8.6a2 2 0 1 1 2.9 1.8c-.6.3-.9.7-.9 1.3"/><path class="ac" d="M12 13.3v.1"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>Your best people spend the day answering the same question.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
       </div>
     </div>
   </footer>
@@ -183,7 +188,7 @@
     <div class="container">
       <div class="chal-top">
         <div class="chal-top-text">
-          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v8a1.5 1.5 0 0 1-1.5 1.5h-6.5L8 19.5v-4H5A1.5 1.5 0 0 1 3.5 14V6A1.5 1.5 0 0 1 5 4.5z"/><path d="M10 8.6a2 2 0 1 1 2.9 1.8c-.6.3-.9.7-.9 1.3"/><path d="M12 13.3v.1"/></svg></span>Expert overload<i>3 of 6</i></p>
+          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v8a1.5 1.5 0 0 1-1.5 1.5h-6.5L8 19.5v-4H5A1.5 1.5 0 0 1 3.5 14V6A1.5 1.5 0 0 1 5 4.5z"/><path class="ac" d="M10 8.6a2 2 0 1 1 2.9 1.8c-.6.3-.9.7-.9 1.3"/><path class="ac" d="M12 13.3v.1"/></svg></span>Expert overload<i>3 of 6</i></p>
           <h2 class="chal-h" id="interruptions-h" tabindex="-1">Your best people spend the day answering the same question.</h2>
           <p class="chal-lead">“Got a minute?” A small question, paid for each time by your most experienced people.</p>
         </div>
@@ -222,7 +227,7 @@
       <div class="chal-end-in">
         <p class="chal-loss">Every repeated “quick question” is time taken from your most valuable people.</p>
         <div class="chal-cta"><a class="btn btn-primary" href="request.html">Request a demo</a><span>On one of your own procedures, in a thirty-minute session.</span></div>
-        <a class="chal-next" href="#consistency"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="12" r="1.6"/><path d="M6.1 12H20"/><path d="M8 12c3.5 0 3.5-6 7.5-6H20"/><path d="M8 12c3.5 0 3.5 6 7.5 6H20"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>One procedure, done a different way in every branch.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
+        <a class="chal-next" href="#consistency"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="12" r="1.6"/><path d="M6.1 12H20"/><path class="ac" d="M8 12c3.5 0 3.5-6 7.5-6H20"/><path class="ac" d="M8 12c3.5 0 3.5 6 7.5 6H20"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>One procedure, done a different way in every branch.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
       </div>
     </div>
   </footer>
@@ -233,7 +238,7 @@
     <div class="container">
       <div class="chal-top">
         <div class="chal-top-text">
-          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="12" r="1.6"/><path d="M6.1 12H20"/><path d="M8 12c3.5 0 3.5-6 7.5-6H20"/><path d="M8 12c3.5 0 3.5 6 7.5 6H20"/></svg></span>Uneven execution<i>4 of 6</i></p>
+          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="12" r="1.6"/><path d="M6.1 12H20"/><path class="ac" d="M8 12c3.5 0 3.5-6 7.5-6H20"/><path class="ac" d="M8 12c3.5 0 3.5 6 7.5 6H20"/></svg></span>Uneven execution<i>4 of 6</i></p>
           <h2 class="chal-h" id="consistency-h" tabindex="-1">One procedure, done a different way in every branch.</h2>
           <p class="chal-lead">Somewhere in your branches, one employee completes the transaction faster and with fewer errors. Their method has never left their desk.</p>
         </div>
@@ -271,7 +276,7 @@
       <div class="chal-end-in">
         <p class="chal-loss">Every day the best method stays in one branch, the other branches pay the difference.</p>
         <div class="chal-cta"><a class="btn btn-primary" href="request.html">Request a demo</a><span>On one of your own procedures, in a thirty-minute session.</span></div>
-        <a class="chal-next" href="#quality"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9.5" r="5.5"/><path d="M9.6 9.6l1.7 1.7 3.1-3.3"/><path d="M8.6 13.9 7.2 21l4.8-2.6 4.8 2.6-1.4-7.1"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>The procedure was written for the auditor, not for the person doing the work.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
+        <a class="chal-next" href="#quality"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9.5" r="5.5"/><path class="ac" d="M9.6 9.6l1.7 1.7 3.1-3.3"/><path d="M8.6 13.9 7.2 21l4.8-2.6 4.8 2.6-1.4-7.1"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>The procedure was written for the auditor, not for the person doing the work.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
       </div>
     </div>
   </footer>
@@ -282,7 +287,7 @@
     <div class="container">
       <div class="chal-top">
         <div class="chal-top-text">
-          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9.5" r="5.5"/><path d="M9.6 9.6l1.7 1.7 3.1-3.3"/><path d="M8.6 13.9 7.2 21l4.8-2.6 4.8 2.6-1.4-7.1"/></svg></span>Quality certifications<i>5 of 6</i></p>
+          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9.5" r="5.5"/><path class="ac" d="M9.6 9.6l1.7 1.7 3.1-3.3"/><path d="M8.6 13.9 7.2 21l4.8-2.6 4.8 2.6-1.4-7.1"/></svg></span>Quality certifications<i>5 of 6</i></p>
           <h2 class="chal-h" id="quality-h" tabindex="-1">The procedure was written for the auditor, not for the person doing the work.</h2>
           <p class="chal-lead">Before the audit, files are updated and signatures collected. After it, they go back into the folder, and work goes back to habit.</p>
         </div>
@@ -322,7 +327,7 @@
       <div class="chal-end-in">
         <p class="chal-loss">A procedure that goes stale unseen is an audit finding waiting for its date.</p>
         <div class="chal-cta"><a class="btn btn-primary" href="request.html">Request a demo</a><span>On one of your own procedures, in a thirty-minute session.</span></div>
-        <a class="chal-next" href="#tomorrow"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V4.5M9.5 13v1.5M14.5 13v1.5M2.5 13v2M21.5 13v2"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>AI agents are coming, and they don't know how you work.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
+        <a class="chal-next" href="#tomorrow"><span class="chal-next-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M2.5 13v2M21.5 13v2"/><path class="ac" d="M12 8V4.5M9.5 13v1.5M14.5 13v1.5"/></svg></span><span class="chal-next-t"><em>Next challenge</em><b>AI agents are coming, and they don't know how you work.</b></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></a>
       </div>
     </div>
   </footer>
@@ -333,7 +338,7 @@
     <div class="container">
       <div class="chal-top">
         <div class="chal-top-text">
-          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V4.5M9.5 13v1.5M14.5 13v1.5M2.5 13v2M21.5 13v2"/></svg></span>A goldmine for tomorrow<i>6 of 6</i></p>
+          <p class="chal-kicker"><span class="chal-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M2.5 13v2M21.5 13v2"/><path class="ac" d="M12 8V4.5M9.5 13v1.5M14.5 13v1.5"/></svg></span>A goldmine for tomorrow<i>6 of 6</i></p>
           <h2 class="chal-h" id="tomorrow-h" tabindex="-1">AI agents are coming, and they don't know how you work.</h2>
           <p class="chal-lead">The question is no longer “will we use agents?” but “what knowledge will they learn from?”</p>
         </div>
