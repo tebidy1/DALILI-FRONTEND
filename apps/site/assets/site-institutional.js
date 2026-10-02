@@ -1,155 +1,151 @@
 /* ============================================================
    إتقان — محرك الأقسام المؤسسية (institutional.html)
-   لكل قسم: نقاط تتبدل تلقائيًا كل ٦ ثوانٍ بشريط تقدم،
-   النقر يفعّل نقطة ويوقف التلقائي، المرور يوقفه مؤقتًا.
-   يبدأ عند دخول ٤٠٪ من القسم. الجوال: أكورديون يدوي.
+   كل قسم: نقاط + صورة حية. الصورة إما «مسرح» (.istage) تتبدّل
+   طبقاته — مقطع من المنتج لكل نقطة — أو لوحة مرسومة (.inst-frame)
+   تتبدّل حالتها بـdata-state.
+   ساعة واحدة: شريط تقدّم النقطة النشطة، ومدته مدة مقطعها
+   (data-dur بالثواني). عند اكتماله تُفعَّل النقطة التالية.
+   النقر يثبّت نقطة ويوقف التقدّم التلقائي · المرور يوقفه مؤقتًا ·
+   يتوقف كل شيء خارج الشاشة · الجوال والحركة المخفَّضة بلا تقدّم تلقائي.
    ============================================================ */
 (function () {
   'use strict';
 
-  var POINT_MS = 6000;
   var mqMobile = window.matchMedia('(max-width: 880px)');
   var mqReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-  function activate(pointsEl, frameEl, index) {
-    var points = pointsEl.querySelectorAll('.inst-point');
-    var count = points.length;
-    if (index >= count) index = 0;
-    if (index < 0) index = count - 1;
-    for (var i = 0; i < count; i++) {
-      var p = points[i];
-      var on = i === index;
-      p.classList.toggle('is-active', on);
-      var head = p.querySelector('.inst-point-head');
-      if (head) head.setAttribute('aria-expanded', on ? 'true' : 'false');
-    }
-    if (frameEl) frameEl.setAttribute('data-state', String(index + 1));
-  }
 
   function setupSection(section) {
     var pointsEl = section.querySelector('.inst-points');
     if (!pointsEl) return;
+    var points = Array.prototype.slice.call(pointsEl.querySelectorAll('.inst-point'));
     var frameEl = section.querySelector('.inst-frame');
-    var points = pointsEl.querySelectorAll('.inst-point');
+    var layers = Array.prototype.slice.call(section.querySelectorAll('.istage-layer'));
+    var videos = layers.map(function (l) { return l.querySelector('video'); });
+
     var current = 0;
-    var started = false;
-    var paused = false;
+    var inView = false;
     var manual = false;
-    var hoverPause = false;
+    var hover = false;
+    var primed = false;
 
-    pointsEl.classList.add('is-paused');
+    function auto() { return !manual && !mqMobile.matches && !mqReduced.matches; }
 
-    function markManual() {
-      if (manual) return;
-      manual = true;
-      pointsEl.classList.add('is-manual');
+    // المصادر تُربط حين يقترب القسم من الشاشة — لا تحميل قبل الحاجة
+    function prime() {
+      if (primed) return;
+      primed = true;
+      videos.forEach(function (v) {
+        if (!v) return;
+        if (!v.getAttribute('poster')) v.setAttribute('poster', v.getAttribute('data-poster'));
+        v.src = v.getAttribute('data-src');
+        if (mqReduced.matches) v.setAttribute('controls', '');
+      });
     }
 
-    function go(index) {
-      current = index;
-      activate(pointsEl, frameEl, current);
+    function playActive() {
+      videos.forEach(function (v, i) {
+        if (!v) return;
+        if (i === current && inView && !mqReduced.matches) {
+          var p = v.play();
+          if (p && p.catch) p.catch(function () {});
+        } else {
+          v.pause();
+        }
+      });
     }
 
     function restartBar() {
-      // إعادة تشغيل أنميشن الشريط للنقطة النشطة (بإزاحة وإرجاع في إطار واحد)
-      var active = points[current];
-      var bar = active.querySelector('.inst-bar');
+      var bar = points[current].querySelector('.inst-bar');
       if (!bar) return;
       bar.style.animation = 'none';
       void bar.offsetWidth;
       bar.style.animation = '';
     }
 
-    function tick() {
-      if (!started || paused || hoverPause || manual || mqMobile.matches || mqReduced.matches) return;
-      go((current + 1) % points.length);
+    function syncClasses() {
+      pointsEl.classList.toggle('is-auto', auto());
+      pointsEl.classList.toggle('is-paused', !inView || hover);
+    }
+
+    function show(index, rewind) {
+      current = (index + points.length) % points.length;
+      points.forEach(function (p, i) {
+        var on = i === current;
+        p.classList.toggle('is-active', on);
+        var head = p.querySelector('.inst-point-head');
+        if (head) head.setAttribute('aria-expanded', on ? 'true' : 'false');
+      });
+      var dur = parseFloat(points[current].getAttribute('data-dur'));
+      pointsEl.style.setProperty('--pdur', (isFinite(dur) ? dur : 6) + 's');
+      if (frameEl) frameEl.setAttribute('data-state', String(current + 1));
+      layers.forEach(function (l, i) { l.classList.toggle('is-on', i === current); });
+      var v = videos[current];
+      if (v && rewind && primed) { try { v.currentTime = 0; } catch (err) {} }
       restartBar();
-      schedule();
+      playActive();
     }
 
-    var timer = null;
-    function schedule() {
-      if (timer) clearTimeout(timer);
-      if (manual || mqMobile.matches || mqReduced.matches) return;
-      timer = setTimeout(tick, POINT_MS);
-    }
+    // اكتمال شريط النقطة النشطة ← النقطة التالية
+    pointsEl.addEventListener('animationend', function (e) {
+      if (!e.target.classList || !e.target.classList.contains('inst-bar')) return;
+      if (!auto() || !inView) return;
+      show(current + 1, true);
+    });
 
-    function stopSchedule() { if (timer) { clearTimeout(timer); timer = null; } }
-
-    // النقر: تفعيل يدوي يوقف التقدم التلقائي
     pointsEl.addEventListener('click', function (e) {
       var head = e.target.closest('.inst-point-head');
       if (!head) return;
-      var pointEl = head.parentElement;
-      var idx = Array.prototype.indexOf.call(points, pointEl);
+      var idx = points.indexOf(head.parentElement);
       if (idx === -1) return;
-      markManual();
-      pointsEl.classList.remove('is-paused');
-      go(idx);
+      manual = true;
+      prime();
+      syncClasses();
+      show(idx, true);
     });
 
-    // مرور المؤشر فوق النقاط: توقف مؤقت
-    pointsEl.addEventListener('mouseenter', function () {
-      if (manual || mqMobile.matches) return;
-      hoverPause = true;
-      pointsEl.classList.add('is-paused');
-    });
-    pointsEl.addEventListener('mouseleave', function () {
-      if (manual || mqMobile.matches) return;
-      hoverPause = false;
-      pointsEl.classList.remove('is-paused');
-      restartBar();
-      schedule();
-    });
+    pointsEl.addEventListener('mouseenter', function () { hover = true; syncClasses(); });
+    pointsEl.addEventListener('mouseleave', function () { hover = false; syncClasses(); });
 
-    // بدء عند دخول ٤٠٪ من القسم
-    if ('IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.intersectionRatio >= 0.4 && !started) {
-            started = true;
-            io.disconnect();
-            if (mqReduced.matches || mqMobile.matches) {
-              // الحالة الأولى ثابتة — النقر يعمل كأكورديون
-              activate(pointsEl, frameEl, 0);
-              return;
-            }
-            pointsEl.classList.remove('is-paused');
-            restartBar();
-            schedule();
-          }
-        });
-      }, { threshold: [0, 0.4, 0.6] });
-      io.observe(section);
-    } else {
-      started = true;
-      activate(pointsEl, frameEl, 0);
+    function onMode() { syncClasses(); restartBar(); playActive(); }
+    if (mqMobile.addEventListener) mqMobile.addEventListener('change', onMode);
+    if (mqReduced.addEventListener) mqReduced.addEventListener('change', onMode);
+
+    // المشاهد المرسومة تبدأ تتابعها حين يراها الزائر، لا عند تحميل الصفحة
+    var stageEl = section.querySelector('.istage');
+    var canObserve = 'IntersectionObserver' in window;
+    if (stageEl && canObserve) stageEl.classList.add('is-armed');
+
+    syncClasses();
+    show(0, false);
+
+    if (!canObserve) {
+      inView = true; prime(); syncClasses(); playActive();
+      return;
     }
 
-    // عند انتهاء أنميشن الشريط → النقطة التالية
-    pointsEl.addEventListener('animationend', function (e) {
-      if (e.target.classList && e.target.classList.contains('inst-bar')) {
-        if (manual || paused || hoverPause) return;
-        go((current + 1) % points.length);
-        restartBar();
-        schedule();
-      }
-    });
+    // اقتراب القسم: ربط المصادر
+    var nearIO = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { prime(); nearIO.disconnect(); }
+      });
+    }, { rootMargin: '700px 0px' });
+    nearIO.observe(section);
 
-    // تبديل الجوال/الخفض: أعِد الحالة الأولى بدون مؤقتات
-    function onModeChange() {
-      if (mqMobile.matches || mqReduced.matches) {
-        stopSchedule();
-        pointsEl.classList.add('is-paused');
-        activate(pointsEl, frameEl, current);
-      } else if (started && !manual) {
-        pointsEl.classList.remove('is-paused');
-        restartBar();
-        schedule();
-      }
-    }
-    if (mqMobile.addEventListener) mqMobile.addEventListener('change', onModeChange);
-    if (mqReduced.addEventListener) mqReduced.addEventListener('change', onModeChange);
+    // دخول صورة القسم الشاشة يشغّل ساعته، وخروجها يوقفها
+    var target = section.querySelector('.istage') || frameEl || pointsEl;
+    new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var now = entry.isIntersecting && entry.intersectionRatio >= 0.35;
+        if (now === inView) return;
+        inView = now;
+        if (inView) {
+          prime();
+          if (stageEl) stageEl.classList.add('is-live');
+        }
+        syncClasses();
+        playActive();
+      });
+    }, { threshold: [0, 0.35, 0.6] }).observe(target);
   }
 
   function init() {
@@ -164,54 +160,55 @@
 })();
 
 /* ============================================================
-   بطاقات «الألم بالأرقام» و«وقودٌ للغد» — تتفتح بالضغط
-   بطاقة مفتوحة واحدة في كل شبكة · النقر على المفتوحة يغلقها ·
-   دخول متتابع هادئ مرة واحدة عند ظهور الشبكة (بلا جافاسكربت: النص ظاهر)
+   فيلم «مهمة حقيقية» — زر التشغيل فوق الغلاف، وزر الهيرو
+   ([data-play-demo]) يمرّر إلى القسم ثم يشغّل الفيلم، وروابط
+   الفصول (.ihow-jump[data-t]) تقفز إلى موضع كل فعل في الفيلم.
    ============================================================ */
 (function () {
   'use strict';
 
-  var mqReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var player = document.getElementById('demo-player');
+  var video = document.getElementById('demo-video');
+  var playBtn = document.getElementById('demo-play');
+  if (!player || !video) return;
 
-  function setupValueGrid(grid) {
-    var cards = Array.prototype.slice.call(grid.querySelectorAll('.pvc'));
-
-    function setState(card, on) {
-      card.classList.toggle('is-open', on);
-      var head = card.querySelector('.pvc-head');
-      if (head) head.setAttribute('aria-expanded', on ? 'true' : 'false');
-    }
-
-    grid.addEventListener('click', function (e) {
-      var head = e.target.closest('.pvc-head');
-      if (!head) return;
-      var card = head.closest('.pvc');
-      if (!card) return;
-      setState(card, !card.classList.contains('is-open'));
-    });
-
-    // الدخول: إظهار متتابع بمَأخور تقاطع، مرة واحدة — ومع الحركة المخفَّضة بلا تأخير
-    function reveal() {
-      if (mqReduced.matches || !('IntersectionObserver' in window)) {
-        cards.forEach(function (c) { c.classList.add('is-in'); });
-        return;
-      }
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (!entry.isIntersecting) return;
-          io.disconnect();
-          cards.forEach(function (c, i) {
-            c.style.setProperty('--d', (i * 90) + 'ms');
-            c.classList.add('is-in');
-          });
-        });
-      }, { threshold: 0.2 });
-      io.observe(grid);
-    }
-
-    grid.classList.add('pvc-armed');
-    reveal();
+  function play() {
+    video.setAttribute('controls', '');
+    var p = video.play();
+    if (p && p.catch) p.catch(function () {});
   }
 
-  document.querySelectorAll('.pvc-grid').forEach(setupValueGrid);
+  function reveal() {
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var r = player.getBoundingClientRect();
+    if (r.top < 80 || r.bottom > window.innerHeight) {
+      player.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    }
+  }
+
+  function seek(t) {
+    function go() { try { video.currentTime = t; } catch (err) {} play(); }
+    if (video.readyState >= 1) { go(); return; }
+    video.addEventListener('loadedmetadata', go, { once: true });
+    video.load();
+  }
+
+  video.addEventListener('play', function () { player.classList.add('is-playing'); });
+  video.addEventListener('ended', function () { player.classList.remove('is-playing'); });
+  if (playBtn) playBtn.addEventListener('click', play);
+
+  document.querySelectorAll('[data-play-demo]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      reveal();
+      play();
+    });
+  });
+
+  document.querySelectorAll('.ihow-jump').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      reveal();
+      seek(parseFloat(btn.getAttribute('data-t')) || 0);
+    });
+  });
 })();

@@ -1,0 +1,216 @@
+/* ============================================================
+   إتقان — صفحة التحديات (challenges.html)
+   ست شاشات، واحدة لكل بطاقة في institutional.html#inst-value.
+   كل شاشة تمشي من الداكن إلى الفاتح: الألم (عنوان + ثلاث نقاط
+   بأرقامها) ← ما يفعله إتقان (نقاط + صورة من المنتج) ← سطر
+   الختام والزر والتحدي التالي.
+   تُحمَّل بعد site-institutional.css (منه .istage ومشاهد .pv)
+   وsite-system.css، وقبل site-en.css.
+   بلا JS تظهر الشاشات الست متتالية؛ معه تظهر واحدة (.is-current).
+   ============================================================ */
+
+/* ——— شريط التنقل بين الشاشات ——— */
+.chal-rail { background: var(--ink); color: var(--paper-on-dark); border-bottom: 1px solid var(--line-on-dark); }
+.chal-rail-in { display: flex; align-items: center; gap: 22px; padding-block: 12px; }
+.chal-back {
+  flex: none; display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted-on-dark); font-size: var(--fs-label); font-weight: 600; text-decoration: none;
+  padding-inline-end: 22px; border-inline-end: 1px solid var(--line-on-dark);
+  transition: color 160ms ease;
+}
+.chal-back:hover { color: var(--paper-on-dark); }
+.chal-back .chev { width: 14px; height: 14px; transform: scaleX(-1); }   /* سهم العودة يشير إلى جهة البداية */
+.chal-tabs {
+  flex: 1; min-width: 0; list-style: none; margin: 0; padding: 0;
+  display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
+}
+.chal-tabs::-webkit-scrollbar { display: none; }
+.chal-tabs a {
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 8px 14px; border-radius: 999px; border: 1px solid transparent;
+  color: var(--muted-on-dark); font-size: var(--fs-label); font-weight: 600; text-decoration: none;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+.chal-tabs a svg { flex: none; width: 16px; height: 16px; }
+.chal-tabs a:hover { color: var(--paper-on-dark); border-color: var(--line-on-dark); }
+.chal-tabs a[aria-current] { background: var(--paper-on-dark); color: var(--ink); }
+.chal-rail :focus-visible { outline-color: var(--alif-on-dark); }
+
+/* ——— الشاشة ——— */
+.chal-js .chal-screen:not(.is-current) { display: none; }
+/* الوصول برابط (#quality…) يُبقي الترويسة وشريط التنقل ظاهرَين فوق الشاشة */
+.chal-screen { scroll-margin-top: 150px; }
+.chal-screen + .chal-screen { border-top: 1px solid var(--line); }
+.chal-js .chal-screen + .chal-screen { border-top: 0; }
+
+.chal-part {
+  margin: 0 0 16px; font-size: var(--fs-label); font-weight: 600; color: var(--sage);
+}
+.is-dark .chal-part { color: #A9C1B6; }
+
+/* ——— الألم (داكن) ——— */
+.chal-pain { background: var(--ink); color: var(--paper-on-dark); padding-block: 60px 76px; }
+.chal-kicker {
+  display: flex; align-items: center; gap: 12px; margin: 0 0 24px;
+  font-size: var(--fs-label); font-weight: 600; color: #A9C1B6;
+}
+.chal-ic {
+  flex: none; display: grid; place-items: center; width: 40px; height: 40px;
+  border: 1px solid var(--line-on-dark); border-radius: 10px;
+}
+.chal-ic svg { width: 21px; height: 21px; }
+.chal-kicker i {
+  font-style: normal; font-weight: 500; color: var(--muted-on-dark);
+  padding-inline-start: 12px; border-inline-start: 1px solid var(--line-on-dark);
+}
+.chal-h {
+  margin: 0; max-width: 17em; outline: none;
+  font-family: 'Amiri', serif; font-weight: 700; text-wrap: balance;
+  font-size: clamp(34px, 4.8vw, 60px); line-height: 1.3;
+}
+.chal-lead {
+  margin: 22px 0 0; max-width: 41rem;
+  font-size: var(--fs-lead); line-height: 1.85; color: var(--muted-on-dark);
+}
+/* ——— صورة الألم: مشهد محايد الألوان، وعنصر واحد فيه بلون الألف.
+   تُقصّ نافذتين (أو ثلاثًا) متفاوتتَي الارتفاع يفصلهما فراغ — «الفجوة» —
+   والصورة خلفهما متصلة. شكل القص يختلف من شاشة إلى أخرى. ——— */
+.chal-top { display: grid; grid-template-columns: 7fr 6fr; gap: 56px; align-items: center; }
+.chal-top-text { min-width: 0; }
+.chal-photo { margin: 0; min-width: 0; --gap: 5px; --drop: 26px; --cut: 62%; }
+.chal-photo img {
+  display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover;
+  clip-path: polygon(
+    0 0, calc(var(--cut) - var(--gap)) 0, calc(var(--cut) - var(--gap)) calc(100% - var(--drop)), 0 calc(100% - var(--drop)), 0 0,
+    calc(var(--cut) + var(--gap)) var(--drop), 100% var(--drop), 100% 100%, calc(var(--cut) + var(--gap)) 100%, calc(var(--cut) + var(--gap)) var(--drop));
+}
+.chal-photo.is-cut-b { --cut: 36%; }
+.chal-photo.is-cut-c { --cut: 50%; --drop: 38px; }
+.chal-photo.is-cut-d { --cut: 71%; }
+/* الانقلاب: النافذة الأولى هي المنخفضة */
+.chal-photo.is-flip img, .chal-photo.is-cut-b img {
+  clip-path: polygon(
+    0 var(--drop), calc(var(--cut) - var(--gap)) var(--drop), calc(var(--cut) - var(--gap)) 100%, 0 100%, 0 var(--drop),
+    calc(var(--cut) + var(--gap)) 0, 100% 0, 100% calc(100% - var(--drop)), calc(var(--cut) + var(--gap)) calc(100% - var(--drop)), calc(var(--cut) + var(--gap)) 0);
+}
+/* ثلاث نوافذ لثلاثة مكاتب: الوسطى أعلى */
+.chal-photo.is-cut-tri img {
+  clip-path: polygon(
+    0 var(--drop), calc(33.33% - var(--gap)) var(--drop), calc(33.33% - var(--gap)) 100%, 0 100%, 0 var(--drop),
+    calc(33.33% + var(--gap)) 0, calc(66.66% - var(--gap)) 0, calc(66.66% - var(--gap)) calc(100% - var(--drop)), calc(33.33% + var(--gap)) calc(100% - var(--drop)), calc(33.33% + var(--gap)) 0, 0 var(--drop),
+    calc(66.66% + var(--gap)) var(--drop), 100% var(--drop), 100% 100%, calc(66.66% + var(--gap)) 100%, calc(66.66% + var(--gap)) var(--drop));
+}
+@media (max-width: 880px) {
+  .chal-top { grid-template-columns: 1fr; gap: 32px; }
+  .chal-photo { --drop: 18px; --gap: 4px; }
+}
+
+.chal-pain .chal-part { margin-top: 54px; }
+.chal-points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line-on-dark); }
+.chal-points li { padding: 28px 28px 4px; border-inline-start: 1px solid var(--line-on-dark); }
+.chal-points li:first-child { border-inline-start: 0; padding-inline-start: 0; }
+.chal-points li:last-child { padding-inline-end: 0; }
+.chal-fig {
+  display: block; font-family: 'Amiri', serif; font-weight: 700; line-height: 1.1;
+  font-size: clamp(38px, 4vw, 54px); color: var(--paper-on-dark);
+}
+.chal-fig.is-word { font-size: clamp(30px, 3.1vw, 42px); line-height: 1.3; }
+.chal-fig small { font-family: 'IBM Plex Sans Arabic', sans-serif; font-size: .34em; font-weight: 600; color: var(--muted-on-dark); }
+.chal-points p { margin: 12px 0 0; font-size: 15.5px; line-height: 1.8; color: var(--muted-on-dark); }
+.chal-src { display: block; margin-top: 10px; font-size: 11.5px; font-weight: 600; color: #A9C1B6; }
+
+/* ——— ما يفعله إتقان (فاتح) ——— */
+.chal-fix { background: var(--ground); padding-block: 76px 64px; }
+.chal-fix-grid { display: grid; grid-template-columns: 5fr 7fr; gap: 60px; align-items: center; }
+.chal-fix-text { min-width: 0; }
+.chal-fix-h {
+  margin: 0 0 28px; font-family: 'Amiri', serif; font-weight: 700; text-wrap: balance;
+  font-size: clamp(28px, 3.2vw, 40px); line-height: 1.38; color: var(--ink);
+}
+.chal-fix-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+.chal-fix-list li { display: grid; grid-template-columns: 26px 1fr; gap: 14px; align-items: start; }
+.chal-fix-list svg {
+  width: 26px; height: 26px; padding: 6px; margin-top: 2px; border-radius: 50%;
+  background: var(--sage-tint); color: var(--sage); stroke-width: 2.4;
+}
+.chal-fix-list p { margin: 0; font-size: var(--fs-body); line-height: 1.8; color: var(--muted); }
+.chal-fix-list b { display: block; font-size: 17.5px; font-weight: 600; line-height: 1.6; color: var(--ink); }
+.chal-fix-list a {
+  color: var(--ink); font-weight: 600; text-decoration: none; white-space: nowrap;
+  border-bottom: 1px solid var(--line-strong); transition: border-color 160ms ease;
+}
+.chal-fix-list a:hover { border-color: var(--alif); }
+.chal-proof {
+  margin: 28px 0 0; padding-top: 16px; border-top: 1px solid var(--line);
+  font-size: var(--fs-small); line-height: 1.75; color: var(--muted);
+}
+.chal-visual { margin: 0; min-width: 0; }
+.chal-visual figcaption { margin-top: 14px; font-size: var(--fs-note); line-height: 1.7; color: var(--muted); text-align: center; }
+.chal-footage { display: block; opacity: .8; }
+
+/* ——— الختام: سطر الخسارة + الزر + التالي ——— */
+.chal-end { background: var(--ground); padding-block: 0 104px; }
+.chal-end-in {
+  border-top: 1px solid var(--line); padding-top: 46px;
+  display: grid; grid-template-columns: 1fr auto; gap: 40px 56px; align-items: center;
+}
+.chal-loss {
+  position: relative; margin: 0; max-width: 22em; padding-inline-start: 24px;
+  font-family: 'Amiri', serif; font-weight: 700; text-wrap: balance;
+  font-size: clamp(24px, 2.7vw, 34px); line-height: 1.5; color: var(--ink);
+}
+/* ألف الختام — الموضع الوحيد للون الألف في الشاشة */
+.chal-loss::before {
+  content: ""; position: absolute; inset-inline-start: 0; top: .32em;
+  width: 3px; height: 1.3em; border-radius: 2px; background: var(--alif);
+}
+.chal-cta { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 17rem; }
+.chal-cta span { font-size: var(--fs-note); line-height: 1.7; color: var(--muted); }
+.chal-next {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 16px;
+  padding: 18px 22px; border: 1px solid var(--line); border-radius: 14px;
+  background: var(--surface); color: var(--ink); text-decoration: none;
+  transition: border-color 180ms ease;
+}
+.chal-next:hover { border-color: var(--line-strong); }
+.chal-next-ic {
+  flex: none; display: grid; place-items: center; width: 40px; height: 40px;
+  border: 1px solid var(--line); border-radius: 10px; color: var(--sage);
+}
+.chal-next-ic svg { width: 21px; height: 21px; }
+.chal-next-t { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.chal-next-t em { font-style: normal; font-size: var(--fs-note); font-weight: 600; color: var(--muted); }
+.chal-next-t b { font-size: 17px; font-weight: 600; line-height: 1.6; }
+.chal-next .chev { flex: none; width: 18px; height: 18px; color: var(--muted); transition: transform 200ms var(--ease-settle), color 180ms ease; }
+.chal-next:hover .chev { transform: translateX(-4px); color: var(--alif); }
+
+/* ——— تبديل الشاشة: ظهور هادئ يجيب نقر الزائر ——— */
+@media (prefers-reduced-motion: no-preference) {
+  .chal-js .chal-screen.is-switched .chal-pain > .container { animation: chal-in 420ms var(--ease-settle) both; }
+  .chal-js .chal-screen.is-switched .chal-fix-grid { animation: chal-in 420ms var(--ease-settle) 90ms both; }
+}
+@keyframes chal-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ——— الاتجاه اللاتيني: الأسهم تنقلب ——— */
+[dir="ltr"] .chal-back .chev { transform: none; }
+[dir="ltr"] .chal-next .chev { transform: scaleX(-1); }
+[dir="ltr"] .chal-next:hover .chev { transform: scaleX(-1) translateX(-4px); }
+
+/* ——— الاستجابة ——— */
+@media (max-width: 1000px) {
+  .chal-fix-grid { grid-template-columns: 1fr; gap: 44px; }
+  .chal-visual { order: 2; }
+}
+@media (max-width: 880px) {
+  .chal-pain { padding-block: 44px 52px; }
+  .chal-points { grid-template-columns: 1fr; }
+  .chal-points li, .chal-points li:first-child { padding: 22px 0 18px; border-inline-start: 0; }
+  .chal-points li + li { border-top: 1px solid var(--line-on-dark); }
+  .chal-pain .chal-part { margin-top: 40px; }
+  .chal-fix { padding-block: 52px 48px; }
+  .chal-end { padding-bottom: 72px; }
+  .chal-end-in { grid-template-columns: 1fr; gap: 28px; padding-top: 36px; }
+  .chal-back { padding-inline-end: 14px; }
+  .chal-back span { display: none; }
+  .chal-rail-in { gap: 12px; }
+}

@@ -1,0 +1,171 @@
+/* ============================================================
+   إتقان — طبقة النظام v3 (٠٢-١٠-٢٠٢٦) · المرحلة الثانية
+   تُحمَّل بعد site.css / site-v2.css / site-institutional.css / site-pages.css
+   وقبل site-en.css. ثلاثة أشياء فقط: اللون الثاني، سلّم الخط، الأزرار.
+
+   قاعدة اللون الثاني — «لون الألف» #8A5447 (نفس لون الألف في الشعار):
+   قوي، فلا يظهر إلا حيث يوجد فعل حيّ أو علامة جزء:
+     ١. الألف في الشعار وكلمة ACTIVE.            (قائم من قبل)
+     ٢. النقطة النشطة وشريط تقدّمها               (علامة «النشط الآن»)
+     ٣. ألف فاصل الجزأين وألف الختام               (ثلاثة مواضع في الصفحة)
+     ٤. استجابة الفعل: مرور الزر الأساسي وضغطه، حلقة التركيز، تحديد النص
+   لا يُستعمل تعبئةً ثابتة، ولا لنص متن، ولا لأيقونة زخرفية.
+   المريمي (--sage) باقٍ نبرةَ تسمية هادئة وداخل لوحات المنتج فقط.
+   ============================================================ */
+
+:root {
+  --alif:         #8A5447;
+  --alif-deep:    #74463B;
+  --alif-on-dark: #E7B3A6;                 /* نفس ألف الشعار على الداكن في الأفلام */
+  --alif-tint:    rgba(138, 84, 71, .10);
+
+  --r-btn: 10px;                           /* الأزرار مستطيلة ناعمة؛ الحبوب للوسوم فقط */
+
+  /* سلّم الخط — ست درجات للنص، والعناوين بـclamp في مواضعها */
+  --fs-note:  12.5px;   /* مصادر وإخلاءات */
+  --fs-label: 13.5px;   /* تسميات وشارات */
+  --fs-small: 14.5px;   /* سطر البرهان والروابط الثانوية */
+  --fs-body:  16px;     /* متن النقاط */
+  --fs-lead:  18.5px;   /* التمهيد وعناوين النقاط */
+}
+
+/* ——— تحديد النص وحلقة التركيز: لون الألف يجيب الفعل ——— */
+::selection { background: rgba(138, 84, 71, .2); color: var(--ink); }
+.is-dark ::selection { background: rgba(231, 179, 166, .32); color: var(--paper-on-dark); }
+:focus-visible { outline: 2px solid var(--alif); outline-offset: 3px; }
+.is-dark :focus-visible { outline-color: var(--alif-on-dark); }
+.lang-switch:focus-visible { outline: 2px solid var(--alif); outline-offset: 2px; }
+.ihow-play:focus-visible { outline: 2px solid var(--alif); outline-offset: 12px; }
+
+/* ——— العربية لا تُتبَّع: التتبّع يكسر اتصال الحروف ——— */
+html[lang="ar"] :is(h1, h2, h3),
+html[lang="ar"] .eyebrow,
+html[lang="ar"] .film-cap,
+html[lang="ar"] .footer-nav-title,
+html[lang="ar"] .product-row-label,
+html[lang="ar"] .product-card-note,
+html[lang="ar"] .panel-preview-label,
+html[lang="ar"] .change-version-label,
+html[lang="ar"] .cap-caption { letter-spacing: 0; }
+
+/* ============================================================
+   الأزرار — ثلاث مراتب
+   أساسي: حبر ممتلئ · ثانوي: إطار · ثالث: رابط بخط سفلي
+   المرور على الأساسي يحوّله إلى لون الألف: اللون يظهر لحظة الفعل فقط.
+   ============================================================ */
+.btn {
+  border-radius: var(--r-btn);
+  min-height: 48px; line-height: 1.2; white-space: nowrap;
+}
+.btn-primary, .btn-secondary {
+  padding: 0 26px; font-size: 15.5px; font-weight: 600;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 120ms ease;
+}
+.btn-primary:hover {
+  background: var(--alif); border-color: var(--alif); color: var(--ground);
+  transform: none; box-shadow: none;
+}
+.btn-primary:active { background: var(--alif-deep); border-color: var(--alif-deep); transform: scale(.985); }
+.btn-secondary:hover { border-color: var(--ink); background: var(--surface); transform: none; }
+.btn-secondary:active { transform: scale(.985); }
+.btn-sm, .header-action .btn-primary { min-height: 40px; padding: 0 18px; font-size: 14.5px; }
+
+/* على الأقسام الداكنة: الزر ورقي، والمرور بلون الألف الفاتح */
+.is-dark .inst-cta .btn-primary:hover {
+  background: var(--alif-on-dark); border-color: var(--alif-on-dark); color: var(--ink);
+  box-shadow: none;
+}
+.is-dark .inst-cta .btn-primary:active { transform: scale(.985); }
+
+/* مبدّل اللغة: نفس زاوية الأزرار وارتفاع زر الترويسة */
+.lang-switch { border-radius: var(--r-btn); min-height: 40px; padding: 0 14px; }
+.mobile-menu nav a.lang-switch { border-radius: var(--r-btn); min-height: 40px; padding: 0 14px; }
+
+/* المرتبة الثالثة: رابط — الخط السفلي يأخذ لون الألف عند المرور */
+.inst-secondary { font-size: 15px; padding-bottom: 4px; }
+.inst-secondary:hover { color: var(--ink); border-color: var(--alif); }
+.is-dark .inst-secondary:hover { color: var(--paper-on-dark); border-color: var(--alif-on-dark); }
+.header-nav a::after { height: 1.5px; background: var(--alif); }
+
+/* زر تشغيل الفيلم */
+.ihow-play { transition: transform 200ms var(--ease-settle), background-color 180ms ease; }
+.ihow-play:hover { background: var(--alif); }
+
+/* ============================================================
+   مواضع لون الألف الثابتة
+   ============================================================ */
+
+/* النقطة النشطة وشريطها: إشارة واحدة بلون واحد */
+.inst-point.is-active .inst-bar { background: var(--alif); }
+.is-dark .inst-point.is-active .inst-dot {
+  background: var(--alif-on-dark);
+  box-shadow: 0 0 0 5px rgba(231, 179, 166, .16);
+}
+.is-dark .inst-point.is-active .inst-bar { background: var(--alif-on-dark); }
+
+/* فاصل الجزأين: ألف قائمة قبل العبارة (بدل المعيّن) */
+.inst-part { color: var(--ink); gap: 20px; }
+.inst-part span { gap: 14px; }
+.inst-part span::before {
+  width: 3px; height: 1.35em; border-radius: 2px;
+  background: var(--alif); transform: none;
+}
+.is-dark .inst-part { color: var(--paper-on-dark); }
+.is-dark .inst-part span::before { background: var(--alif-on-dark); }
+
+/* الختام: الألف نفسها فوق الثلاثية */
+.iclose .inst-h::before {
+  content: ""; display: block;
+  width: 3px; height: 46px; border-radius: 2px;
+  margin: 0 auto 28px; background: var(--alif);
+}
+
+/* ============================================================
+   سلّم الخط — الصفحة المؤسسية
+   Amiri للعرض (≥ ٢٤px) · IBM Plex Sans Arabic للمتن والواجهة
+   ============================================================ */
+.eyebrow { font-size: var(--fs-label); margin-bottom: 20px; }
+
+.hero-copy .hero-heading { font-size: clamp(38px, 4.6vw, 60px); line-height: 1.3; }
+.hero-copy .hero-lead { font-size: var(--fs-lead); line-height: 1.9; }
+.hero-trust { font-size: 14px; }
+
+.inst-h { font-size: clamp(31px, 3.5vw, 46px); line-height: 1.36; margin-bottom: 30px; }
+.inst-point-head { padding-block: 16px; }
+.inst-point-title { font-size: var(--fs-lead); line-height: 1.55; }
+.inst-point-body > p { font-size: var(--fs-body); line-height: 1.9; max-width: 34rem; text-wrap: pretty; }
+.inst-proof { font-size: var(--fs-small); line-height: 1.8; }
+.inst-value-lead { font-size: 17px; }
+
+.inst-names span { font-size: var(--fs-label); }
+.inst-names-note { font-size: var(--fs-note); }
+.inst-marquee-track span { font-size: 15px; }
+.film-cap { font-size: var(--fs-note); }
+
+.ihow-verb { font-size: 26px; }
+.ihow-step p { font-size: var(--fs-body); line-height: 1.85; }
+.ihow-cap { font-size: 14px; }
+.ihow-num { background: transparent; border-color: var(--line-strong); color: var(--ink); }
+
+.iplat-label { font-size: var(--fs-label); color: var(--muted); }
+.iplat-item b { font-size: 15px; font-weight: 600; }
+.iplat-item i { font-size: 13px; }
+
+.inum dd { font-size: 15.5px; }
+.inum-src, .inum-note { font-size: var(--fs-note); }
+
+.iclose-lead { font-size: 17.5px; }
+
+@media (max-width: 880px) {
+  .inst-h { font-size: clamp(27px, 7vw, 34px); }
+  .inst-point-title { font-size: 17.5px; }
+  .hero-copy .hero-lead { font-size: 17px; }
+  .iclose .inst-h::before { height: 36px; margin-bottom: 22px; }
+}
+@media (max-width: 560px) {
+  .hero-copy .hero-actions .btn { min-height: 52px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary, .btn-secondary, .ihow-play { transition: none; }
+  .btn-primary:active, .btn-secondary:active { transform: none; }
+}
