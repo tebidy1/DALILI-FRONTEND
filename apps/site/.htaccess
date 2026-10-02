@@ -1,0 +1,6 @@
+# إتقان — الموقع التسويقي (itqan.sootnote.com)
+# عنوان الموقع يفتح الصفحة المؤسسية؛ index.html القديمة تبقى متاحة برابطها.
+DirectoryIndex institutional.html index.html
+
+# الأرشيف الداخلي وسكربتات العمل لا تُنشر (لا تُرفع أصلًا، وهذا احتياط)
+RedirectMatch 404 ^/scripts/
