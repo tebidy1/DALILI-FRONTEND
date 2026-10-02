@@ -435,9 +435,6 @@ body {
   flex-direction: column;
   gap: 10px;
 }
-.viewer-note {
-  margin: 0;
-}
 .viewer-footer {
   border-top: 1px solid var(--line);
   padding-top: 14px;
@@ -948,7 +945,8 @@ a.chip {
   border-radius: var(--r-md);
   border: 1px solid;
   padding: var(--sp-2) var(--sp-4);
-  margin: var(--sp-3) 0;
+  /* أسفله فسحة أوسع من أعلاه: لا يلتصق ببطاقة الخطوة التالية */
+  margin: var(--sp-3) 0 var(--sp-6);
 }
 .viewer-callout p {
   margin: var(--sp-1) 0 0;
@@ -978,8 +976,28 @@ a.chip {
 .col-stack {
   gap: var(--sp-3);
 }
-.step-note-read {
+/* طلب المالك 2026-10-02: تعليق الخطوة كان سطرًا رماديًا صغيرًا يُقرأ هامشًا —
+   وهو في الحقيقة التعليمة التي يُفتح الدليل لأجلها (سياسة، تحذير، سبب). صار لوحةً
+   بعرض اللقطة تعلوها مباشرة: حبر كامل لا رمادي، وزن ٥٠٠، وحدّ بلون العلامة عند
+   بداية السطر يشدّ العين من العنوان إليه. بلا أيقونة ولا تسمية — النص نفسه هو
+   المهم. `pre-line` يحفظ أسطر المؤلف كما كتبها (التعليق الصوتي المفرَّغ قد يطول). */
+.step-note-read,
+.viewer-note {
   margin: 0;
+  padding: 10px var(--sp-4);
+  background: var(--note-bg);
+  border-inline-start: 3px solid var(--brand);
+  border-start-start-radius: 3px;
+  border-end-start-radius: 3px;
+  border-start-end-radius: 10px;
+  border-end-end-radius: 10px;
+  color: var(--ink);
+  font-size: 0.97rem;
+  font-weight: 500;
+  line-height: 1.8;
+  white-space: pre-line;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
 }
 .step-head {
   display: flex;
@@ -1360,8 +1378,14 @@ a.chip {
 .editor-page-wrapper,
 .viewer-layout {
   min-height: 100vh;
-  /* قاعدة بيضاء نظيفة كإضافة كروم — الرمل همسة لا سطح قاتم (طلب المالك 2026-09-07) */
-  background: var(--paper-raised);
+  /* طلب المالك 2026-10-02: شاشة الدليل أبيض محايد — الرمل الدافئ كان يُقرأ «قديمًا».
+     الرموز تُعاد تعريفها داخل النطاق فيرثها كل ما تحته (حدود، قاع اللقطة، كبسولات)
+     بلا مطاردة قاعدةٍ قاعدة؛ بقية التطبيق (المكتبة/الإعدادات) على لوحته كما هي. */
+  --line: var(--read-line);
+  --line-strong: var(--read-line-strong);
+  --paper: var(--read-well);
+  --paper-raised: var(--read-ground);
+  background: var(--read-ground);
 }
 
 /* شريط تحكم كامل العرض يمتد لأركان الشاشة */
@@ -1434,24 +1458,96 @@ a.chip {
   gap: var(--sp-2);
   flex-wrap: wrap;
 }
-/* شريط مشاركة العارض — أزرار متجاورة وQR ينبثق أسفلها بلا إزاحة الشريط */
+/* مشاركة العارض — طلب المالك 2026-10-02: زر واحد يفتح قائمة (مشاركة الجهاز، واتساب،
+   نسخ، QR، طباعة) بدل أزرار منفردة كانت تلتفّ على الجوال أربعة أسطر (١٧٣px من الشاشة).
+   القائمة تلازم حافة الزر من جهة النهاية وتُحدّ بعرض الشاشة فلا تفيض، وQR ينفتح داخلها. */
 .viewer-share {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex-wrap: wrap;
   position: relative;
+  display: inline-flex;
 }
-.viewer-qr.qr-holder {
+.viewer-share-menu {
   position: absolute;
   top: calc(100% + var(--sp-2));
   inset-inline-end: 0;
-  padding: var(--sp-3);
+  z-index: 40;
+  width: max-content;
+  min-width: 232px;
+  max-width: calc(100vw - 2 * var(--sp-3));
+  padding: var(--sp-1);
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(43, 42, 38, 0.12);
-  z-index: 40;
+  border-radius: var(--r-md);
+  box-shadow:
+    0 2px 4px color-mix(in srgb, var(--brand) 6%, transparent),
+    0 18px 38px -14px color-mix(in srgb, var(--brand) 30%, transparent);
+}
+.viewer-share-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 40px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.viewer-share-item svg {
+  flex: none;
+  color: var(--muted);
+}
+.viewer-share-item:hover,
+.viewer-share-item:focus-visible {
+  background: var(--brand-soft);
+}
+.viewer-share-item.is-done,
+.viewer-share-item.is-done svg {
+  color: var(--ok);
+}
+.viewer-share-item.is-failed,
+.viewer-share-item.is-failed svg {
+  color: var(--danger);
+}
+.viewer-share-sep {
+  height: 1px;
+  margin: var(--sp-1) var(--sp-2);
+  background: var(--line);
+}
+.viewer-share-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+}
+.viewer-share-qr p {
+  margin: 0;
+  max-width: 200px;
+  text-align: center;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+@media (max-width: 640px) {
+  /* الشريط على الجوال سطر واحد نحيل: الاسم في البداية وزر المشاركة في النهاية */
+  .viewer-bar {
+    padding: var(--sp-2) var(--sp-3);
+    flex-wrap: nowrap;
+  }
+  .viewer-bar-end {
+    flex-wrap: nowrap;
+  }
+  .viewer-share-item {
+    min-height: 46px;
+    font-size: 1rem;
+  }
 }
 .viewer-brand-name {
   font-weight: 700;
@@ -1472,6 +1568,24 @@ a.chip {
   flex-direction: column;
   gap: var(--sp-3);
 }
+/* طلب المالك 2026-10-02: ما تحت العنوان كان ثلاثة أسطر متفرّقة (شارات، ثم زر تعليقات
+   وحده في سطر) — صار صفًّا واحدًا: شارات المواقع في بدايته وزر التعليقات في نهايته.
+   قسم التعليقات `display: contents` فيصير زرّه عنصرًا في الصف، ولوحته حين تنفتح
+   تأخذ سطرًا كاملًا تحته. */
+.guide-head-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.guide-head-foot > .guide-comments {
+  display: contents;
+}
+.guide-head-foot .comments-panel {
+  flex: 1 0 100%;
+  margin: 0;
+}
 .guide-head-fields,
 .guide-head-read {
   display: flex;
@@ -1486,6 +1600,12 @@ input.guide-title-input {
   line-height: 1.35;
   margin: 0;
   text-align: start;
+}
+/* عنوان القراءة يتدرّج مع عرض الشاشة (١٫٣ على الجوال ← ١٫٦٥) وتتوازن أسطره
+   فلا تبقى كلمة يتيمة في السطر الأخير */
+.guide-title-read {
+  font-size: clamp(1.3rem, 1.02rem + 1.4vw, 1.65rem);
+  text-wrap: balance;
 }
 input.guide-title-input {
   border-color: transparent;
@@ -1568,6 +1688,22 @@ textarea.guide-desc-input:focus {
 .site-badge-name {
   font-family: inherit;
 }
+/* جذر تراكب الشارات (بلاغ المالك 2026-10-02): قاعدة `.site-badge` لبطاقة المكتبة
+   (حرف بدائرة ٣٠px، أسفل الملف) كانت تغلب هذه فتحشر الكبسولة في دائرة يفيض منها
+   الاسم فوق جارتها. النطاق هنا يعيدها كبسولة تتّسع لاسمها، بحشوة منطقية (الأيقونة
+   في بداية السطر أيًّا كان الاتجاه). */
+.site-badges-row .site-badge {
+  width: auto;
+  height: auto;
+  justify-content: flex-start;
+  padding-block: 3px;
+  padding-inline: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink);
+}
 
 /* كبسولة رابط الانتقال المباشر في الخطوات */
 .step-url-pill {
@@ -1608,10 +1744,11 @@ textarea.guide-desc-input:focus {
 }
 .viewer-step-head h2 {
   margin: 0;
-  /* لا flex:1 — كان يلتهم العرض فيلتفّ رابط الخطوة لسطر ثانٍ دائمًا.
-     العنوان يأخذ بحسب نصّه، والرابط يدفع نفسه للطرف المقابل بالهامش الآلي */
-  flex: 0 1 auto;
-  min-width: 0;
+  /* 2026-10-02 (الجوال): `flex: 0 1 auto` كان يُنزل العنوان الطويل كله سطرًا تحت رقمه
+     فيبقى الرقم وحيدًا فوقه. الأساس صفر مع حدٍّ أدنى ٥٥٪: العنوان يلازم رقمه دائمًا
+     ويلتفّ داخل عموده، والرابط يجاوره إن وسعه الباقي (سطح المكتب) وإلا نزل تحته (الجوال). */
+  flex: 1 1 0;
+  min-width: 55%;
   font-size: 1.05rem;
   line-height: 1.55;
   padding-top: 2px;
@@ -1619,7 +1756,9 @@ textarea.guide-desc-input:focus {
 .viewer-step-head .step-url-pill {
   margin-inline-start: auto;
 }
-/* شارة رقم الخطوة — قرص هادئ بلون العلامة، لغة واحدة مع شارة قارئ الإضافة (.rcard-n) */
+/* شارة رقم الخطوة — طلب المالك 2026-10-02: مصمتة بلون زر «دربني» نفسه (`--accent`)
+   لا قرصًا باهتًا: الرقم الداكن في رأس كل بطاقة هو الفاصل البصري بين البطاقات.
+   (الرقم الخفيف هو رقم السهم داخل اللقطة — `step-badge.ts` — لا هذا.) */
 .viewer-step-num {
   flex: none;
   min-width: 28px;
@@ -1628,8 +1767,8 @@ textarea.guide-desc-input:focus {
   display: inline-grid;
   place-items: center;
   border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--brand) 12%, transparent);
-  color: var(--brand);
+  background: var(--accent);
+  color: var(--brand-ink);
   font-weight: 700;
   font-size: 0.85rem;
 }
@@ -1828,9 +1967,22 @@ textarea.guide-desc-input:focus {
   left: 0;
   will-change: transform;
 }
+/* بلاغ المالك 2026-10-02 («لا يستجيب للجوال»): `touch-action: none` أعلاه كان يحبس
+   الإصبع داخل اللقطة — ومع تكبير القراءة كل لقطة قابلة للسحب، فمن بدأ لمسته فوق لقطة
+   (ومعظم شاشة الجوال لقطات) حرّك الصورة ولم يمرّر الصفحة. في القراءة: التمرير الرأسي
+   وتكبير الإصبعين للمتصفح، والسحب الأفقي يحرّك اللقطة. وضع التعديل يحتفظ بالإيماءة
+   كاملة (تحريك الهدف وتحجيمه بالسحب في كل اتجاه). */
+.shot:not(.drawing) .shot-viewport {
+  touch-action: pan-y pinch-zoom;
+}
+.editor-page.editing .shot-viewport {
+  touch-action: none;
+}
 /* طلب المالك 2026-09-11: رقم الخطوة بلا هدف (كفتح الموقع) — شارة ثابتة على إطار
-   اللقطة لا على اللوحة، فلا يقصّها منظار العرض حين يفيض عرض اللقطة. دائرة بلون
-   علامات الدليل ورقمٌ أبيض بهالة رفيعة تُقرأ على أي خلفية. RTL ⇒ الزاوية اليمنى. */
+   اللقطة لا على اللوحة، فلا يقصّها منظار العرض حين يفيض عرض اللقطة.
+   طلب المالك 2026-10-02: خفيفة لا مصمتة — قاعدة بيضاء بصبغة من لون علامات الدليل
+   (`--mark`) وحلقة رفيعة ورقم بلونها، مطابقةً لدائرة الرقم المرسومة على اللوحة
+   (`step-badge.ts`) كي لا تسرق الضوء من إطار الهدف. */
 .shot-step-num {
   position: absolute;
   top: 10px;
@@ -1844,11 +1996,13 @@ textarea.guide-desc-input:focus {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  font-weight: 800;
+  font-weight: 700;
   font-size: clamp(13px, 2.6vw, 17px);
   line-height: 1;
-  color: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(255, 255, 255, 0.85);
+  --mark: #ea580c;
+  color: var(--mark);
+  background: color-mix(in srgb, var(--mark) 16%, #ffffff);
+  box-shadow: 0 0 0 1.25px var(--mark), 0 2px 6px rgba(0, 0, 0, 0.14);
   pointer-events: none;
 }
 .shot.drawing .shot-viewport canvas {
@@ -2145,9 +2299,9 @@ textarea.guide-desc-input:focus {
   /* نمط سكرايب (طلب المالك 2026-09-15): كل خطوة بطاقة بيضاء مستقلة على ورق
      الصفحة، والمسافة بينها واسعة (٤٠px) كي تتنفس العين — كانت 28px بلا بطاقة */
   margin-bottom: 48px;
-  /* طلب المالك 2026-09-01: بطاقة الخطوة في العارض أضيق ٢٠٪ (٩٨٠→٧٨٤) ومتوسّطة،
-     كي تطابق تصغير المحرر — الارتفاع مقلَّص أصلًا من .shot-viewport المشترك. */
-  max-width: 784px;
+  /* طلب المالك 2026-10-02: البطاقة أصغر (٧٨٤→٧٢٠) — اللقطة الكبيرة كانت تُتعب العين؛
+     وعمود القراءة كله (رأس الدليل والبطاقات) صار على خط واحد `--read-col`. */
+  max-width: var(--read-col);
   margin-inline: auto;
   width: 100%;
   background: var(--card);
@@ -2155,14 +2309,89 @@ textarea.guide-desc-input:focus {
   border-radius: var(--r-lg);
   padding: var(--sp-5);
   box-shadow:
-    0 1px 2px color-mix(in srgb, var(--ink) 5%, transparent),
-    0 8px 24px color-mix(in srgb, var(--ink) 4%, transparent);
+    0 1px 2px color-mix(in srgb, var(--brand) 6%, transparent),
+    0 10px 28px -12px color-mix(in srgb, var(--brand) 14%, transparent);
 }
 
 /* طلب المالك 2026-09-15: الإطار الافتراضي فاتح فيختفي بين اللقطة الفاتحة وبياض
-   البطاقة — بين الشاشة والبطاقة إطار أوضح بدرجة واحدة يرسم حدودها على الطرفين */
-.viewer-step .shot-viewport {
-  border-color: var(--line-strong);
+   البطاقة — بين الشاشة والبطاقة إطار أوضح بدرجة واحدة يرسم حدودها على الطرفين.
+   طلب المالك 2026-10-02: اللقطة أقصر — ارتفاعها يتبع عرضها (١٦:٩ يسع لقطة
+   تبويب المتصفح ≈٢:١ بزومها الافتتاحي ١٠٪ كاملةً) بدل ٥٤٪ من النافذة، فلا شريط
+   فارغ تحت اللقطة ولا لقطة تبتلع الشاشة؛ `ResizeObserver` في StepImage يعيد المنظار. */
+.viewer-step .shot-viewport,
+.editor-page:not(.editing) .step-card .shot-viewport {
+  height: auto;
+  aspect-ratio: 16 / 9;
+  max-height: 64vh;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+}
+
+/* العارض العام عمودٌ واحد: رأس الدليل والتعليقات والبطاقات والتنبيهات بحافة واحدة.
+   الكرّاسة لها عرضها (فهرس + عمود قراءة) فتُستثنى. */
+.viewer-page:not(.booklet-page) {
+  max-width: calc(var(--read-col) + 2 * var(--sp-5));
+}
+
+/* ——— وضع القراءة في المحرر (فتح الدليل من المكتبة قبل ضغط «تعديل») ———
+   طلب المالك 2026-10-02: البطاقات كانت متلاصقة (١٢px) واللقطة تملأ البطاقة حافةً
+   لحافة بعرض ٨٤٠ — زحام. صار شكله شكل العارض العام نفسه: عمود قراءة متوسّط،
+   لقطة داخل حشوة البطاقة، ومسافة تنفّس بين البطاقات. وضع التعديل لم يُمسّ
+   (اللقطة الواسعة هناك دقّةٌ لرسم العلامات لا زينة). */
+.editor-page:not(.editing):not(.is-booklet) {
+  max-width: calc(var(--read-col) + 2 * var(--sp-5));
+}
+@media (min-width: 1101px) {
+  /* عمود الأدوات العائم (تكبير/تصغير) بعيد عن عمودٍ بهذا العرض — لا فسحة له،
+     فيتوسّط العمود تمامًا بدل انزياحه ٨٤px */
+  .editor-page:not(.editing):not(.is-booklet) {
+    padding-inline-start: var(--sp-5);
+  }
+}
+.editor-page:not(.editing) .editor-step-stack {
+  gap: 48px;
+}
+.editor-page:not(.editing) .step-card {
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--brand) 6%, transparent),
+    0 10px 28px -12px color-mix(in srgb, var(--brand) 14%, transparent);
+}
+.editor-page:not(.editing) .step-head {
+  align-items: flex-start;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.editor-page:not(.editing) .step-num {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  font-size: 0.85rem;
+}
+.editor-page:not(.editing) .step-title-read {
+  /* العنوان يلازم رقمه ولا ينزل تحته حين يطول (كالعارض العام). `match-parent`:
+     عنوان لاتيني (`dir=auto` ⇒ LTR) يبقى مجاورًا لرقمه لا في الطرف البعيد */
+  flex: 1 1 0;
+  min-width: 55%;
+  text-align: match-parent;
+  font-size: 1.06rem;
+  font-weight: 700;
+  line-height: 1.55;
+  padding-top: 2px;
+}
+.editor-page:not(.editing) .step-head .step-url-pill {
+  margin-inline-start: auto;
+}
+/* في عمود القراءة الأضيق الكبسولة بطولها الكامل (٣٨٠) تلتفّ لسطر وحدها تحت كل
+   عنوان — أقصر فتجاور العنوان ما اتّسع السطر، والرابط كاملًا في `title` والنقر */
+.viewer-step-head .step-url-pill,
+.editor-page:not(.editing) .step-head .step-url-pill {
+  max-width: 200px;
+}
+.editor-page:not(.editing) .step-figure > .shot {
+  width: 100%;
+  margin-inline: 0;
 }
 
 /* PERF-04: تمرير افتراضي للأدلة الطويلة — المتصفح يتخطى تخطيط ما هو خارج
@@ -2180,7 +2409,7 @@ textarea.guide-desc-input:focus {
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: 784px;
+  max-width: var(--read-col);
   width: 100%;
   margin: -18px auto 34px;
   padding: 8px 12px;
@@ -2282,6 +2511,34 @@ textarea.guide-desc-input:focus {
     /* البطاقات على الجوال: مسافة أهدأ من سطح المكتب وحشوة أقرب للحافة */
     margin-bottom: 32px;
     padding: var(--sp-4);
+  }
+  /* 2026-10-02: لقطة الجوال ٤:٣ لا ١٦:٩ — الإطار العريض القصير (٣١٨×١٧٩) كان يعرض
+     شريطًا ضيقًا من الشاشة؛ ٤:٣ يزيد المرئيّ ثلثًا ويوافق نسبة لقطة تبويب المتصفح
+     (≈١٫٣) فتظهر الخطوة بلا هدف كاملةً بلا قصّ أسفلها */
+  .viewer-step .shot-viewport,
+  .editor-page:not(.editing) .step-card .shot-viewport {
+    aspect-ratio: 4 / 3;
+  }
+  /* رأس الدليل على الجوال: إيقاع أضيق، والوصف بحجم المتن */
+  .guide-head {
+    margin-bottom: var(--sp-6);
+    padding-bottom: var(--sp-4);
+  }
+  .guide-desc-read {
+    font-size: 1rem;
+  }
+  .guide-meta {
+    gap: var(--sp-1) var(--sp-4);
+  }
+  /* وضع القراءة في المحرر يطابق العارض على الجوال أيضًا */
+  .editor-page:not(.editing) .editor-step-stack {
+    gap: 32px;
+  }
+  .editor-page:not(.editing) .step-card {
+    padding: var(--sp-4);
+  }
+  .editor-page:not(.editing) .step-head .step-url-pill {
+    margin-inline-start: 0;
   }
   .viewer-step h2 {
     font-size: 1.02rem;
@@ -2587,16 +2844,15 @@ textarea.guide-desc-input:focus {
   }
 }
 
-/* ——— دربني (GM-01): زر التدريب الثابت أعلى الركن — القراءة أولًا ثم التدريب ——— */
+/* ——— دربني (GM-01): القراءة أولًا ثم التدريب ———
+   2026-10-02: الزر كان عائمًا (fixed) في الركن الأعلى فوق الشريط فيغطّي ما تحته من
+   أزراره. صار عنصرًا في الشريط نفسه — والشريط لاصق فيبقى الزر حاضرًا مع التمرير —
+   ورسالة الخطأ تتدلّى تحته بلا إزاحة الشريط. على الجوال يبقى عائمًا أسفل الشاشة
+   قرب الإبهام (القاعدة آخر هذا المقطع). */
 .train-fab-wrap {
-  position: fixed;
-  top: var(--sp-3, 12px);
-  left: var(--sp-3, 12px);
-  z-index: 60;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2, 8px);
-  max-width: min(340px, calc(100vw - 24px));
 }
 .train-fab {
   display: inline-flex;
@@ -2605,20 +2861,26 @@ textarea.guide-desc-input:focus {
   border: 0;
   cursor: pointer;
   border-radius: 999px;
-  padding: 10px 18px;
+  min-height: 36px;
+  padding: 0 16px;
   font-family: var(--font-ui);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 800;
   background: var(--accent);
   color: var(--brand-ink);
-  box-shadow: 0 10px 28px rgba(43, 42, 38, 0.28);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .train-fab:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 34px rgba(43, 42, 38, 0.38);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 32%, transparent);
 }
 .train-fab-error {
+  position: absolute;
+  top: calc(100% + var(--sp-2, 8px));
+  inset-inline-end: 0;
+  z-index: 40;
+  width: max-content;
+  max-width: min(340px, calc(100vw - 24px));
   margin: 0;
   background: var(--paper);
   color: var(--warn-ink);
@@ -2628,11 +2890,28 @@ textarea.guide-desc-input:focus {
   line-height: 1.7;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
-/* الشاشات الضيقة: الزر أسفل يسارًا حتى لا يغطي أزرار الترويسة */
+/* الجوال: الزر عائم أسفل الشاشة (لا مكان له في شريط السطر الواحد، والإبهام يصله)،
+   ورسالته فوقه لا تحته */
 @media (max-width: 640px) {
   .train-fab-wrap {
-    top: auto;
+    position: fixed;
     bottom: var(--sp-3, 12px);
+    left: var(--sp-3, 12px);
+    z-index: 60;
+    flex-direction: column-reverse;
+    gap: var(--sp-2, 8px);
+    max-width: min(340px, calc(100vw - 24px));
+  }
+  .train-fab {
+    align-self: flex-start;
+    min-height: 44px;
+    padding: 0 18px;
+    font-size: 0.95rem;
+    box-shadow: 0 10px 28px rgba(43, 42, 38, 0.28);
+  }
+  .train-fab-error {
+    position: static;
+    width: auto;
   }
 }
 
@@ -2641,25 +2920,52 @@ textarea.guide-desc-input:focus {
 .guide-comments {
   margin-top: var(--sp-2);
 }
-.comment-toggle.has-comments {
+/* طلب المالك 2026-10-02: زر التعليقات كان صندوقًا بإطار داكن وحده في سطر — أثقل من
+   دوره. صار كبسولة هادئة بصبغة العلامة في نهاية صفّ الرأس: بلا إطار في السكون،
+   والعدّاد قرص مصمت حين يوجد ما يُقرأ، وحين تنفتح اللوحة يظهر إطارها فتُعرف حالتها. */
+.icon-btn.wide.comment-toggle {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border-color: transparent;
+  background: var(--note-bg);
   color: var(--brand);
+  font-weight: 600;
+}
+.icon-btn.wide.comment-toggle:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--brand) 11%, var(--card));
+  color: var(--brand);
+  border-color: transparent;
+}
+.icon-btn.wide.comment-toggle[aria-expanded='true'] {
   border-color: var(--brand);
+  background: var(--card);
 }
 /* مشكلات مفتوحة على الدليل — إشارة حمراء بارزة تحرّك المُنشئ للمراجعة */
-.comment-toggle.has-issues {
+.icon-btn.wide.comment-toggle.has-issues,
+.icon-btn.wide.comment-toggle.has-issues:hover:not(:disabled) {
   color: var(--danger);
+  background: var(--danger-bg);
+}
+.icon-btn.wide.comment-toggle.has-issues[aria-expanded='true'] {
   border-color: var(--danger);
 }
 .comment-toggle .comment-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.4em;
-  padding: 0 0.4em;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   border-radius: 999px;
-  background: var(--line);
-  font-size: 0.8rem;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: 0.75rem;
   font-weight: 700;
+}
+.comment-toggle.has-issues .comment-count {
+  background: color-mix(in srgb, var(--danger) 16%, var(--card));
+  color: var(--danger);
 }
 .comments-panel {
   display: flex;
@@ -2754,6 +3060,12 @@ textarea.guide-desc-input:focus {
 .comment-box {
   resize: vertical;
   min-height: 64px;
+}
+/* الحقل الفارغ `dir=auto` يُحسب LTR فيظهر تلميحه العربي من اليسار — يتبع اتجاه
+   الصفحة ما دام فارغًا، ثم يتبع ما يُكتب فيه */
+.comment-box:placeholder-shown,
+.comment-name:placeholder-shown {
+  direction: inherit;
 }
 .comment-actions {
   gap: var(--sp-1);
@@ -3982,32 +4294,139 @@ textarea.guide-desc-input:focus {
   margin: 0;
 }
 
-/* ——— VOX-09 «ميك الخطوة»: شارة 🎙 بجانب عنوان البطاقة ——— */
+/* ——— VOX-09/10 «ميك الخطوة»: مشغّل الشرح الصوتي — صفٌّ فوق اللقطة ———
+   طلب المالك 2026-10-02: كان مثلثًا صغيرًا في رأس البطاقة. صار زرًّا ظاهرًا بلون الصوت
+   في الهوية (`--amber`): قرص تشغيل مصمت، نص «استمع للشرح»، موجة، والمدة. أثناء
+   التشغيل: الموجة تتراقص، هالة تنبض حول الزر، والزر يمتلئ بمقدار ما عُزف (`--p`). */
 .step-voice {
+  --p: 0;
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  background: var(--brand-soft);
-  color: var(--brand);
-  font-size: 0.78rem;
-  font-weight: 700;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  max-width: 100%;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 .step-voice-play {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding-block: 4px;
+  padding-inline: 4px 14px;
+  border: 1px solid color-mix(in srgb, var(--amber) 38%, var(--card));
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--amber) 9%, var(--card));
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+/* امتلاء التقدّم — من بداية السطر (يمين العربية) بمقدار ما عُزف */
+.step-voice-play::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: calc(var(--p) * 100%);
+  background: color-mix(in srgb, var(--amber) 26%, var(--card));
+  transition: width 0.25s linear;
+}
+.step-voice-play:hover {
+  border-color: var(--amber);
+}
+.step-voice-play:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.step-voice-disc {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--amber);
+  color: var(--brand-ink);
+}
+/* عرض ثابت للنص: «استمع للشرح» ↔ «إيقاف» لا يقفز بهما عرض الزر */
+.step-voice-label {
+  min-width: 5.8em;
+  text-align: start;
+}
+.step-voice-wave {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  border: 0;
-  background: none;
-  color: var(--brand);
-  cursor: pointer;
-  padding: 0;
-  font: inherit;
+  height: 18px;
+}
+.step-voice-wave i {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--amber);
+  transform: scaleY(0.3);
+}
+/* ساكنة: نمط موجيّ ثابت (لا خطًّا مسطّحًا) يقول «صوت» قبل التشغيل */
+.step-voice-wave i:nth-child(2) {
+  transform: scaleY(0.6);
+}
+.step-voice-wave i:nth-child(3) {
+  transform: scaleY(0.9);
+}
+.step-voice-wave i:nth-child(4) {
+  transform: scaleY(0.5);
+}
+.step-voice.is-playing .step-voice-play {
+  border-color: var(--amber);
+  animation: voice-glow 1.8s ease-out infinite;
+}
+.step-voice.is-playing .step-voice-wave i {
+  animation: voice-bar 0.9s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.17s);
+}
+@keyframes voice-bar {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+@keyframes voice-glow {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--amber) 42%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--amber) 0%, transparent);
+  }
+}
+/* بلا حركة: الموجة تبقى على نمطها الثابت والهالة تُلغى — التقدّم (امتلاء الزر) يبقى */
+@media (prefers-reduced-motion: reduce) {
+  .step-voice.is-playing .step-voice-play,
+  .step-voice.is-playing .step-voice-wave i {
+    animation: none;
+  }
+}
+@media (hover: none) {
+  .step-voice-play {
+    min-height: 44px;
+  }
 }
 .step-voice-dur {
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--muted);
 }
 .step-voice-pending {
   display: inline-flex;

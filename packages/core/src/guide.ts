@@ -138,6 +138,8 @@ export interface Step {
   pageTitle?: string
   /** DTOP-01: مصدر الخطوة الصريح — الأدلة القديمة بلا source تُفسَّر ويبًا من الرابطين */
   source?: StepSource
+  /** ختم الخطوة بالساعة المطلقة (epoch ms كـ`Date.now()`) — ساعةٌ واحدة لكل المصادر:
+   *  الإضافة تقرؤها مباشرة، والديسكتوب يحوّل ختوم مستشعره إليها (session.ts) */
   ts: number
   screenshot?: ScreenshotMeta | MissingScreenshot
   /** BLK-01: نوع كتلة النداء/الهيدر — اختياري جمعيًا؛ غيابه خطوة عادية تُرقَّم */

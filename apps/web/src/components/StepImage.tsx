@@ -13,9 +13,10 @@ import {
   type DragPoints,
   type MarkHandle,
 } from '../editor/rectmath'
-import { focusViewport, panViewport, type Viewport } from '../editor/focus'
+import { focusViewport, OPENING_ZOOM, panViewport, type Viewport } from '../editor/focus'
 import { useInView } from '../lib/inview'
-import { drawAnnotation, drawHandles, drawMark, drawPreview, drawStepBadge, drawStrokePreview, hitTextAnnotation, uid } from './annotations-render'
+import { drawAnnotation, drawHandles, drawMark, drawPreview, drawStrokePreview, hitTextAnnotation, uid } from './annotations-render'
+import { drawStepBadge } from './step-badge'
 
 export type DrawMode = 'view' | 'blur' | 'crop' | 'annotate' | 'move-target'
 /** أداة الشرح النشطة داخل وضع annotate — أي شكل يرسمه السحب */
@@ -156,7 +157,7 @@ export function StepImage({
   useEffect(() => {
     render()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blurRects, crop, annotations, drag, markDrag, mode, tool, color, mark, markHandlesShown, strokePts, textDrag, autoNumber])
+  }, [blurRects, crop, annotations, drag, markDrag, mode, tool, color, mark, markHandlesShown, strokePts, textDrag, autoNumber, vp?.scale])
 
   /** تغيّر مقاس الصندوق (تدوير الجهاز/تغيير النافذة) يعيد حساب المنظار */
   useEffect(() => {
@@ -230,7 +231,13 @@ export function StepImage({
       // طلب المالك 2026-09-09: «إظهار الأرقام» يرسم رقم الخطوة بجوار علامة الهدف من بعيد.
       // البُعد والحدود بإحداثيات اللوحة الظاهرة (cw×ch) لا الصورة الأصلية — وإلا
       // انحرف الرقم والسهم في اللقطات المقصوصة (طلب المالك 2026-09-11).
-      if (autoNumber != null) drawStepBadge(c, ml, autoNumber, mark.color, cw, { w: cw, h: ch })
+      // طلب المالك 2026-10-02: السهم الملتفّ يُرسم دائمًا؛ الرقم وحده يتبع المبدّل.
+      // مقاس الشارة والسهم **ثابت على الشاشة** مهما كان التكبير: يُرسمان على اللوحة
+      // ببكسلها الطبيعي فيتضخّمان مع تكبير القراءة — نقسم على مقياس المنظار كي يبقيا
+      // بحجمهما عند ملء العرض (حيث يساوي هذا المقياس عرض اللوحة كما كان يُمرَّر).
+      const boxW = boxRef.current?.getBoundingClientRect().width ?? 0
+      const badgeScale = vp && boxW > 0 ? (boxW * OPENING_ZOOM) / vp.scale : cw
+      drawStepBadge(c, ml, autoNumber ?? null, mark.color, badgeScale, { w: cw, h: ch }, markShapeOf(mark))
     }
     // طلب المالك 2026-09-11: الخطوة بلا هدف (كفتح الموقع) لا تُرسم رقمها على اللوحة —
     // منظار العارض يقصّ حواف اللقطة فيضيع رقم الركن. تُعرَض بشارة HTML فوق الإطار
@@ -469,6 +476,16 @@ export function StepImage({
     setDrag({ ...drag, x1: p.x, y1: p.y })
   }
 
+  /**
+   * في وضع القراءة يأخذ المتصفح الإيماءة الرأسية ليمرّر الصفحة (`touch-action: pan-y`)
+   * فيُلغي المؤشّر بلا pointerup — تُفلت قبضة السحب كي لا تبقى اللقطة «ممسوكة».
+   */
+  function onPointerCancel() {
+    if (!panRef.current) return
+    panRef.current = null
+    setGrabbing(false)
+  }
+
   function onPointerUp() {
     if (panRef.current) {
       panRef.current = null
@@ -636,6 +653,7 @@ export function StepImage({
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
             onPointerLeave={() => setHoverHandle(null)}
           />
         ) : (
@@ -646,7 +664,7 @@ export function StepImage({
           الثابت لا على اللوحة، فلا يقصّها منظار العرض. لا سهم: لا زرّ يشير إليه.
         */}
         {active && autoNumber != null && !mark && (
-          <div className="shot-step-num" style={{ backgroundColor: color }} aria-hidden="true">
+          <div className="shot-step-num" style={{ '--mark': color } as React.CSSProperties} aria-hidden="true">
             {autoNumber}
           </div>
         )}

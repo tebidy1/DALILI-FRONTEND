@@ -229,7 +229,7 @@ describe('لحظة الالتقاط وعجلات التدريب (خطوتا ال
     expect(n).toContain('.flash .shot-ring {')
     expect(n).toContain('border: 1.5px solid #ea580c;')
     // الزجاجية: تعبئة خفيفة بلون الإطار تميّز دون إخفاء (طلب المالك 2026-09-27)؛ السمك أرفع بطلبه 2026-09-29
-    expect(n).toContain('background: rgba(234, 88, 12, 0.14);')
+    expect(n).toContain('background: rgba(234, 88, 12, 0.2);')
     expect(n).toContain('<button class="undo" id="btnUndo" type="button">تراجع</button>')
     expect(n).toContain('id="flashStep"')
     // شارة `flashVoice` رُفعت 2026-09-30/ب: زرّ المايك في الصفّ نفسه يقول ما

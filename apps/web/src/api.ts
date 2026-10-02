@@ -1,7 +1,8 @@
 import { DaliliClient } from '@dalili/shared'
+import { API_BASE } from './lib/api-base'
 
-/** قاعدة فارغة = مسارات نسبية عبر بروكسي Vite إلى الخادم على 8787 */
-export const client = new DaliliClient('')
+/** قاعدة فارغة = مسارات نسبية عبر بروكسي Vite؛ في الإنتاج أصل الـAPI من `VITE_API_BASE` */
+export const client = new DaliliClient(API_BASE)
 
 export const WEB_SHARE_BASE = typeof location !== 'undefined' ? `${location.origin}/s/` : '/s/'
 

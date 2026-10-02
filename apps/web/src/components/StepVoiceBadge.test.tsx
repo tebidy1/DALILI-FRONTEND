@@ -96,3 +96,61 @@ describe('StepVoiceBadge — 🎙 تعليق الخطوة', () => {
     expect(onTranscribed).not.toHaveBeenCalled() // لم يُفرَّغ شيء — لا نكذب بالنجاح
   })
 })
+
+/**
+ * طلب المالك 2026-10-02: الصوت المسجَّل على اللقطة يُشغَّل عند عرض الدليل من زرّ ظاهر
+ * بنصّه («استمع للشرح») لا مثلثًا صغيرًا في رأس البطاقة، وبحركة أثناء التشغيل
+ * (موجة + امتلاء بمقدار التقدّم). ومشغّل واحد يعزف في الصفحة — لا شرحان معًا.
+ */
+describe('StepVoiceBadge — مشغّل الشرح الصوتي (VOX-10)', () => {
+  const second: StepVoiceDto = { fileId: 'f2', fileUrl: '/files/f2', durationMs: 8_000 }
+
+  it('الزر يحمل نصًّا ظاهرًا «استمع للشرح» وموجة — لا أيقونة صمّاء', () => {
+    const { container } = render(<StepVoiceBadge voice={uploaded} guideId="g1" />)
+    const btn = container.querySelector('.step-voice-play')!
+    expect(btn.textContent).toContain('استمع للشرح')
+    expect(container.querySelectorAll('.step-voice-wave i').length).toBeGreaterThanOrEqual(4)
+    expect(container.querySelector('.step-voice')!.classList.contains('is-playing')).toBe(false)
+  })
+
+  it('أثناء التشغيل: صنف is-playing (تتحرّك الموجة) والنص «إيقاف»، وعند انتهاء الملف يعود ساكنًا', async () => {
+    const { container } = render(<StepVoiceBadge voice={uploaded} guideId="g1" />)
+    const root = container.querySelector('.step-voice')!
+    fireEvent.click(container.querySelector('.step-voice-play')!)
+    await waitFor(() => expect(root.classList.contains('is-playing')).toBe(true))
+    expect(container.querySelector('.step-voice-play')!.textContent).toContain('إيقاف')
+    fireEvent.ended(container.querySelector('audio')!)
+    expect(root.classList.contains('is-playing')).toBe(false)
+    expect((root as HTMLElement).style.getPropertyValue('--p')).toBe('0')
+  })
+
+  it('التقدّم: timeupdate يملأ الزر بنسبة ما عُزف (المدة من بيانات الخطوة حين لا يعرفها المتصفح)', async () => {
+    const { container } = render(<StepVoiceBadge voice={uploaded} guideId="g1" />)
+    const root = container.querySelector('.step-voice') as HTMLElement
+    const audio = container.querySelector('audio')!
+    fireEvent.click(container.querySelector('.step-voice-play')!)
+    await waitFor(() => expect(root.classList.contains('is-playing')).toBe(true))
+    audio.currentTime = 6 // من ١٢ ثانية
+    fireEvent.timeUpdate(audio)
+    expect(Number(root.style.getPropertyValue('--p'))).toBeCloseTo(0.5)
+  })
+
+  it('مشغّل واحد في الصفحة: تشغيل شرح خطوة أخرى يوقف الأول', async () => {
+    const { container } = render(
+      <>
+        <StepVoiceBadge voice={uploaded} guideId="g1" />
+        <StepVoiceBadge voice={second} guideId="g1" />
+      </>,
+    )
+    const [a, b] = Array.from(container.querySelectorAll('.step-voice'))
+    fireEvent.click(a!.querySelector('.step-voice-play')!)
+    await waitFor(() => expect(a!.classList.contains('is-playing')).toBe(true))
+    pause.mockClear()
+    fireEvent.click(b!.querySelector('.step-voice-play')!)
+    await waitFor(() => expect(b!.classList.contains('is-playing')).toBe(true))
+    expect(pause).toHaveBeenCalledTimes(1)
+    // المتصفح يطلق pause على الأول — فيعود ساكنًا
+    fireEvent.pause(a!.querySelector('audio')!)
+    expect(a!.classList.contains('is-playing')).toBe(false)
+  })
+})

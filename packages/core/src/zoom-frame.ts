@@ -60,6 +60,8 @@ export function zoomFrame(
   viewW: number,
   viewH: number,
   limits: ZoomLimits = CAPTURE_ZOOM,
+  /** كثافة الشاشة العارضة (devicePixelRatio) — لحساب سقف الدقّة الأصلية */
+  dpr = 1,
 ): ZoomFrame | null {
   if (natW <= 0 || natH <= 0 || viewW <= 0 || viewH <= 0) return null
   if (mark.w <= 0 || mark.h <= 0) return null
@@ -72,7 +74,11 @@ export function zoomFrame(
   const cy = (mark.y + mark.h / 2) * s
 
   const fit = Math.min((limits.fill * viewW) / mw, (limits.fill * viewH) / mh)
-  const scale = clamp(fit, limits.min, limits.max)
+  // سقف الدقّة الأصلية (بلاغ المالك 2026-10-02: «اللقطة باهتة بسبب التكبير الشديد»):
+  // بكسل الصورة لا يُمدّ على أكثر من بكسل شاشة واحد — فوقه تتكسّر الصورة مهما كان
+  // حدّ التكبير المطلوب. ولا ينزل تحت ١× (ملء العرض) للقطة أضيق من النافذة.
+  const nativeCap = Math.max(1, natW / (viewW * (dpr > 0 ? dpr : 1)))
+  const scale = Math.min(clamp(fit, limits.min, limits.max), nativeCap)
 
   // توسيط مركز العنصر في مركز النافذة
   let translateX = viewW / 2 - scale * cx

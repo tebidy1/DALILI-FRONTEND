@@ -12,10 +12,10 @@ import { guideMarkColor } from '../components/EmbeddedSteps'
 import { ViewerBooklet } from './ViewerBooklet'
 import { SkeletonScreen } from '../ui/Skeleton'
 import { StateView } from '../ui/StateView'
-import { IconCloudOff, IconExternalLink, IconPause, IconPlay } from '../ui/icons'
+import { IconClock, IconCloudOff, IconExternalLink, IconList, IconPause, IconPlay } from '../ui/icons'
 import { t } from '../i18n'
 import { needsVirtualScrolling } from '../lib/virtual-list'
-import { shotOf } from '../lib/format'
+import { durationAr, fmtDigits, guideDurationMs, relativeTimeAr, shotOf } from '../lib/format'
 import { useReloadSeq } from '../lib/reload-seq'
 import { TrainButton } from './TrainButton'
 import { ViewerShare } from './ViewerShare'
@@ -277,7 +277,7 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
                 {embedNums[i]}. <bdi>{ov ? ov.stepText(s.id, 'title', s.title) : s.title}</bdi>
               </h2>
               {s.note && (
-                <p className="muted viewer-note">
+                <p className="viewer-note">
                   <bdi>{ov ? ov.stepText(s.id, 'note', s.note) : s.note}</bdi>
                 </p>
               )}
@@ -292,6 +292,9 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
   const nums = stepNumbers(guide.steps)
   const markColor = guideMarkColor(guide.steps)
   const capturedSites = extractCapturedSites(guide.steps)
+  // العدّ يطابق أرقام البطاقات: الكتل (تنبيه/عنوان) بلا رقم فلا تُحسب خطوات
+  const stepCount = nums.filter((n) => n != null).length
+  const durationMs = guideDurationMs(guide.steps, audio?.durationMs)
 
   return (
     <div className={`viewer-layout${virtual ? ' cv-steps' : ''}`}>
@@ -302,12 +305,11 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
             {t('app.name')}
           </span>
         </div>
+        {/* طلب المالك 2026-10-02: سطر واحد على كل المقاسات — المشاركة والطباعة مجموعة
+            تحت زر واحد بدل أربعة أزرار تلتفّ على الجوال */}
         <div className="viewer-bar-end">
           {trainable && <TrainButton token={token!} />}
           <ViewerShare title={guide.title} />
-          <button className="btn ghost" onClick={() => window.print()}>
-            {t('common.print')}
-          </button>
         </div>
       </div>
 
@@ -319,30 +321,49 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
             {ov && <span className="viewer-auto-badge">{t('viewer.badge.auto')}</span>}
           </h1>
           {guide.description && (
+            // النص ابنٌ مباشر: `dir=auto` يتخطّى محتوى <bdi> فيُحسب الوصف العربي LTR
             <p className="guide-desc-read" dir="auto">
-              <bdi>{ov ? ov.description ?? guide.description : guide.description}</bdi>
+              {ov ? ov.description ?? guide.description : guide.description}
             </p>
           )}
-          {capturedSites.length > 0 && (
-            <div className="site-badges-row" aria-label={t('editor.capturedSites')}>
-              {capturedSites.map((site) => (
-                <span key={site.host} className="site-badge" title={site.host}>
-                  <span className="site-badge-icon" style={{ backgroundColor: site.color }}>
-                    {site.initial}
+          {/* سطر البيانات: ما يحتاجه القارئ قبل أن يبدأ — كم خطوة، كم تأخذ، ومتى حُدّث */}
+          <div className="guide-meta">
+            <span className="meta-item">
+              <IconList size={14} />{' '}
+              {t(guide.kind === 'booklet' ? 'common.blocks' : 'common.steps', {
+                count: fmtDigits(guide.kind === 'booklet' ? guide.steps.length : stepCount),
+              })}
+            </span>
+            {guide.kind !== 'booklet' && durationMs > 0 && (
+              <span className="meta-item">
+                <IconClock size={14} /> {durationAr(durationMs)}
+              </span>
+            )}
+            <span className="meta-item">{t('viewer.updated', { when: relativeTimeAr(guide.updatedAt) })}</span>
+          </div>
+          {/* صفّ واحد: شارات المواقع في بدايته وزر التعليقات في نهايته — لوحة التعليقات
+              تنفتح تحته بكامل العرض (GM-05: التعليقات والمشكلات على مستوى الدليل) */}
+          <div className="guide-head-foot">
+            {capturedSites.length > 0 && (
+              <div className="site-badges-row" aria-label={t('editor.capturedSites')}>
+                {capturedSites.map((site) => (
+                  <span key={site.host} className="site-badge" title={site.host}>
+                    <span className="site-badge-icon" style={{ backgroundColor: site.color }}>
+                      {site.initial}
+                    </span>
+                    <span className="site-badge-name" dir="ltr">{site.name}</span>
                   </span>
-                  <span className="site-badge-name" dir="ltr">{site.name}</span>
-                </span>
-              ))}
-            </div>
-          )}
-          {/* GM-05 تطوّر: التعليقات والمشكلات على مستوى الدليل أعلى الشاشة مع المعلومات */}
-          <GuideComments
-            comments={comments}
-            canModerate={false}
-            failed={commentsFailed}
-            onRetry={bumpReload}
-            onAdd={addComment}
-          />
+                ))}
+              </div>
+            )}
+            <GuideComments
+              comments={comments}
+              canModerate={false}
+              failed={commentsFailed}
+              onRetry={bumpReload}
+              onAdd={addComment}
+            />
+          </div>
         </header>
 
         {/* VOX-03 موزّعًا (قرار المالك): عنصر الصوت مشترك خفي — أزرار الاستماع داخل الخطوات */}
@@ -401,14 +422,15 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
                     <IconExternalLink size={13} className="step-url-icon" />
                   </a>
                 )}
-                {/* VOX-09: شارة 🎙 تعليق الخطوة — أولوية على نطاق الصوت المستمر */}
-                {s.voice && <StepVoiceBadge voice={s.voice} guideId={guide.id} />}
               </div>
               {s.note && (
-                <p className="muted viewer-note">
+                <p className="viewer-note">
                   <bdi>{ov ? ov.stepText(s.id, 'note', s.note) : s.note}</bdi>
                 </p>
               )}
+              {/* VOX-09/10: مشغّل الشرح الصوتي للخطوة — صفٌّ ظاهر فوق اللقطة (كان شارة صغيرة
+                  في الرأس)، وله الأولوية على نطاق الصوت المستمر */}
+              {s.voice && <StepVoiceBadge voice={s.voice} guideId={guide.id} />}
               {audio && !s.voice && ranges[i] && ranges[i]!.endMs > ranges[i]!.startMs && (
                 <button className="step-audio no-print" onClick={() => toggleStepAudio(i)} type="button">
                   {playing === i ? <IconPause size={15} /> : <IconPlay size={15} />}

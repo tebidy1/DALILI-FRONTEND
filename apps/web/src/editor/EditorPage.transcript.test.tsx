@@ -88,6 +88,18 @@ describe('بلاغ المالك: نص التفريغ يظهر مباشرة بع�
     expect(follows(note!, figure!)).toBe(true)
   })
 
+  /**
+   * عيب مرئي 2026-10-02: `dir="auto"` يتخطّى محتوى `<bdi>` حين يحدّد الاتجاه، فكانت
+   * فقرة الملاحظة العربية تُحسب LTR — نصّها يُحاذى يسارًا وحدّ لوحتها في الجهة
+   * الخطأ. الشرط: نص الملاحظة ابنٌ مباشر للفقرة كي يراه `dir="auto"`.
+   */
+  it('اتجاه الملاحظة يُقرأ من نصّها: لا <bdi> يحجبه عن dir="auto"', () => {
+    const note = document.querySelector('.step-note-read')!
+    expect(note.getAttribute('dir')).toBe('auto')
+    expect(note.querySelector('bdi')).toBeNull()
+    expect(note.firstChild?.nodeType).toBe(Node.TEXT_NODE)
+  })
+
   it('شارة الصوت ظاهرة على البطاقة بملفها المرفوع', () => {
     expect(screen.getByRole('button', { name: 'شغّل تعليق الخطوة الصوتي' })).toBeTruthy()
   })

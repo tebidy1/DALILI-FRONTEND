@@ -1,8 +1,11 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { PublicGuideDto } from '@dalili/shared'
 import { t } from '../i18n'
+import { fmtDigits } from '../lib/format'
 import { needsVirtualScrolling } from '../lib/virtual-list'
 import { ViewerPage } from './ViewerPage'
 
@@ -272,6 +275,78 @@ describe('مشغل الصوت في العارض', () => {
       expect((steps[1] as HTMLElement).dataset.current).toBe('true')
       expect((steps[0] as HTMLElement).dataset.current).toBeUndefined()
     })
+  })
+})
+
+/**
+ * طلب المالك 2026-10-02: شاشة المشاركة على الجوال — الشريط سطر واحد (خيارات المشاركة
+ * مجموعة تحت زر)، ورأس الدليل يحمل سطر بيانات، وشارات المواقع وزر التعليقات في صفّ
+ * واحد، ورقم الخطوة مصمت بلون زر «دربني» ليفصل بين البطاقات.
+ */
+describe('ترويسة العارض ورأس الدليل (VIEW-17)', () => {
+  const css = fs.readFileSync(path.join(__dirname, '..', 'index.css'), 'utf8')
+
+  async function renderHead() {
+    const { client } = await import('../api')
+    const g = fixture()
+    g.guide.steps[0]!.url = 'https://dashboard.example.com/orders'
+    vi.mocked(client.publicGuide).mockResolvedValue(g)
+    const r = renderViewer()
+    await screen.findByText('إصدار فاتورة توريد')
+    return r
+  }
+
+  it('الشريط يحمل زر «مشاركة» واحدًا — لا أزرار واتساب/نسخ/QR/طباعة منفردة', async () => {
+    const { container } = await renderHead()
+    const bar = container.querySelector('.viewer-bar')!
+    const buttons = Array.from(bar.querySelectorAll('button, a')).map((el) => el.textContent?.trim())
+    expect(buttons).toEqual([t('editor.shareOpen')])
+  })
+
+  it('رأس الدليل يعرض سطر بيانات: عدد الخطوات وآخر تحديث', async () => {
+    const { container } = await renderHead()
+    const meta = container.querySelector('.viewer-guide-head .guide-meta')!
+    expect(meta.textContent).toContain(t('common.steps', { count: fmtDigits(2) }))
+    expect(meta.textContent).toContain(t('viewer.updated', { when: t('fmt.now') }))
+  })
+
+  it('شارات المواقع وزر التعليقات يتشاركان صفًّا واحدًا أسفل الرأس', async () => {
+    const { container } = await renderHead()
+    const foot = container.querySelector('.viewer-guide-head .guide-head-foot')!
+    expect(foot.querySelector('.site-badges-row')).toBeTruthy()
+    expect(foot.querySelector('.comment-toggle')).toBeTruthy()
+  })
+
+  it('VOX-10: مشغّل شرح الخطوة الصوتي صفٌّ ظاهر فوق اللقطة — لا شارة صغيرة داخل رأس البطاقة', async () => {
+    const { client } = await import('../api')
+    const g = fixture()
+    ;(g.guide.steps[0] as { voice?: unknown }).voice = { fileId: 'v1', fileUrl: '/files/v1', durationMs: 9_000 }
+    vi.mocked(client.publicGuide).mockResolvedValue(g)
+    const { container } = renderViewer()
+    await screen.findByText('إصدار فاتورة توريد')
+    const step = container.querySelector('.viewer-step')!
+    const voice = step.querySelector('.step-voice')!
+    expect(voice).toBeTruthy()
+    expect(step.querySelector('.viewer-step-head .step-voice')).toBeNull()
+    expect(voice.parentElement).toBe(step)
+    // قبل اللقطة في ترتيب البطاقة
+    const shot = step.querySelector('.shot')!
+    expect(voice.compareDocumentPosition(shot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('رقم الخطوة مصمت بلون زر «دربني» نفسه (--accent) لا قرص باهت', () => {
+    const fab = css.match(/\.train-fab\s*\{[^}]*\}/)?.[0] ?? ''
+    const num = css.match(/\.viewer-step-num\s*\{[^}]*\}/)?.[0] ?? ''
+    expect(fab).toMatch(/background:\s*var\(--accent\)/)
+    expect(num).toMatch(/background:\s*var\(--accent\)/)
+    expect(num).toMatch(/color:\s*var\(--brand-ink\)/)
+  })
+
+  it('شارة الموقع في رأس الدليل كبسولة تتّسع لاسمها — لا دائرة ٣٠px يفيض منها النص', () => {
+    const rule = css.match(/\.site-badges-row \.site-badge\s*\{[^}]*\}/)?.[0] ?? ''
+    expect(rule).toMatch(/width:\s*auto/)
+    expect(rule).toMatch(/height:\s*auto/)
+    expect(rule).toMatch(/border-radius:\s*var\(--r-pill\)/)
   })
 })
 

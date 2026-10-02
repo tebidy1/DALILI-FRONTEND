@@ -147,4 +147,23 @@ describe('٣ج-٣ — القبول بالمحاكاة: fixture مسجَّل ⇐ 
     // ثبات أمام الترحيل — نفس حارس النواة القائم
     expect(migrateGuide(structuredClone(guide))).toEqual(guide)
   })
+
+  it('كل ts في الدليل المسجَّل epoch ms من ساعةٍ واحدة، متصاعدةٌ بترتيب الخطوات', async () => {
+    const { bridge, emit } = replayBridge()
+    // ساعة مطلقة تتراجع مع كل قراءة: لو خُتمت خطوةٌ بقراءةٍ ثانية لانكسر الترتيب
+    let wall = 1_790_366_000_000
+    const session = createRecorderSession(bridge, { epochNow: () => (wall -= 60_000) })
+    replay(emit)
+    const guide = await session.stop()
+
+    const ts = guide.steps.map((s) => s.ts)
+    expect(ts).toHaveLength(9)
+    // epoch ms لا «مللي ثانية منذ الإقلاع» (qpcMs الـfixture ~100,000)
+    for (const v of ts) expect(v).toBeGreaterThan(Date.UTC(2020, 0, 1))
+    // متصاعدة بترتيب الخطوات (navigate المُدرَجة تشارك نقرتها الختم)
+    for (let i = 1; i < ts.length; i++) expect(ts[i]!).toBeGreaterThanOrEqual(ts[i - 1]!)
+    // ساعة واحدة: الفواصل هي فواصل ختوم المستشعر في الـfixture حرفيًّا
+    // (النقرات عند 100000 · 100300 · 100700 · 101100 · 101500 · 102100 · 102500)
+    expect(ts.map((v) => v - ts[0]!)).toEqual([0, 300, 300, 700, 1100, 1500, 2100, 2500, 2500])
+  })
 })

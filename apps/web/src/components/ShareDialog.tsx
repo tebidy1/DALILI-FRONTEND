@@ -99,9 +99,10 @@ export function ShareDialog({
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  /** نسخ نصّي مع بديل صامت للمتصفحات بلا clipboard API */
+  /** نسخ نصّي مع بديل صامت للمتصفحات بلا clipboard API — «نُسخ» تُعلَن عند النجاح فقط
+   *  (النص ظاهر في حقله فيُنسخ يدويًا إن رفض المتصفح) */
   async function copy(text: string, mark: (v: boolean) => void) {
-    await copyWithFallback(text)
+    if (!(await copyWithFallback(text))) return
     mark(true)
     setTimeout(() => mark(false), 2000)
   }

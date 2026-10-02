@@ -57,18 +57,39 @@ struct UserEmail {
 /// ‏origin الـAPI من البيئة — الافتراضيّ تطويرٌ محليّ على جهاز المالك (8787)،
 /// والإنتاج يتجاوزه بمتغيّر البيئة (لا ترميز صلب لخادم إنتاج). بلا شرطة
 /// مائلة ذيليّة (نِتّ تدقيق ٣د-١: ‏//device لو كتبها المالك بالبيئة).
+/// المتغيّر يُقرأ مرّتين: وقت التشغيل أولًا، ثم ما خُبز وقت البناء
+/// (‏option_env!) — فالنسخة المبنيّة للإنتاج تعمل بنقرة مزدوجة وبالمثبِّت
+/// بلا ملفّ تشغيل يضبط البيئة، وملفّات التشغيل المحليّة ما زالت تتجاوزها.
 /// **تُقرأ عند حدّ أوامر Tauri حصرًا** (إصلاح ٣د-٤-أ): ‏pair_start/status/forget
 /// تأخذ المنشأ وسيطًا، فالاختبار يمرّره صراحةً — لا قراءة بيئة ولا تحويرها
 /// في أيّ اختبار، ويستحيل بنيويًّا أن يلمس اختبارٌ خادم المالك
 pub fn api_origin() -> String {
-    clean_base(&std::env::var("ITQAN_API_ORIGIN").unwrap_or_else(|_| "http://127.0.0.1:8787".into()))
-        .to_string()
+    resolve_origin(
+        std::env::var("ITQAN_API_ORIGIN").ok(),
+        option_env!("ITQAN_API_ORIGIN"),
+        "http://127.0.0.1:8787",
+    )
 }
 
 /// ‏origin صفحة موافقة الجهاز (يخدِمها تطبيق الويب) — بقصّ الذيل كالـAPI
 pub fn web_origin() -> String {
-    clean_base(&std::env::var("ITQAN_WEB_ORIGIN").unwrap_or_else(|_| "http://localhost:5174".into()))
-        .to_string()
+    resolve_origin(
+        std::env::var("ITQAN_WEB_ORIGIN").ok(),
+        option_env!("ITQAN_WEB_ORIGIN"),
+        "http://localhost:5174",
+    )
+}
+
+/// ترتيب المنشأ: بيئة التشغيل ← المخبوز وقت البناء ← التطوير المحليّ.
+/// الفارغ يسقط إلى التالي — نقية ومُختبَرة
+pub fn resolve_origin(runtime: Option<String>, baked: Option<&str>, dev: &str) -> String {
+    let pick = runtime
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .or_else(|| baked.map(str::trim).filter(|s| !s.is_empty()))
+        .unwrap_or(dev);
+    clean_base(pick).to_string()
 }
 
 /// قصّ الشرطات المائلة الذيليّة من origin — نقية ومُختبَرة
@@ -281,5 +302,25 @@ mod tests {
         // الدمج الفعلي: بلا ‏//device
         let base = clean_base("http://localhost:5174/");
         assert_eq!(format!("{base}/device?code=X"), "http://localhost:5174/device?code=X");
+    }
+
+    /// ترتيب المنشأ: بيئة التشغيل ثم ما خُبز وقت البناء ثم التطوير المحليّ
+    #[test]
+    fn المنشأ_بيئة_التشغيل_ثم_المخبوز_ثم_المحلي() {
+        let dev = "http://127.0.0.1:8787";
+        assert_eq!(resolve_origin(None, None, dev), dev);
+        assert_eq!(resolve_origin(None, Some("https://api.itqan.example/"), dev), "https://api.itqan.example");
+        assert_eq!(
+            resolve_origin(Some("http://127.0.0.1:8790".into()), Some("https://api.itqan.example"), dev),
+            "http://127.0.0.1:8790"
+        );
+    }
+
+    /// قيمة فارغة (متغيّر معرَّف بلا محتوى) لا تحجب ما بعدها
+    #[test]
+    fn المنشأ_الفارغ_يسقط_إلى_التالي() {
+        let dev = "http://localhost:5174";
+        assert_eq!(resolve_origin(Some("  ".into()), Some("https://itqan.example"), dev), "https://itqan.example");
+        assert_eq!(resolve_origin(Some(String::new()), Some(""), dev), dev);
     }
 }

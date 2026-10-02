@@ -48,12 +48,13 @@ export function hitTextAnnotation(annotations: Annotation[], nx: number, ny: num
  * 2026-09-29 يلغي «سمك الريشة نفسه» 2026-09-01 — الإطار يظهر مكبَّرًا في
  * بطاقات العرض فكان السمك الكبير يبدو ثقيلًا)
  * **مع طبقة زجاجية خفيفة داخل الشكل بلون الإطار نفسه** — تمييز المنطقة دون
- * إخفاء ما خلفها (طلب المالك 2026-09-27).
+ * إخفاء ما خلفها (طلب المالك 2026-09-27). رُفعت من ١٤٪ إلى ٢٠٪ (2026-10-02):
+ * كانت لا تُلحظ داخل حلقة الديسكتوب الصغيرة ولا على اللقطات الداكنة.
  * `alpha` مُضاعِف شفافية (١ للمحفوظ، ٠٫٥ لمعاينة التحريك)، و`shape` يبدّل
  * المسار بين مستطيل وقطع ناقص يتوسّط الإطار (طلب المالك 2026-09-04).
  * المستطيل **قائم الزوايا** لا مدوّر (طلب المالك 2026-09-10).
  */
-export const MARK_GLASS_ALPHA = 0.14
+export const MARK_GLASS_ALPHA = 0.2
 
 /**
  * سمك إطار الهدف — خط رفيع مستقل عن أدوات الريشة (طلب المالك 2026-09-29):
@@ -198,80 +199,6 @@ export function drawAnnotation(c: CanvasRenderingContext2D, a: Annotation, crop:
   c.restore()
 }
 
-/**
- * طلب المالك 2026-09-11 (العلاج الجذري): الرقم والسهم **مثبَّتان على الزر نفسه**
- * لا على مركز الصورة. العطب القديم كان يحسب الاتجاه «من مركز الزر نحو مركز اللقطة»
- * فيضطرب ويُقذف حين يكون الزر وسط الشاشة (بلاغ المالك: «الوسط خطأ، الأطراف صحيحة»)
- * — والعارض أصلاً يمركز الزر في المنظار، فمرجع «مركز الصورة» لا علاقة له بما يُرى.
- *
- * القاعدة الجديدة (متوقَّعة في كل الحالات): الرقم **فوق الزر** متمركزًا أفقيًّا عليه،
- * والسهم قصير من الرقم إلى حافة الزر العليا. وإن كان الزر ملاصقًا لأعلى اللقطة
- * يُقلب الرقم أسفله والسهم يشير صعودًا.
- *
- * **الرقم داخل دائرة** (طلب المالك 2026-09-28 — ينسخ قرار «الرقم العاري» القديم
- * صراحةً): دائرة ممتلئة بلون العلامة ورقم أبيض، مطابقةً لشارة الخطوات بلا هدف
- * (`.shot-step-num` — كالخطوة ١ لفتح الموقع) قياسًا وحسنًا، بحلقة بيضاء رفيعة
- * تفصل الدائرة عن اللقطة حين يتشابه لوناها. **السهم بلونه فقط بلا هالة بيضاء**
- * (الهالة كانت كتلة بيضاء تشوّش على اللقطات الداكنة). معاينة حيّة لا محتوى محفوظًا.
- */
-export function drawStepBadge(
-  c: CanvasRenderingContext2D,
-  rect: Rect,
-  n: number,
-  color: string,
-  scale: number,
-  bounds: { w: number; h: number },
-) {
-  const r = Math.min(40, Math.max(16, scale * 0.02))
-  const gap = Math.max(r * 1.6, scale * 0.03) // فجوة الرقم عن حافة الزر
-  const lw = Math.max(3, lineWidthFor(scale))
-  const m = Math.max(6, Math.round(scale * 0.004)) + lw // خارج هامش الزر المرسوم وسمك خطه
-  const mcx = rect.x + rect.w / 2
-
-  // الوضع الافتراضي: الرقم فوق الزر. يُقلب أسفله إن لم يتّسع فوقه (زر قرب الحافة العليا).
-  const aboveY = rect.y - gap - r
-  const placeBelow = aboveY < r * 1.6
-  const cx = Math.min(Math.max(r * 1.6, mcx), Math.max(r * 1.6, bounds.w - r * 1.6))
-  const rawCy = placeBelow ? rect.y + rect.h + gap + r : aboveY
-  const cy = Math.min(Math.max(r * 1.6, rawCy), Math.max(r * 1.6, bounds.h - r * 1.6))
-
-  // السهم القصير: من طرف الرقم المواجه للزر إلى حافة الزر القريبة (بهامش لا يلامس خطه)
-  const dirY = placeBelow ? -1 : 1 // رقم فوق ⇒ السهم ينزل للزر؛ رقم أسفل ⇒ يصعد إليه
-  const sx = cx
-  const sy = cy + dirY * r * 1.18 // من حلقة الدائرة مباشرةً لا من بعيد عنها
-  const ex = mcx
-  const ey = placeBelow ? rect.y + rect.h + m : rect.y - m
-
-  c.save()
-  // سهم أوضح وأجمل (بلاغ المالك 2026-09-28: «صغير جدًّا ورأسه مشوّه»): جسم
-  // أسمك بنسبة نصف قطر الشارة لا بسمك الريشة، ورأس مثلث نصف زاويته ٣٠°
-  // يُقاس من **طول الجسم نفسه** فتبقى نسبه سليمة في كل المقاسات
-  c.strokeStyle = color
-  c.fillStyle = color
-  c.lineWidth = Math.max(3, r * 0.16)
-  const shaft = Math.abs(ey - sy)
-  const head = Math.min(Math.max(shaft * 0.48, 9), r * 0.72)
-  strokeArrow(c, sx, sy, ex, ey, c.lineWidth, true, 0.14, head, Math.PI / 6)
-  c.restore()
-
-  // الرقم داخل دائرة ممتلئة بلون العلامة (طلب المالك 2026-09-28) — حلقة بيضاء
-  // رفيعة تفصلها عن اللقطة، والرقم أبيض كشارة الخطوات بلا هدف تمامًا
-  c.save()
-  c.beginPath()
-  c.arc(cx, cy, r, 0, Math.PI * 2)
-  c.fillStyle = color
-  c.fill()
-  c.lineWidth = Math.max(2, r * 0.12)
-  c.strokeStyle = '#ffffff'
-  c.stroke()
-  c.font = `700 ${Math.round(r * 1.05)}px 'IBM Plex Sans Arabic', system-ui, sans-serif`
-  c.textAlign = 'center'
-  c.textBaseline = 'middle'
-  c.fillStyle = '#ffffff'
-  c.fillText(String(n), cx, cy + r * 0.05)
-  c.restore()
-}
-
 /** رسم شكل قيد السحب (معاينة حيّة) بإحداثيات العرض المحوَّلة للطبيعية */
 export function drawPreview(
   c: CanvasRenderingContext2D,
@@ -342,9 +269,8 @@ export function drawStrokePreview(
   c.restore()
 }
 
-/** سهم مستقيم أو منحنٍ برأس مثلّث ممتلئ — حجم الرأس وزاويته قابلان للضبط
- *  (الافتراضي نسبةٌ لسمك الخط كما في أداة السهم؛ شارة الخطوة تمرّر قيمًا
- *  محسوبة من طول جسمها كي تظل النسب سليمة) */
+/** سهم أداة الريشة: مستقيم أو منحنٍ برأس مثلّث ممتلئ يتناسب مع سمك الخط.
+ *  (سهم شارة الخطوة الملتفّ له رسمه في `step-badge.ts`) */
 function strokeArrow(
   c: CanvasRenderingContext2D,
   x0: number,
@@ -353,13 +279,10 @@ function strokeArrow(
   y1: number,
   lw: number,
   curved: boolean,
-  /** نسبة تقويس المسار من طوله — الافتراضي كفاية لأداة السهم المنحني */
-  bendRatio = 0.25,
-  /** طول رأس السهم من الرحم إلى طرفه — يُقاس بالبكسل الطبيعي */
-  head = Math.max(10, lw * 3.2),
-  /** نصف زاوية رأس السهم — الأضيق حِدّة والأوسع امتلاءً */
-  headAngle = Math.PI / 7,
 ) {
+  const bendRatio = 0.25
+  const head = Math.max(10, lw * 3.2)
+  const headAngle = Math.PI / 7
   let angle: number
   c.beginPath()
   c.moveTo(x0, y0)

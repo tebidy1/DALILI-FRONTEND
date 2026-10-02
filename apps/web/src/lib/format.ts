@@ -61,13 +61,24 @@ export function durationAr(ms: number): string {
   return t('fmt.minutes', { count: digits(sec / 60) })
 }
 
-/** مدة الدليل: من الصوت إن وُجد، وإلا من مدى ts بين أول وآخر خطوة */
+/** طابع ملّي ثانية منذ 1970 لا يقلّ عن هذا (≈ سنة 2001) — ما دونه ساعة نسبية (منذ إقلاع الجهاز) */
+const EPOCH_MS_FLOOR = 1e12
+
+/**
+ * مدة الدليل: من الصوت إن وُجد، وإلا من مدى ts بين أول وآخر خطوة.
+ * أدلة مسجِّل الديسكتوب تخلط ساعتين (طوابع المستشعرات نسبية، وخطوات الانتقال
+ * `Date.now()`) — فالمدى يُحسب من المجموعة الأكبر وحدها، لا بين ساعتين (كان يخرج
+ * «٢٩ مليون دقيقة»).
+ */
 export function guideDurationMs(steps: Array<{ ts: number }>, audioMs?: number): number {
   if (audioMs && audioMs > 0) return audioMs
   if (steps.length < 2) return 0
   const times = steps.map((s) => s.ts).filter((n) => Number.isFinite(n))
-  if (times.length < 2) return 0
-  return Math.max(0, Math.max(...times) - Math.min(...times))
+  const epoch = times.filter((n) => n >= EPOCH_MS_FLOOR)
+  const relative = times.filter((n) => n < EPOCH_MS_FLOOR)
+  const clock = epoch.length >= relative.length ? epoch : relative
+  if (clock.length < 2) return 0
+  return Math.max(0, Math.max(...clock) - Math.min(...clock))
 }
 
 /** لقطة الخطوة إن وُجدت — null للخطوة اليدوية بلا لقطة أو للقطة المفقودة (مشتركة بين العارض والمحرر) */
@@ -117,18 +128,31 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-/** نسخ نصّي مع بديل صامت (textarea + execCommand) للمتصفحات بلا clipboard API — ينجح دائمًا عمليًا */
+/**
+ * نسخ نصّي مع بديل صامت (textarea + execCommand) للمتصفحات بلا clipboard API.
+ * النتيجة صادقة: false حين يرفض المتصفح الطريقين معًا (كان يعيد true دائمًا فتظهر
+ * «نُسخ» والحافظة فارغة). الحقل المؤقت للقراءة فقط وخارج المشهد — فلا يفتح لوحة
+ * مفاتيح الجوال ولا يقفز بالتمرير.
+ */
 export async function copyWithFallback(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text)
     return true
   } catch {
     const ta = document.createElement('textarea')
-    ta.value = text
-    document.body.appendChild(ta)
-    ta.select()
-    document.execCommand('copy')
-    ta.remove()
-    return true
+    try {
+      ta.value = text
+      ta.readOnly = true
+      ta.style.position = 'fixed'
+      ta.style.top = '0'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      return document.execCommand('copy')
+    } catch {
+      return false
+    } finally {
+      ta.remove()
+    }
   }
 }

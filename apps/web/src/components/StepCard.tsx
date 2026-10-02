@@ -344,7 +344,7 @@ export function StepCard({
           </div>
         ) : (
           <h2 className="step-title-read" dir="auto">
-            <bdi>{step.title}</bdi>
+            {step.title}
           </h2>
         )}
 
@@ -359,16 +359,6 @@ export function StepCard({
             <span className="step-url-text" dir="ltr">{step.url}</span>
             <IconExternalLink size={13} className="step-url-icon" />
           </a>
-        )}
-
-        {/* VOX-09: شارة 🎙 بجانب العنوان — النص المفرَّغ يظهر تحته لأنه صار الملاحظة */}
-        {step.voice && guideId && (
-          <StepVoiceBadge
-            voice={step.voice}
-            guideId={guideId}
-            canRetry={editing}
-            onTranscribed={onVoiceTranscribed}
-          />
         )}
 
         {editing && (
@@ -417,10 +407,23 @@ export function StepCard({
 
       {/* بلاغ المالك 2026-09-04: نص التفريغ يُقرأ مباشرة بعد العنوان لا أسفل البطاقة —
           وفي التعديل صار داخل إطار العنوان نفسه فوق */}
+      {/* النص ابنٌ مباشر للفقرة عمدًا: `dir="auto"` يتخطّى محتوى `<bdi>` فكانت
+          الملاحظة العربية تُحسب LTR وتُحاذى يسارًا (عيب 2026-10-02) */}
       {!editing && step.note && (
-        <p className="muted step-note-read" dir="auto">
-          <bdi>{step.note}</bdi>
+        <p className="step-note-read" dir="auto">
+          {step.note}
         </p>
+      )}
+
+      {/* VOX-09/10: مشغّل الشرح الصوتي — صفٌّ ظاهر فوق اللقطة (كان شارة صغيرة في الرأس)؛
+          النص المفرَّغ فوقه لأنه صار الملاحظة */}
+      {step.voice && guideId && (
+        <StepVoiceBadge
+          voice={step.voice}
+          guideId={guideId}
+          canRetry={editing}
+          onTranscribed={onVoiceTranscribed}
+        />
       )}
 
       {shot ? (

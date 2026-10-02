@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampViewport, fitScale, focusViewport, MAX_SCALE, panViewport, zoomAround } from './focus'
+import { clampViewport, fitScale, focusViewport, MAX_SCALE, panViewport, READING_SCALE, zoomAround } from './focus'
 
 /** صورة 2000×1200 داخل منظار 800×500 — النسب واقعية للقطات شاشة فعلية */
 const IMG_W = 2000
@@ -38,7 +38,7 @@ describe('clampViewport — لا فراغ ولا انزلاق خارج الصو�
   })
 })
 
-describe('focusViewport — المنظر الافتتاحي: الصورة كاملة تملأ العرض (قرار «بطاقة ونصف»)', () => {
+describe('focusViewport — المنظر الافتتاحي: تكبير قراءة حول الهدف، وملء العرض بلا هدف', () => {
   const mark = { x: 1500, y: 900, w: 120, h: 40 }
 
   it('يضع مركز الهدف في مركز المنظار (أو أقرب موضع مسموح)', () => {
@@ -51,25 +51,48 @@ describe('focusViewport — المنظر الافتتاحي: الصورة كام
     expect(cy).toBeLessThan(BOX_H)
   })
 
-  it('لا تكبيق على الزر: مقياس الخطوة المُعلَّمة = مقياس غير المُعلَّمة تمامًا (ملء العرض)', () => {
-    // طلب المالك 2026-09-01 (اللاحق): اللقطة دائمًا لكامل الشاشة، فبطاقة ثابتة
-    // تعرض الصورة كلها؛ العلامة ظاهرة تلقائيًا ولا حاجة لنافذة تكبيق حول الزر.
-    const withMark = focusViewport(mark, IMG_W, IMG_H, BOX_W, BOX_H)
-    const without = focusViewport(undefined, IMG_W, IMG_H, BOX_W, BOX_H)
-    expect(withMark.scale).toBeCloseTo(without.scale, 5)
-  })
-
-  it('الزوم الافتتاحي ١٠٪ فوق ملء العرض — والهدف يبقى ظاهرًا (القاعدة المعمّمة)', () => {
-    // طلب المالك 2026-09-10: محتوى أوضح فور الفتح بلا زوم يدوي، مع بقاء الركن
-    // الذي به الزر المحدد هو الظاهر — فالمقياس ١٫١× والهدف داخل المنظار.
+  it('تكبير القراءة: الخطوة المُعلَّمة تُفتح بمقياس القراءة لا بملء العرض — الزر يُقرأ بحجمه', () => {
+    // طلب المالك 2026-10-02 (ينسخ «لا تكبيق على الزر» 2026-09-01 و«١٠٪» 2026-09-10):
+    // ملء العرض يصغّر لقطة ٢٠٠٠px إلى ٤٤٪ فتصير نصوصها ~٥px وتحتاج تركيزًا.
+    // المقياس الجديد **مطلق** (بكسل صورة ← بكسل معروض) لا نسبةً لعرض الصندوق،
+    // فحجم النص المقروء واحد على سطح المكتب والجوال.
     const v = focusViewport(mark, IMG_W, IMG_H, BOX_W, BOX_H)
-    expect(v.scale).toBeCloseTo((BOX_W / IMG_W) * 1.1, 5)
+    expect(v.scale).toBeCloseTo(READING_SCALE, 5)
+    expect(v.scale).toBeGreaterThan((BOX_W / IMG_W) * 1.1)
+    // والهدف في مركز المنظار (أو أقرب موضع مسموح عند الحواف)
     const cx = (mark.x + mark.w / 2) * v.scale + v.tx
     const cy = (mark.y + mark.h / 2) * v.scale + v.ty
     expect(cx).toBeGreaterThan(0)
     expect(cx).toBeLessThan(BOX_W)
     expect(cy).toBeGreaterThan(0)
     expect(cy).toBeLessThan(BOX_H)
+  })
+
+  it('مقياس القراءة «طبيعي أو أصغر قليلًا»: لقطة بكثافة ١٫٥ تُعرض بين ٨٠٪ و١٠٠٪ من حجمها على الشاشة', () => {
+    // لقطات المالك بكثافة ١٫٥ (١٩٢٠ بكسل = ١٢٨٠ منطقيّة) — حجمها الطبيعي = ١/١٫٥
+    const natural = 1 / 1.5
+    expect(READING_SCALE / natural).toBeGreaterThanOrEqual(0.8)
+    expect(READING_SCALE / natural).toBeLessThanOrEqual(1)
+  })
+
+  it('مقياس القراءة لا يتبع عرض الصندوق: الجوال يفتح بالمقياس نفسه (نص مقروء لا لقطة مصغّرة)', () => {
+    const desktop = focusViewport(mark, 1920, 1080, 679, 382)
+    const phone = focusViewport(mark, 1920, 1080, 318, 179)
+    expect(desktop.scale).toBeCloseTo(READING_SCALE, 5)
+    expect(phone.scale).toBeCloseTo(READING_SCALE, 5)
+  })
+
+  it('هدف عريض لا يُقصّ: المقياس ينزل حتى يظهر الإطار كاملًا — ولا ينزل تحت ملء العرض', () => {
+    const wide = { x: 300, y: 500, w: 1300, h: 60 } // شريط بعرض ثلثَي الشاشة
+    const v = focusViewport(wide, IMG_W, IMG_H, BOX_W, BOX_H)
+    expect(v.scale).toBeLessThan(READING_SCALE)
+    expect(wide.w * v.scale).toBeLessThanOrEqual(BOX_W)
+    expect(v.scale).toBeGreaterThanOrEqual((BOX_W / IMG_W) * 1.1 - 1e-9)
+  })
+
+  it('لقطة صغيرة أصلًا (ملء العرض أكبر من مقياس القراءة) تبقى على ملء العرض — لا تصغير ولا فراغ', () => {
+    const v = focusViewport({ x: 400, y: 300, w: 120, h: 40 }, 1000, 700, BOX_W, BOX_H)
+    expect(v.scale).toBeCloseTo((BOX_W / 1000) * 1.1, 5)
   })
 
   it('القاعدة المعمّمة: هدف قرب أي ركن يبقى ظاهرًا داخل المنظار مع الزوم الافتتاحي', () => {

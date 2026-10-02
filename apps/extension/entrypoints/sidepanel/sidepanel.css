@@ -287,12 +287,14 @@ a:hover { text-decoration: underline; }
 .step-shot img { display: block; width: 100%; height: auto; }
 /* إطار الهدف — خط برتقالي رفيع مع طبقة زجاجية خفيفة بلون الإطار نفسه:
    تميّز المنطقة دون إخفاء ما خلفها (طلب المالك 2026-09-27)؛
-   السمك أُخفّض إلى 1.25px لأن التكبير التكيّفي يضخّمه بصريًّا (طلب المالك 2026-09-29) */
+   2026-10-02: السمك حقيقي الآن (١٫٥px) — التكبير صار تخطيطيًّا فلا يضخّم الخطّ ولا
+   الزوايا كما كان يفعل `scale()` (كان 1.25px يظهر ٢٫٥–٣px مشوّهًا) */
 .step-shot .shot-mark {
   position: absolute;
   box-sizing: border-box;
-  border: 1.25px solid #ea580c;
-  background: rgba(234, 88, 12, 0.14);
+  border: 1.5px solid #ea580c;
+  /* ١٤٪→٢٠٪ (2026-10-02) مطابقةً لعارض الويب */
+  background: rgba(234, 88, 12, 0.2);
   border-radius: 3px;
   pointer-events: none;
 }
@@ -300,7 +302,9 @@ a:hover { text-decoration: underline; }
    مكبّرة تضمّ الصورة والإطار معًا فيظهر العنصر المحدَّد كبيرًا وسط البطاقة لا مضغوطًا.
    القصّ يقع على .step-shot الأساس (overflow:hidden). */
 .step-shot.zoom { aspect-ratio: 4 / 3; }
-.step-shot.zoom .shot-zoom { position: absolute; top: 0; left: 0; width: 100%; will-change: transform; }
+/* 2026-10-02: بلا `will-change` وبلا `scale()` — كان يثبّت نقطيّة الطبقة بدقّة ما قبل
+   التكبير ثم يمدّها فتبهت اللقطة ويتضخّم خطّ الإطار. التكبير الآن عرضُ الطبقة (Shot.tsx). */
+.step-shot.zoom .shot-zoom { position: absolute; top: 0; left: 0; width: 100%; }
 /* الطبقة تُحرّك ككل — لا نقطع رسم الصورة على حواف النافذة بزوايا مستديرة داخلية */
 .step-shot.zoom .shot-zoom img { border-radius: 0; }
 

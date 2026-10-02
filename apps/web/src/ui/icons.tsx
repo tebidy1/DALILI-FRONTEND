@@ -291,6 +291,28 @@ export function IconLink({ size, ...rest }: IconProps) {
   )
 }
 
+/** رمز QR — ثلاث علامات الركن المميّزة ونقاط البيانات */
+export function IconQr({ size, ...rest }: IconProps) {
+  return (
+    <Svg size={size} {...rest}>
+      <rect x="3.5" y="3.5" width="6" height="6" rx="1" />
+      <rect x="14.5" y="3.5" width="6" height="6" rx="1" />
+      <rect x="3.5" y="14.5" width="6" height="6" rx="1" />
+      <path d="M14.5 14.5h2.5v2.5M20.5 14.5v2M14.5 20.5h2M20.5 20v.5h-.5" />
+    </Svg>
+  )
+}
+
+export function IconPrinter({ size, ...rest }: IconProps) {
+  return (
+    <Svg size={size} {...rest}>
+      <path d="M7 8V3.5h10V8" />
+      <path d="M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <path d="M7 14h10v6.5H7z" />
+    </Svg>
+  )
+}
+
 export function IconExternalLink({ size, ...rest }: IconProps) {
   return (
     <Svg size={size} {...rest}>

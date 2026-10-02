@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { canAddBlock, canAddEmbed, embedIdsOf, DEFAULT_MARK_COLOR, extractCapturedSites, markShapeOf, mergeSteps, stepNumbers, suggestSimilarBlur, scaleRelativeRect, toMarkdown, type MarkColor, type MarkShape, type Rect, type RelativeRect, type Step, type TargetMark } from '@dalili/core'
 import { buildRichHtml } from '../lib/rich-copy'
+import { filesOrigin } from '../lib/api-base'
 import type { ShareInfoDto, StepDto, GuideDto, StepCommentDto } from '@dalili/shared'
 import { client } from '../api'
 import { createHistory, type History } from '../lib/history'
@@ -62,7 +63,7 @@ type SaveState = 'saved' | 'dirty' | 'saving' | 'error'
 /** روابط مطلقة للنطاق العام — الملف المُنزَّل يُقرأ خارج التطبيق فالمسار النسبي ينكسر */
 function publicShotUrl(s: Step): string {
   const shot = s.screenshot
-  return shot && !('missing' in shot) ? shot.fileUrl ?? `${window.location.origin}/files/${shot.fileId}` : ''
+  return shot && !('missing' in shot) ? shot.fileUrl ?? `${filesOrigin()}/files/${shot.fileId}` : ''
 }
 
 export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }) {
@@ -870,7 +871,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   /** VIEW-10: نسخ غني بصور **مضمّنة** (data-URI) — الصق في Word/Google Docs/Confluence فتظهر الخطوات بصورها حتى دون اتصال */
   async function copyRichHtml() {
     if (!guide) return
-    const html = await buildRichHtml(guide, window.location.origin)
+    // الملفات يقدّمها أصل الـAPI — في الإنتاج دومين غير دومين الويب
+    const html = await buildRichHtml(guide, filesOrigin())
     const md = toMarkdown(guide as never, publicShotUrl)
     try {
       await navigator.clipboard.write([
@@ -1084,8 +1086,9 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
                 <bdi>{guide.title}</bdi>
               </h1>
               {guide.description && (
+                // النص ابنٌ مباشر: `dir=auto` يتخطّى محتوى <bdi> فيُحسب الوصف العربي LTR
                 <p className="guide-desc-read" dir="auto">
-                  <bdi>{guide.description}</bdi>
+                  {guide.description}
                 </p>
               )}
             </div>
@@ -1125,31 +1128,35 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
             </span>
           </div>
 
-          {/* شارات المواقع والتطبيقات الملتقطة — للدليل وحده: الكرّاسة تُؤلَّف ولا تُلتقط */}
-          {guide.kind !== 'booklet' && capturedSites.length > 0 && (
-            <div className="site-badges-row" aria-label={t('editor.capturedSites')}>
-              {capturedSites.map((site) => (
-                <span key={site.host} className="site-badge" title={site.host}>
-                  <span className="site-badge-icon" style={{ backgroundColor: site.color }}>
-                    {site.initial}
+          {/* صفّ واحد كالعارض العام: شارات المواقع في بدايته وزر التعليقات في نهايته،
+              ولوحة التعليقات تنفتح تحته بكامل العرض */}
+          <div className="guide-head-foot">
+            {/* شارات المواقع والتطبيقات الملتقطة — للدليل وحده: الكرّاسة تُؤلَّف ولا تُلتقط */}
+            {guide.kind !== 'booklet' && capturedSites.length > 0 && (
+              <div className="site-badges-row" aria-label={t('editor.capturedSites')}>
+                {capturedSites.map((site) => (
+                  <span key={site.host} className="site-badge" title={site.host}>
+                    <span className="site-badge-icon" style={{ backgroundColor: site.color }}>
+                      {site.initial}
+                    </span>
+                    <span className="site-badge-name" dir="ltr">{site.name}</span>
                   </span>
-                  <span className="site-badge-name" dir="ltr">{site.name}</span>
-                </span>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
 
-          {/* GM-05 تطوّر: التعليقات والمشكلات على مستوى الدليل مع معلومات الرأس */}
-          <GuideComments
-            comments={comments}
-            canModerate
-            failed={commentsFailed}
-            onRetry={() => setCommentsSeq((s2) => s2 + 1)}
-            onAdd={addComment}
-            onEdit={editComment}
-            onResolve={resolveComment}
-            onDelete={deleteComment}
-          />
+            {/* GM-05 تطوّر: التعليقات والمشكلات على مستوى الدليل مع معلومات الرأس */}
+            <GuideComments
+              comments={comments}
+              canModerate
+              failed={commentsFailed}
+              onRetry={() => setCommentsSeq((s2) => s2 + 1)}
+              onAdd={addComment}
+              onEdit={editComment}
+              onResolve={resolveComment}
+              onDelete={deleteComment}
+            />
+          </div>
         </header>
 
       {shareOpen && (

@@ -3,6 +3,8 @@
  * (٣ت) ويصوّغ دليل v2 في الذاكرة. **بلا شبكة إطلاقًا** (النقل كلّه ٣د) و**بلا
  * `Date.now` ولا `setTimeout`** في منطق الجلسة: الساعة والمجدول من `TickEvt`
  * (qpcMs) حصرًا — مؤقّتات WebView المخفيّة تُخنَق فلا يُؤمَن عليها (خطّة ٣ج §٧).
+ * الاستثناء الوحيد قراءةٌ **واحدة** للساعة المطلقة (`epochNow`) تُرسي تحويل
+ * ختوم المستشعر إلى epoch ms لـ`step.ts` — قراءةُ ساعةٍ لا مؤقّت، فلا تُخنَق.
  *
  * الحدود محقونة (`Bridge`) كي تُختبَر الجلسة بمزيّفات بلا Tauri؛ مغلّف الإنتاج
  * `bridge.ts` سطور توصيل بلا منطق. المبدأ الحاكم: لا تُعِد بناء ما بنته النواة —
@@ -145,6 +147,10 @@ function missingReason(kind: string): string {
 
 /// نصف قطر حلقة نقطة الضغط بالبكسل المنطقيّ عند 96dpi — يُحجَّم لكل شاشة بـDPI
 /// (قرار المالك ٣و: حلقة فارغة بنصف قطر ثابت). الثابت الوحيد القابل للضبط هنا.
+/// طلب المالك 2026-10-02 «قطر أكبر قليلًا»: تحقّق من **تكبير القراءة** في العارض
+/// (focus.ts `READING_SCALE`) لا من هنا — الحلقة نفسها تُعرض الآن ~٥٢px بدل ~٣٣px
+/// في كل الأدلة قديمها وجديدها. رفع هذا الثابت فوقه (جُرّب ٣٠) يضاعف الأثر فتغطّي
+/// الحلقة ثلاثة صفوف من قائمة.
 const POINT_MARK_RADIUS_PX = 24
 
 interface GestureItem {
@@ -186,11 +192,27 @@ export interface SessionOptions {
   /** إسقاط الإيماءة (حقائق غائبة حتى مهلة ٣ب أو خاطئة) — البطاقة
    *  المؤقّتة تُغلَق بصدق: لا خطوة وُلدت فلا رقم يبقى كاذبًا */
   onGestureDropped?: () => void
+  /** الساعة المطلقة (epoch ms) — تُقرأ **مرّةً واحدة** لإرساء ختوم المستشعر.
+   *  غيابها ⇐ `Date.now` (ساعة ختم الإضافة نفسها)؛ الاختبارات تحقن ثابتًا */
+  epochNow?: () => number
 }
 
 export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {}): RecorderSession {
   // الساعة: آخر qpcMs وصل من TickEvt — مصدر الزمن الوحيد في الجلسة
   let lastTickQpcMs = 0
+  /** مرساة ساعة `step.ts` (بلاغ 2026-10-02: ساعتان في دليلٍ واحد): عقد النواة
+   *  والإضافة أنّ `ts` epoch ms، وqpcMs مللي ثانية منذ إقلاع الجهاز. أوّل ختم
+   *  مستشعرٍ يصل يُقرَن بقراءةٍ واحدة للساعة المطلقة، ثم كل ختمٍ يُحوَّل بفرقه
+   *  عن المرساة — فالفواصل بين الخطوات فواصلُ QPC حرفيًّا ولا يمسّها تصحيح
+   *  ساعة النظام أثناء التسجيل. الانحراف الثابت = تأخّر وصول ذلك الحدث الأوّل */
+  let clockAnchor: { qpcMs: number; epochMs: number } | null = null
+  const anchorClock = (qpcMs: number): { qpcMs: number; epochMs: number } =>
+    (clockAnchor ??= { qpcMs, epochMs: (opts.epochNow ?? Date.now)() })
+  /** ختم مستشعر → epoch ms صحيح (شكل `Date.now()`) */
+  const toEpochMs = (qpcMs: number): number => {
+    const a = anchorClock(qpcMs)
+    return Math.round(a.epochMs + (qpcMs - a.qpcMs))
+  }
   // المجدول المدفوع بالـtick: مواعيد تُفحَص عند كل نبضة لا مؤقّت نظام
   let pending: Array<{ fn: () => void; deadline: number }> = []
   const schedule = (fn: () => void, ms: number): (() => void) => {
@@ -299,7 +321,8 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
     const facts = waited.facts
     const keys = items.filter((i) => i.t === 'key').map((i) => i.keyClass ?? 'other')
     const gesture = { clicks: 1, keys }
-    const ts = click.qpcMs
+    // ساعة واحدة للدليل كلّه: ختم النقرة محوَّلًا إلى epoch ms (navigate المُدرَجة تشاركه)
+    const ts = toEpochMs(click.qpcMs)
     const source = factsToStepSource(facts)
 
     const steps: RawStep[] = []
@@ -454,6 +477,7 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
   bridge.listen('sensor://tick', (p) => {
     const qpcMs = asTick(p)
     if (qpcMs === null) return
+    anchorClock(qpcMs)
     lastTickQpcMs = qpcMs
     const due = pending.filter((e) => lastTickQpcMs >= e.deadline)
     pending = pending.filter((e) => lastTickQpcMs < e.deadline)
@@ -463,6 +487,8 @@ export function createRecorderSession(bridge: Bridge, opts: SessionOptions = {})
   bridge.listen('sensor://input', (p) => {
     const evt = asInput(p)
     if (!evt) return
+    // نقرة سبقت أوّل نبضة ⇐ ختمها هو المرساة (لا أثر له بعد الإرساء)
+    anchorClock(evt.qpcMs)
     // الإيقاف المؤقّت (٣هـ-٢): الضغط والمفاتيح لا يبنيان خطوات — الحقائق والنبض يجريان
     if (paused) return
     if (evt.kind === 'down') {

@@ -119,7 +119,10 @@ describe('رقم الخطوة بلا هدف — شارة على الإطار', (
     const badge = container.querySelector('.shot-step-num') as HTMLElement
     expect(badge).toBeTruthy()
     expect(badge.textContent).toBe('1')
-    expect(badge.style.backgroundColor).toBeTruthy()
+    // طلب المالك 2026-10-02: الشارة خفيفة — لون الدليل يصلها متغيّرًا (`--mark`) تصبغ
+    // به CSS خلفيتها وحلقتها ورقمها، لا خلفية مصمتة بلون العلامة
+    expect(badge.style.getPropertyValue('--mark')).toBe('#ea580c')
+    expect(badge.style.backgroundColor).toBe('')
   })
 
   it('خطوة ذات هدف ⇒ لا شارة إطار (الرقم على اللوحة بجوار السهم)', () => {

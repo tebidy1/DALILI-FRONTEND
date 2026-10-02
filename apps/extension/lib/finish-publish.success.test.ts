@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { WEB_BASE } from './config'
 import { createFinish, type FinishDeps } from './finish-publish'
 import type { SessionMeta } from './protocol'
+
+// عنوان الويب بيئيّ (‎.env المحليّ قد يغيّر المنفذ) — التوقّع يتبعه لا ثابتًا مكتوبًا
+const GUIDE_URL = `${WEB_BASE}/g/g9`
 
 /**
  * المرحلة ٣ (قرار المالك): النجاح يُرى — بعد نشر ناجح تُحفظ «lastPublished» في
@@ -65,9 +69,9 @@ describe('finish-publish — لحظة النجاح والتسمية (المرح�
     expect(w.meta().lastPublished).toMatchObject({ guideId: 'g9', stepCount: 3 })
     expect(w.meta().lastPublished!.at).toBeGreaterThan(0)
     expect(vi.mocked(publishSteps)).toHaveBeenCalledTimes(1)
-    expect(tabUrls).toEqual(['http://localhost:5174/g/g9'])
+    expect(tabUrls).toEqual([GUIDE_URL])
     // النشر الناجح حدثٌ في الجرس برابط دائم — بطاقة النجاح تزول، الحدث يبقى
-    expect(w.pushEvent).toHaveBeenCalledWith('publish', expect.stringContaining('نُشر دليلك'), 'http://localhost:5174/g/g9')
+    expect(w.pushEvent).toHaveBeenCalledWith('publish', expect.stringContaining('نُشر دليلك'), GUIDE_URL)
   })
 
   it('الاسم الاختياري يمر إلى النشر للدليل الجديد', async () => {
@@ -88,6 +92,6 @@ describe('finish-publish — لحظة النجاح والتسمية (المرح�
     const w = world(capturing)
     await w.finish.finishCapture()
     expect(w.meta().state).toBe('idle')
-    expect(w.pushEvent).toHaveBeenCalledWith('stt', expect.stringContaining('تفريغ'), 'http://localhost:5174/g/g9')
+    expect(w.pushEvent).toHaveBeenCalledWith('stt', expect.stringContaining('تفريغ'), GUIDE_URL)
   })
 })

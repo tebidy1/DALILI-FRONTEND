@@ -70,6 +70,11 @@ describe('drawMark — خط واحد رفيع مع طبقة زجاجية بلو�
     expect(fills[0]!.globalAlpha).toBeCloseTo(MARK_GLASS_ALPHA)
   })
 
+  it('الزجاجية تُلحظ لكنها لا تحجب: بين ١٨٪ و٢٥٪ (رُفعت من ١٤٪ بطلب 2026-10-02)', () => {
+    expect(MARK_GLASS_ALPHA).toBeGreaterThanOrEqual(0.18)
+    expect(MARK_GLASS_ALPHA).toBeLessThanOrEqual(0.25)
+  })
+
   it('معاينة التحريك الحيّة (alpha=0.5): الزجاجية تتبعها والخط يبقى بنصف الشفافية', () => {
     const { c, strokes, fills } = fakeCtx()
     drawMark(c, rect, '#e11d48', scale, 0.5)

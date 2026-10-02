@@ -58,13 +58,23 @@ export function PreviewShot({
     return b ? asStyle(b) : null
   }
   const zoomed = !!mark && !full
-  const frame = zoomed && mark && layout && view ? zoomFrame(toLocal(mark, crop), layout.frameW, layout.frameH, view.w, view.h, zoom) : null
+  const dpr = typeof window !== 'undefined' && window.devicePixelRatio > 0 ? window.devicePixelRatio : 1
+  const frame =
+    zoomed && mark && layout && view
+      ? zoomFrame(toLocal(mark, crop), layout.frameW, layout.frameH, view.w, view.h, zoom, dpr)
+      : null
   const markBox = mark ? boxOf(mark) : null
 
+  /**
+   * التكبير **تخطيطي** لا `scale()` (بلاغ المالك 2026-10-02: الإطار كبير مشوّه واللقطة
+   * باهتة): عرض الطبقة = نسبة التكبير والتحويل إزاحة فقط. فتُرسم الصورة بدقّتها عند
+   * حجمها المعروض (لا نقطيّة ممدودة)، وخطّ الإطار وزواياه بسمكها الحقيقي لأن الإطار
+   * بنِسَب من الطبقة لا مُكبَّر معها. الإزاحة نفسها من `zoomFrame` (أصلها الركن الأعلى الأيسر).
+   */
   const layerStyle = {
     ...(crop && layout ? { aspectRatio: `${layout.frameW} / ${layout.frameH}` } : {}),
     ...(frame
-      ? { transform: `translate(${frame.translateX}px, ${frame.translateY}px) scale(${frame.scale})`, transformOrigin: '0 0' }
+      ? { width: pct(frame.scale * 100), transform: `translate(${frame.translateX}px, ${frame.translateY}px)` }
       : {}),
   }
 
