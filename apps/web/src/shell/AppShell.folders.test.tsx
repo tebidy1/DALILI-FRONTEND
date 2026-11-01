@@ -14,6 +14,7 @@ import { AppShell } from './AppShell'
 vi.mock('../api', () => ({
   client: {
     libraryOverview: vi.fn(),
+    listMyWorkspaces: vi.fn().mockResolvedValue([]),
     listFolders: vi.fn(),
     createFolder: vi.fn(),
     renameFolder: vi.fn(),

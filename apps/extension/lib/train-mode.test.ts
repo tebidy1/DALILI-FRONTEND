@@ -4,7 +4,8 @@ import { createTrainMode } from './train-mode'
 import type { AnchorCandidate } from '@dalili/core'
 import type { TrainStep } from './protocol'
 
-const anchor: AnchorCandidate[] = [{ k: 'id', v: 'save-btn' }]
+// ث١: معرّف + نص موافق = ثقة عالية (معرّف وحده = «هل ترى؟»)
+const anchor: AnchorCandidate[] = [{ k: 'id', v: 'save-btn' }, { k: 'text', v: 'حفظ' }]
 
 function trainStep(partial: Partial<TrainStep> = {}): TrainStep {
   return { id: 's1', kind: 'click', title: 'انقر زر الحفظ', anchor, url: 'https://x.test/a', ...partial }
@@ -50,24 +51,24 @@ describe('train-mode — التدريب داخل الصفحة الهدف (GM-01.
     mode.dispose()
   })
 
-  it('RC1 — عنصر يظهر متأخرًا بعد اكتمال التحميل (صفحات SPA كـGmail): البحث الصبور يجده ويرسم دائرته', () => {
+  it('RC1 — عنصر يظهر متأخرًا بعد اكتمال التحميل (صفحات SPA كـGmail): المراقبة تجده ويرسم دائرته', async () => {
     vi.useFakeTimers()
     document.body.innerHTML = '<div>صفحة فارغة الآن</div>'
     const send = vi.fn()
     // على الشاشة الهدف نفسها — عنصر SPA متأخر لا انتظار دخول
     const mode = createTrainMode(send, undefined, () => 'https://x.test/a')
     mode.handle({ t: 'train-step', step: trainStep(), idx: 0, total: 2, guideTitle: 'د' })
-    // قبل ظهوره: بطاقة بحث صادقة، لا رسالة فشل متسرعة
-    expect(document.querySelector('dalili-train')!.shadowRoot!.textContent).toContain('أبحث عن الزر')
-    // العنصر يظهر بعد 700 ملي — SPA أنهت تركيبها
+    // ث١: قبل ظهوره «نجهّز الخطوة…» — لا عبارة توجيه قبل أن نرى ما نوجّه إليه، ولا فشل متسرّع
     vi.advanceTimersByTime(700)
+    expect(document.querySelector('dalili-train')!.shadowRoot!.textContent).toContain('نجهّز الخطوة')
+    expect(document.querySelector('dalili-train')!.shadowRoot!.textContent).not.toContain('انقر زر الحفظ')
     const btn = withRect(document.createElement('button'))
     btn.id = 'save-btn'
     btn.textContent = 'حفظ'
     document.body.appendChild(btn)
-    vi.advanceTimersByTime(400)
+    await vi.advanceTimersByTimeAsync(120) // طفرة ← فحص بعد فاصل التجميع
     const host = document.querySelector('dalili-train')!
-    expect(host.shadowRoot!.querySelector('svg.ring')).toBeTruthy()
+    expect((host.shadowRoot!.querySelector('svg.ring') as HTMLElement).style.display).toBe('')
     expect(host.shadowRoot!.textContent).toContain('انقر الزر') // تعليمات النقر ظهرت بعد الحل
     // والنقر عليه الآن يُحتسب صحيحًا
     fireClick(btn)
@@ -97,6 +98,7 @@ describe('train-mode — التدريب داخل الصفحة الهدف (GM-01.
     const send = vi.fn()
     const mode = createTrainMode(send, undefined, () => 'https://x.test/a')
     mode.handle({ t: 'train-step', step: trainStep(), idx: 0, total: 1, guideTitle: 'د' })
+    vi.advanceTimersByTime(300)
     expect((document.querySelector('dalili-train')!.shadowRoot!.querySelector('svg.ring') as HTMLElement).style.display).toBe('none')
     vi.advanceTimersByTime(9000)
     expect(document.querySelector('dalili-train')!.shadowRoot!.textContent).toContain('لم أجد هذا الزر')
@@ -114,13 +116,13 @@ describe('train-mode — التدريب داخل الصفحة الهدف (GM-01.
     const host = document.querySelector('dalili-train')!
     const text = host.shadowRoot!.textContent ?? ''
     expect(text).toContain('سجّل الدخول')
-    expect(text).toContain('تلقائيًا')
+    expect(text).toContain('افتح الشاشة المطلوبة')
     expect(text).not.toContain('لم أجد هذا الزر')
     // لا حلقة أبدية: مؤقتات البحث انقضت والانتظار مدفوع بالأحداث لا بالدوران
     mode.dispose()
   })
 
-  it('LX-01 — بعد الدخول وظهور الشاشة الهدف: الخطوة تبدأ تلقائيًا وتُحتسب النقرة (مراقب أحداث)', () => {
+  it('LX-01 — بعد الدخول وظهور الشاشة الهدف: الخطوة تبدأ تلقائيًا وتُحتسب النقرة (مراقب أحداث)', async () => {
     vi.useFakeTimers()
     document.body.innerHTML = '<form id="login"><input type="password"></form>'
     const send = vi.fn()
@@ -136,14 +138,13 @@ describe('train-mode — التدريب داخل الصفحة الهدف (GM-01.
     btn.textContent = 'حفظ'
     document.body.appendChild(btn)
     // المراقب يلتقط الطفرة ويعرض الخطوة بلا إعادة تحميل
-    return Promise.resolve().then(() => {
-      const host = document.querySelector('dalili-train')!
-      expect(host.shadowRoot!.querySelector('svg.ring')).toBeTruthy()
-      expect(host.shadowRoot!.textContent).toContain('انقر الزر')
-      fireClick(btn)
-      expect(send).toHaveBeenCalledWith('done')
-      mode.dispose()
-    })
+    await vi.advanceTimersByTimeAsync(120)
+    const host = document.querySelector('dalili-train')!
+    expect((host.shadowRoot!.querySelector('svg.ring') as HTMLElement).style.display).toBe('')
+    expect(host.shadowRoot!.textContent).toContain('انقر الزر')
+    fireClick(btn)
+    expect(send).toHaveBeenCalledWith('done')
+    mode.dispose()
   })
 
   it('خطوة جديدة تلغي بحث سابقتها — لا دائرة ولا رسالة متأخرة من خطوة قديمة', () => {

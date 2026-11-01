@@ -11,6 +11,7 @@ import { readLocale, setLocale, type Locale } from '../lib/locale'
 import { useOverview } from '../shell/OverviewContext'
 import { useConfirm } from '../components/ConfirmProvider'
 import { DevicesCard } from './DevicesCard'
+import { ProfileCard } from './ProfileCard'
 
 /**
  * المرحلة هـ (الإعداد — WS-09): «فهرسُ كل شيء» لا تكرار للشاشات — بطاقة بيانات
@@ -100,7 +101,7 @@ export function SettingsPage() {
             <bdi>{overview?.workspaceName || '…'}</bdi>
           </div>
           <div className="muted ws-meta">
-            {t('settings.myRole')}: <span className="chip">{overview ? roleLabelAr(overview.myRole) : '…'}</span>
+            {t('settings.myRole')}: <span className="chip">{overview ? roleLabelAr(overview.myRole, overview.accountKind) : '…'}</span>
           </div>
           <div className="muted ws-meta">
             {t('settings.myEmail')}: <bdi>{overview?.myEmail}</bdi>
@@ -197,6 +198,7 @@ export function SettingsPage() {
         </section>
 
         {/* DTOP-03: الأجهزة المرتبطة (تطبيقات ويندوز) */}
+        <ProfileCard initialName={overview?.myName} />
         <DevicesCard />
 
         {/* — بطاقات المداخل — */}

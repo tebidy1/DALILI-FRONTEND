@@ -77,6 +77,9 @@ export const zAnchorCandidate = z.discriminatedUnion('k', [
   /** مرشّحا UIA لخطوات الديسكتوب — مطابقة AnchorCandidate في core (يحرسها اختبار اتساق النوع) */
   z.object({ k: z.literal('automationId'), v: z.string().min(1).max(200) }),
   z.object({ k: z.literal('controlType'), v: z.string().min(1).max(60) }),
+  /** ث١: متحقِّقان لا باحثان — تسمية الحقل وسياقه (عنوان النافذة/النموذج) */
+  z.object({ k: z.literal('label'), v: z.string().min(1).max(80) }),
+  z.object({ k: z.literal('ctx'), v: z.string().min(1).max(60) }),
 ])
 
 /**
@@ -119,6 +122,16 @@ export const zStepSource = z.discriminatedUnion('kind', [
 ])
 export type StepSourceDto = z.infer<typeof zStepSource>
 
+/** د١ب: درس الدورة — خطوة block='lesson'. كتل درس الصفحة تليه مسطّحة في steps حتى الدرس التالي */
+export const zLesson = z.object({
+  type: z.enum(['guide', 'video', 'page']),
+  title: z.string().max(120, 'عنوان الدرس 120 حرفًا كحد أقصى'),
+  guideId: z.string().min(1).optional(),
+  video: z.object({ url: z.string().min(1) }).optional(),
+  note: z.string().max(500).optional(),
+})
+export type LessonStepDto = z.infer<typeof zLesson>
+
 export const zStep = z.object({
   id: z.string(),
   kind: zStepKind,
@@ -143,11 +156,13 @@ export const zStep = z.object({
   ts: z.number(),
   screenshot: zScreenshot.optional(),
   /** BLK-01 + BKL-01: نوع الكتلة — اختياري جمعي (الأدلة القديمة صالحة) */
-  block: z.enum(['tip', 'alert', 'header', 'text', 'embed', 'divider', 'link', 'image', 'video']).optional(),
+  block: z.enum(['tip', 'alert', 'header', 'text', 'embed', 'divider', 'link', 'image', 'video', 'lesson']).optional(),
   /** BKL-01: محتوى كتلة النص (block='text') */
   rich: zRichText.optional(),
   /** BKL-01: الدليل المضمّن (block='embed') */
   embed: zGuideEmbed.optional(),
+  /** د١ب: درس الدورة (block='lesson') */
+  lesson: zLesson.optional(),
   /** VOX-09 «ميك الخطوة»: تعليق صوتي مدموج مع الخطوة — اختياري جمعي (الأدلة القديمة صالحة).
    * ‏pending = الصوت محفوظ محليًا ولم يُرفع/يُفرَّغ بعد (فشل الخدمة لا يفقد الصوت أبدًا) */
   voice: zStepVoice.optional(),
@@ -159,6 +174,12 @@ export const zStep = z.object({
       path: ['source'],
       message: 'الخطوة تحتاج رابط صفحة ويب أو مصدر التقاط',
     })
+  }
+  if (s.lesson?.type === 'guide' && !s.lesson.guideId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['lesson', 'guideId'], message: 'درس الدليل يحتاج دليلاً' })
+  }
+  if (s.lesson?.type === 'video' && !s.lesson.video?.url) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['lesson', 'video'], message: 'درس الفيديو يحتاج رابطاً' })
   }
 })
 
@@ -197,7 +218,7 @@ export const zGuide = z.object({
    *  والقراءة تمرّ عبر migrateGuide في core فتنتج ٢ دائمًا */
   schemaVersion: z.union([z.literal(1), z.literal(2)]),
   /** BKL-01: نوع المستند — غيابه دليل. توسيع جمعي بلا رفع schemaVersion */
-  kind: z.enum(['guide', 'booklet']).optional(),
+  kind: z.enum(['guide', 'booklet', 'course']).optional(),
   title: z.string(),
   description: z.string().max(2000, 'الوصف لا يتجاوز 2000 حرف').optional(),
   locale: z.literal('ar'),
@@ -247,16 +268,51 @@ export const zAppendSteps = z.object({
 export interface MeDto {
   id: string
   email: string
+  /** م١: الاسم الظاهر — غيابه حساب قديم */
+  name?: string | null
+  /** ORG-00: المساحة النشطة لهذه الجلسة */
+  activeWorkspaceId?: string
+  /** م١: نوع الحساب النشط وحالته — الموقوف والمنتهي يُعرض لهما سبب لا محتوى */
+  accountKind?: AccountKind
+  accountStatus?: AccountStatus
+  /** م٢: في قائمة إدارة المنصة — يظهر له رابط /platform */
+  isPlatformAdmin?: boolean
 }
 
-export interface GuideSummaryDto {
+export type AccountKind = 'personal' | 'company' | 'partner'
+export type AccountStatus = 'active' | 'suspended' | 'ended'
+
+/** ORG-00: عضوية فعالة في مساحة — مبدّل المساحات */
+export interface WorkspaceDto {
+  id: string
+  name: string
+  role: 'admin' | 'creator' | 'viewer' | 'partner'
+  kind?: AccountKind
+  status?: AccountStatus
+  active: boolean
+}
+
+/** ORG-08: صف في سجل التدقيق */
+export interface AuditEntryDto {
+  id: string
+  at: string
+  action: string
+  actorId: string
+  actorEmail: string | null
+  targetKind: string
+  targetId: string
+  targetLabel: string | null
+  meta: Record<string, unknown>
+}
+
+export interface GuideSummaryDto extends GuideRowFields {
   id: string
   title: string
   createdAt: string
   updatedAt: string
   stepCount: number
   /** BKL-01: يميّز بطاقة الكرّاسة في المكتبة — يأتي من عمود مشتق لا من فكّ JSON (قانون PERF-05) */
-  kind: 'guide' | 'booklet'
+  kind: 'guide' | 'booklet' | 'course'
   shared: boolean
   shareUrl?: string
   /** PERF-02: معرّف مصغّرة أول لقطة — القوائم تعرضها لا الأصل؛ PNG بلا مصغّة */
@@ -286,6 +342,106 @@ export interface GuideSummaryDto {
   views: number
   /** نمط سكرايب: بريد المنشئ — يُعرض باسم مشتق على البطاقات («قبل ٣ أيام · أحمد») */
   ownerEmail: string
+  /** م١: اسم المنشئ — null لحساب قديم بلا اسم */
+  ownerName?: string | null
+  /** ORG-04: القسم المالك (قسم المنشئ عند الإنشاء) — غيابه خادم قديم أو منشئ بلا قسم */
+  ownerTeamId?: string | null
+  ownerTeamName?: string | null
+  /** ب: ما يحق للعضو الحالي على الدليل — الواجهة تُظهر الأزرار منه، والخادم يحرسها */
+  access?: GuideAccess
+  /** ب (§٧): مثبّت يظهر أولاً لكل الشركة */
+  pinned?: boolean
+  /** ب (§٦): شارة التوثيق — null إن لم يُوثَّق أو نُشر تحديث بعد التوثيق */
+  verified?: GuideVerified | null
+  /** ب (PUB-03): موقوف — لا يصل للقارئ أصلاً، فيراه المحرر وحده */
+  suspended?: boolean
+}
+
+/** ت (§٥.١): ما لم يره هذا الموظف خلال آخر ١٤ يوماً — شخصية، تختفي بفتحه */
+export type GuideFreshness = 'new' | 'updated'
+
+/**
+ * ت (§٥): حقول الصف الذي يختار منه الموظف — واحدة في المكتبة والإضافة.
+ * source='official' والشريك يُملآن في ش٢، فالصف نفسه يعرض الدليل الرسمي بلا تصميم جديد.
+ */
+export interface GuideRowFields {
+  /** اسم المنشئ (أو بريده إن لم يضع اسماً) — للدليل الرسمي: اسم الشريك */
+  creatorName?: string
+  /** 👁 عدد الأشخاص المختلفين الذين فتحوه — لا مرات الفتح */
+  readerCount?: number
+  fresh?: GuideFreshness | null
+  source?: 'company' | 'official'
+  partner?: { id: string; name: string; logoUrl?: string }
+}
+
+/**
+ * ب: owner = صاحب الدليل (المشاركة والحذف والترجمة والتفريغ والتعليقات له وحده)،
+ * edit = يحرر المسودة، publish = ينشر/يلغي، moderate = يوقف ويوثّق ويثبّت (المدير ومدير القسم)
+ */
+export interface GuideAccess {
+  owner: boolean
+  edit: boolean
+  publish: boolean
+  moderate: boolean
+}
+
+export interface GuideVerified {
+  at: string
+  byName: string
+}
+
+export interface GuideSuspension {
+  at: string
+  reason: string
+  byName: string
+}
+
+/** ب (PUB-02): المنشور نسخة مجمّدة — المحرر يعرف إن كانت مسودته سبقتها */
+export interface GuidePublishState {
+  published: boolean
+  hasUnpublishedChanges: boolean
+}
+
+/**
+ * ث٣ (§٥.٧): from = موقع الدليل المسجّل (نسخة الشريك)، hosts = نطاقات نسخة الشركة الصريحة (تُفتح)،
+ * patterns = نجوم الشركة، systemPatterns = نجوم النظام — لمطابقة تبويب مفتوح فقط، وحين لا نطاق صريح للشركة
+ */
+export interface TrainHostsDto {
+  from?: string
+  hosts: string[]
+  patterns: string[]
+  systemPatterns?: string[]
+}
+
+/** ث٢ (§٥.٥): تشغيل «دربني» واحد — نتيجة كل خطوة، بلا هوية الموظف. runId من الإضافة: الإعادة لا تكرّر العدّ */
+export type TrainOutcomeDto = 'verified' | 'confirmed' | 'declared' | 'missing'
+export interface TrainRunBody {
+  runId: string
+  steps: Array<{ stepId: string; outcome: TrainOutcomeDto; confidence: 'high' | 'medium' | 'low' | null }>
+}
+
+/** ث٢ (§٥.٦): حال الدليل — الخطوة معطوبة حين تكون ٣ من آخر ٥ نتائج لها بإقرار الموظف أو لم توجد */
+export interface GuideHealthDto {
+  broken: boolean
+  companies: number
+  steps: Array<{ stepId: string; broken: boolean; bad: number; seen: number; since: string | null }>
+}
+
+/** ب (§٦): «صحة المكتبة» في لوحة الشركة */
+export interface LibraryHealthItemDto {
+  id: string
+  title: string
+  ownerName: string
+  updatedAt: string
+  verifiedAt?: string
+  suspendedAt?: string
+  reason?: string
+  byName?: string
+}
+
+export interface LibraryHealthDto {
+  reverify: LibraryHealthItemDto[]
+  suspended: LibraryHealthItemDto[]
 }
 
 export interface ShareInfoDto {
@@ -298,15 +454,29 @@ export interface ShareInfoDto {
 export interface GuideDetailsDto {
   guide: GuideDto
   share: ShareInfoDto | null
+  /** ش١: لدليل في حساب شريك وحده — نظامه وجمهوره، وما يختار منه المحرر */
+  official?: OfficialDto
+  /** ش٢: دليل رسمي يقرؤه موظف شركة — للقراءة وحدها، ومنشئه الشريك */
+  source?: 'company' | 'official'
+  partner?: { id: string; name: string; logoUrl?: string | null }
+  /** ث٣: للدليل الرسمي عند موظف الشركة — أين يُفتح «دربني» بدل نسخة الشريك */
+  trainHosts?: TrainHostsDto
   /** LIB-03: بيانات التنظيم للمحرر — الوسوم تُعرض وتُحرَّر من هناك */
-  meta?: { starred: boolean; folderId: string | null; tags: string[] }
-  /**
+  meta?: { starred: boolean; folderId: string | null; tags: string[] }  /**
    * قرار المالك 2026-09-10: بوابة النشر قبل الرابط — حالة النشر تصير مع بيانات
    * التنظيم ليحترم المحرر «لا رابط لدليل غير منشور». اختياري جمعيًا (خادم قديم = بلا بوابة).
    */
   visibility?: 'private' | 'workspace'
   /** LIB-06 + BKL-01: وقت دخول السلة — حضوره يميّز «في السلة» عن «غير موجود» (٤٠٤) */
   deletedAt?: string
+  /** ORG-04: شارة القسم المالك في العارض */
+  ownerTeam?: { id: string; name: string } | null
+  /** ب: غيابها خادم قديم — يُعامل كما كان (المالك يحرر) */
+  access?: GuideAccess
+  publishState?: GuidePublishState
+  suspension?: GuideSuspension | null
+  verified?: GuideVerified | null
+  pinned?: boolean
 }
 
 export interface PublicGuideDto {
@@ -366,6 +536,10 @@ export const zListGuidesQuery = z.object({
   creator: z.enum(['me', 'others']).optional(),
   /** المرحلة ب (الهوم): نافذة زمنية على آخر تحديث — الخادم يحسب الحد */
   when: z.enum(['today', 'week', 'month']).optional(),
+  /** ORG-04: ترشيح بالقسم المالك — الخادم يضم فروعه */
+  team: z.string().min(1).max(64).optional(),
+  /** ش٢: مصدر الدليل — أدلة الشركة أو الأدلة الرسمية من شريكها */
+  source: z.enum(['company', 'official']).optional(),
 })
 
 export type ListGuidesQuery = z.infer<typeof zListGuidesQuery>
@@ -383,10 +557,25 @@ export interface LibrarySiteCountDto {
   count: number
 }
 
+export interface LibraryTeamCountDto {
+  id: string
+  name: string
+  count: number
+}
+
 export interface LibraryOverviewDto {
   workspaceName: string
   myRole: 'admin' | 'creator' | 'viewer'
   myEmail: string
+  /** م١: اسمي الظاهر — null لحساب قديم بلا اسم */
+  myName?: string | null
+  /** م٢: قائمة البداية — لمدير حساب شركة فقط */
+  /** م٢ + ش١: للشركة الأقسام، وللشريك الملف العام */
+  onboarding?: { departments?: boolean; profile?: boolean; members: boolean; guides: boolean } | null
+  /** ج١: نوع الحساب النشط — «أنظمتنا» لحساب الشركة وحده */
+  accountKind?: AccountKind
+  /** م٢: يظهر له رابط «إدارة المنصة» */
+  isPlatformAdmin?: boolean
   /** خيار الثيم المحفوظ لهذا المستخدم — الموقع والامتداد يقرآنه عند الإقلاع */
   myTheme: ThemeChoiceDto
   /** لغة الواجهة المحفوظة لهذا المستخدم (I18N-01) — مرآة الثيم */
@@ -397,8 +586,12 @@ export interface LibraryOverviewDto {
     mine: number
     published: number
     saved: number
+    /** ش٢: الأدلة الرسمية من شركاء هذه الشركة */
+    official?: number
   }
   sites: LibrarySiteCountDto[]
+  /** ORG-04: أقسام الأدلة المقروءة لفلتر «القسم» — يغيب من خادم قديم */
+  teams?: LibraryTeamCountDto[]
   /** ASG: عدد الإسنادات التي تخصّني ولم أفتحها — شارة الشريط وإعلان الرئيسية.
    *  اختياري تسامحًا مع مستهلكين أقدم؛ الخادم يرسله دائمًا (القارئ يفترض `?? 0`) */
   assignedNewCount?: number
@@ -418,11 +611,49 @@ export const zCreateAssignment = z.object({
 export type CreateAssignmentDto = z.infer<typeof zCreateAssignment>
 
 /** عنصر «أُسند إليّ» بمنظور المُسنَد إليه */
+/** د١: عنصر في الدورة — الدليل نفسه أو دليل مضمّن في الكرّاسة */
+export interface CourseItemDto {
+  id: string
+  title: string
+  done: boolean
+  /** د١ب: نوع الدرس — عنصر الكرّاسة والدليل المنفرد 'guide' */
+  type: 'guide' | 'video' | 'page'
+  minutes: number
+}
+
+/** د١: حالة الدورة لمستخدم واحد — تُحسب حيّاً لكل (دليل مُسند، مستخدم) */
+export interface CourseStateDto {
+  guideId: string
+  title: string
+  kind: 'guide' | 'booklet' | 'course'
+  items: CourseItemDto[]
+  itemsDone: number
+  minutes: number
+  nextItemId: string | null
+  completedAt: string | null
+}
+
+/** د١ب: الدرس الواحد للمشغّل — الدليل بنسخته المنشورة، والصفحة بكتلها، والفيديو برابطه */
+export interface LessonDto {
+  id: string
+  type: 'guide' | 'video' | 'page'
+  title: string
+  note?: string
+  videoUrl?: string
+  blocks?: StepDto[]
+  guide?: GuideDto
+  trainHosts?: TrainHostsDto
+  /** درس دليل لا يراه المتدرّب (حُذف، أو أُوقف، أو لم يُنشر) */
+  unavailable?: true
+}
+
 export interface AssignedItemDto {
+  /** د١: الدورة — التقدّم والتالي */
+  course: CourseStateDto
   assignmentId: string
   guideId: string
   title: string
-  kind: 'guide' | 'booklet'
+  kind: 'guide' | 'booklet' | 'course'
   site: string
   stepCount: number
   assignerEmail: string
@@ -439,6 +670,10 @@ export interface AssignmentRecipientDto {
   teamName: string | null
   openedAt: string | null
   doneAt: string | null
+  /** د١: التقدّم — started = فتح أو أنهى عنصراً */
+  itemsDone: number
+  itemsTotal: number
+  started: boolean
 }
 
 export interface AssignmentBoardDto {
@@ -573,15 +808,21 @@ export type DiscoverGuideDto = {
   updatedAt: string
   /** المشاهدات المجمّعة — الأكثر مشاهدة يُرتَّب أولًا داخل مجموعته */
   views: number
-}
+  /** ب (§٧): المثبّت يتقدم داخل مجموعته — الخادم يرتّب (§٥.٢)، والإضافة لا تعيد الترتيب */
+  pinned?: boolean
+  verified?: GuideVerified | null
+  ownerTeamName?: string | null
+} & GuideRowFields
 
 export type DiscoverResponseDto = {
-  /** إجمالي أدلة الموقع (لشارة العدد) */
+  /** إجمالي أدلة الشركة للموقع (لشارة العدد) — أدلة الشريك خارجه */
   count: number
   /** أدلة تطابق الشاشة الحالية — الأكثر مشاهدة أولًا */
   onScreen: DiscoverGuideDto[]
   /** بقية أدلة الموقع — الأكثر مشاهدة أولًا */
   onSite: DiscoverGuideDto[]
+  /** أدلة شريك الشركة لهذا النظام — مجموعة مستقلة أسفل أدلة الشركة (قرار المالك 2026-10-31)، مطابقة الشاشة أولًا */
+  official?: DiscoverGuideDto[]
 }
 
 export type SearchHitDto = {
@@ -633,6 +874,8 @@ export type WorkspaceRole = z.infer<typeof zWorkspaceRole>
 export const zMember = z.object({
   id: z.string().min(1),
   email: z.string().email(),
+  /** م١: الاسم الظاهر — فارغ للحسابات القديمة فيُعرض البريد */
+  name: z.string().nullable().optional(),
   role: z.string().min(1),
   department: z.string(),
   joinedAt: z.string().optional(),
@@ -643,14 +886,23 @@ export const zMember = z.object({
   /** فريقه (ترحيل 0010) — اختياري رغم أنه عمليًّا فريق واحد لكل عضو */
   teamId: z.string().nullable().optional(),
   teamName: z.string().nullable().optional(),
+  /** ORG-07: تعطيل لا حذف */
+  status: z.enum(['active', 'deactivated']).optional(),
+  deactivatedAt: z.string().nullable().optional(),
+  /** PUB-01: صلاحية النشر للمساحة */
+  canPublish: z.boolean().optional(),
 })
 export type MemberDto = z.infer<typeof zMember>
 
-/** المرحلة د (WS-08): فريق المساحة — «القسم» الحر رُقّي إلى كيان (ترحيل 0010) */
+/** المرحلة د (WS-08) ثم ORG-01/02: القسم — أب بمستوى واحد، وأرشفة لا حذف، ومدراء القسم */
 export const zTeam = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
+  /** الأعضاء الفعّالون */
   memberCount: z.number(),
+  parentId: z.string().nullable().optional(),
+  archivedAt: z.string().nullable().optional(),
+  managerIds: z.array(z.string()).optional(),
 })
 export type TeamDto = z.infer<typeof zTeam>
 
@@ -666,6 +918,8 @@ export const zUpdateMemberReq = z.object({
   department: z.string().optional(),
   /** المرحلة د: تجميع العضو في فريق المساحة (null = بلا فريق) */
   teamId: z.string().nullable().optional(),
+  /** PUB-01: المدير يمنح صلاحية النشر أو يسحبها */
+  canPublish: z.boolean().optional(),
 })
 export type UpdateMemberReq = z.infer<typeof zUpdateMemberReq>
 
@@ -687,6 +941,8 @@ export interface InviteDto {
   inviteUrl: string
   createdAt: string
   acceptedAt?: string
+  /** م١: وصلت بالبريد؟ false = البريد تعطّل، فالرابط للنسخ وحده */
+  emailed?: boolean
 }
 
 /** ما يراه المدعوّ علنًا قبل القبول (بلا جلسة) */
@@ -696,10 +952,14 @@ export interface InviteInfoDto {
   workspaceName: string
   accepted: boolean
   expired: boolean
+  /** ORG-00: للبريد حساب قائم — يدخل بحسابه ثم ينضم بدل وضع كلمة مرور */
+  hasAccount?: boolean
 }
 
 /** القبول: المدعوّ يضع كلمة مرور فيستكمل حسابه المعلق ويدخل بجلسة */
 export const zAcceptInviteReq = z.object({
+  /** م١: الاسم الظاهر للزملاء بدل البريد */
+  name: z.string().trim().min(1).max(80),
   password: z.string().min(8, 'كلمة المرور 8 أحرف على الأقل'),
 })
 export type AcceptInviteReq = z.infer<typeof zAcceptInviteReq>
@@ -753,3 +1013,229 @@ export interface DeviceDto {
   lastUsedAt: string | null
 }
 
+
+// ——— م٢: إدارة المنصة ولوحة الشركة ———
+
+/** حساب كما تراه إدارة المنصة: أعداد وحالة فقط، بلا أي محتوى */
+export interface PlatformAccountDto {
+  id: string
+  kind: 'company' | 'partner'
+  name: string
+  status: AccountStatus
+  statusReason: string | null
+  plan: string
+  createdAt: string
+  retainUntil: string | null
+  note: string | null
+  members: number
+  guides: number
+  storageBytes: number
+  lastActivityAt: string | null
+  adminEmails: string[]
+}
+
+export interface PlatformAccountDetailDto extends PlatformAccountDto {
+  pendingInvites: { email: string; role: string; createdAt: string }[]
+  history: { action: string; at: string; actorEmail: string | null; meta: Record<string, unknown> | null }[]
+  /** ش١: لحساب الشريك وحده — أنظمته وعدد أدلته الرسمية وعملائه */
+  partner?: { systems: { id: string; name: string }[]; officialGuides: number; clients: number }
+}
+
+export interface PlatformSummaryDto {
+  companies: Record<AccountStatus, number>
+  partners: Record<AccountStatus, number>
+  activeUsers30d: number
+  guides: number
+  storageBytes: number
+  recent: PlatformAccountDto[]
+}
+
+export interface PlatformUserDto {
+  id: string
+  email: string
+  name: string | null
+  createdAt: string
+  memberships: { accountId: string; accountName: string; kind: AccountKind; accountStatus: AccountStatus; role: string; status: string }[]
+}
+
+export interface PlatformAuditDto {
+  id: string
+  action: string
+  targetKind: string
+  targetId: string
+  targetLabel: string | null
+  actorEmail: string | null
+  at: string
+  meta: Record<string, unknown> | null
+}
+
+/** التحقق بخطوتين: السر يُعطى مرة واحدة قبل التسجيل */
+export interface PlatformMfaDto {
+  enrolled: boolean
+  secret?: string
+  otpauthUri?: string
+}
+
+// ——— ج١: الأنظمة بالنطاق، وشريك واحد لكل نظام (الخطة §١٢) ———
+
+/** النظام كما تراه إدارة المنصة: نطاقاته (المعرّف الثابت)، ومقدّمو أدلته، وعدد الشركات التي أضافته */
+export interface PlatformSystemDto {
+  id: string
+  name: string
+  hidden: boolean
+  createdAt: string
+  domains: string[]
+  providers: { id: string; name: string; status: AccountStatus; logoUrl?: string | null }[]
+  companies: number
+  logoUrl?: string | null
+}
+
+/** بطاقة نظام في «أنظمتنا»: هل أضافته الشركة، ومقدّموه، والشريك المختار، ونطاقات نسختها */
+export interface CompanySystemDto {
+  id: string
+  name: string
+  domains: string[]
+  added: boolean
+  providers: { id: string; name: string; officialGuides: number; logoUrl?: string | null }[]
+  partnerId: string | null
+  ownDomains: string[]
+  logoUrl?: string | null
+}
+
+// ——— ش١: منصة الشريك (الخطة §٢٦) ———
+
+/** الملف العام للشريك — ما تراه الشركات عنه */
+export interface PartnerProfileDto {
+  name: string
+  description: string
+  website: string
+  logoUrl: string | null
+}
+
+/** ش٢: إشعار في الجرس — البيانات أسماء جاهزة للعرض */
+export interface NotificationDto {
+  id: string
+  kind: 'partner.chosen' | 'partner.stopped' | 'provider.removed' | 'note.answered'
+  data: { companyName?: string; partnerName?: string; systemName?: string; label?: string }
+  createdAt: string
+  readAt: string | null
+}
+
+export interface NotificationsDto {
+  items: NotificationDto[]
+  unread: number
+}
+
+/** ش٢: تقارير الشريك — أعداد بلا أسماء */
+export interface PartnerReportsDto {
+  activeCompanies: number
+  guides: { id: string; title: string; systemName: string; readers: number; companies: number }[]
+}
+
+/** لوحة الشريك: أنظمته بأعدادها، وعملاؤه الفعّالون */
+export interface PartnerConsoleDto {
+  systems: { id: string; name: string; domains: string[]; officialGuides: number; clients: number; logoUrl: string | null }[]
+  clients: { companyId: string; companyName: string; systemId: string; systemName: string; since: string }[]
+}
+
+/** نظام الدليل الرسمي وجمهوره، والخيارات التي يبني منها المحرر لوحته */
+export interface OfficialDto {
+  /** رسمي للعملاء، أو داخلي لفريق الشريك (الافتراض) كدليل أي شركة */
+  official: boolean
+  systemId: string | null
+  audience: 'all' | 'listed'
+  companyIds: string[]
+  systems: { id: string; name: string }[]
+  clients: { id: string; name: string }[]
+}
+
+/** هـ ج١ (HLP) «ما هذا؟» — الشرح دليل note صغير مخفيّ من كل قوائم الأدلة */
+
+/** بطاقة الشريك صاحب الشرح — بلا أي هوية كاتب */
+export interface NotePartnerCardDto {
+  id: string
+  name: string
+  logoUrl: string | null
+}
+
+/** شرح زر كما يقرؤه موظف الشركة */
+export interface NoteDto {
+  id: string
+  /** اسم الزر المقروء، مثل «تأكيد» */
+  label: string
+  /** جملة الشريك — ٢٠٠ حرف كحد أقصى */
+  body: string
+  /** مرساة الزر الآمنة (بلا ctx) كما تُطابَق في الصفحة */
+  anchor: AnchorCandidateDto[]
+  /** رموز المسار والـhash بلا استعلام — ما يفصل شاشة الفاتورة عن أمر الشراء */
+  screenKey: string
+  partner: NotePartnerCardDto
+  /** الدليل المربوط إن بقي مقروءًا للشركة، وإلا null بلا رابط ميت */
+  guide: { id: string; title: string } | null
+}
+
+/** رد /api/notes — شروح النظام وهل للشركة شريك يُسأل */
+export interface NotesDto {
+  system: { id: string; name: string } | null
+  canRequest: boolean
+  notes: NoteDto[]
+}
+
+/** مرسى خطوة دليل منشور — «هذا الزر في دليل X، الخطوة N» */
+export interface NoteStepDto {
+  guideId: string
+  title: string
+  no: number
+  anchor: AnchorCandidateDto[]
+  url: string
+}
+
+/** شرح الشريك كما يراه هو — إدارته من الإضافة على الشاشة نفسها */
+export interface MyNoteDto extends NoteDto {
+  suspended: boolean
+  access: { owner: boolean; edit: boolean; publish: boolean; moderate: boolean }
+  audience: 'all' | 'listed'
+  companyIds: string[]
+}
+
+/** رد /api/notes/mine — شروح الشريك وأدلته الرسمية وعملاؤه على النظام */
+export interface MyNotesDto {
+  system: { id: string; name: string } | null
+  notes: MyNoteDto[]
+  guides: { id: string; title: string }[]
+  clients: { id: string; name: string }[]
+}
+
+/** جسم نشر الشرح — الالتقاط كاملًا */
+export interface NoteInput {
+  systemId: string
+  anchor: AnchorCandidateDto[]
+  screenKey: string
+  label: string
+  body: string
+  guideId?: string | null
+  audience: 'all' | 'listed'
+  companyIds?: string[]
+}
+
+/** هـ ج١: طلب شرح — ما يراه الشريك: الشركة والعدد وحدهما، بلا أسماء */
+export interface HelpRequestDto {
+  id: string
+  label: string
+  screenKey: string
+  systemName: string
+  companyName: string
+  count: number
+  updatedAt: string
+}
+
+/** صفحة «الحساب» في لوحة الشركة */
+export interface CompanyAccountDto {
+  name: string
+  kind: AccountKind
+  status: AccountStatus
+  plan: string
+  members: number
+  guides: number
+  storageBytes: number
+}

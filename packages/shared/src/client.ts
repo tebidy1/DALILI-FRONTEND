@@ -27,6 +27,32 @@ import type {
   InviteDto,
   InviteInfoDto,
   AcceptInviteReq,
+  AuditEntryDto,
+  WorkspaceDto,
+  AccountStatus,
+  CompanyAccountDto,
+  LibraryHealthDto,
+  TrainRunBody,
+  GuideHealthDto,
+  PlatformAccountDetailDto,
+  PlatformAccountDto,
+  PlatformAuditDto,
+  PlatformSystemDto,
+  CompanySystemDto,
+  PartnerProfileDto,
+  PartnerConsoleDto,
+  PartnerReportsDto,
+  NotificationsDto,
+  OfficialDto,
+  NotesDto,
+  NoteStepDto,
+  MyNotesDto,
+  NoteInput,
+  AnchorCandidateDto,
+  HelpRequestDto,
+  PlatformMfaDto,
+  PlatformSummaryDto,
+  PlatformUserDto,
   ThemeChoiceDto,
   VersionSummaryDto,
   ListVersionsDto,
@@ -34,6 +60,8 @@ import type {
   AssignedItemDto,
   AssignmentBoardDto,
   AssignTargetDto,
+  CourseStateDto,
+  LessonDto,
   DeviceDto,
   DevicePendingDto,
 } from './contract'
@@ -42,6 +70,8 @@ export class DaliliApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    /** رمز الخطأ من الخادم (E-ORG-02، E-PUB-01…) حين يرسله */
+    public code?: string,
   ) {
     super(message)
     this.name = 'DaliliApiError'
@@ -75,8 +105,8 @@ export class DaliliClient {
       throw new DaliliApiError(0, 'تعذر الاتصال بالخادم — تأكد من تشغيله على المنفذ 8787')
     }
     if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { errorAr?: string } | null
-      throw new DaliliApiError(res.status, body?.errorAr ?? `فشل الطلب (${res.status})`)
+      const body = (await res.json().catch(() => null)) as { errorAr?: string; code?: string } | null
+      throw new DaliliApiError(res.status, body?.errorAr ?? `فشل الطلب (${res.status})`, body?.code)
     }
     if (res.status === 204) return undefined as T
     const text = await res.text()
@@ -139,6 +169,26 @@ export class DaliliClient {
     return this.req<{ myLocale: 'ar' | 'en' }>('/api/me/locale', { method: 'PUT', json: { locale } })
   }
 
+  /** م١: «نسيت كلمة المرور» — الرد واحد لكل بريد */
+  forgotPassword(email: string) {
+    return this.req<{ ok: true }>('/api/auth/forgot', { method: 'POST', json: { email } })
+  }
+
+  /** م١: كلمة مرور جديدة برمز البريد — لمرة واحدة */
+  resetPassword(token: string, password: string) {
+    return this.req<{ ok: true }>('/api/auth/reset', { method: 'POST', json: { token, password } })
+  }
+
+  /** م١: الاسم الظاهر للزملاء */
+  updateProfile(name: string) {
+    return this.req<{ name: string }>('/api/me/profile', { method: 'PUT', json: { name } })
+  }
+
+  /** م١: يتطلب الحالية، ويُنهي الجلسات الأخرى */
+  changePassword(current: string, next: string) {
+    return this.req<{ ok: true }>('/api/me/password', { method: 'PUT', json: { current, next } })
+  }
+
   /** TRNS-01: توليد/تجديد الترجمة الإنجليزية — الخادم يعيد الدليل محدثًا */
   translateGuide(id: string) {
     return this.req<{ guide: GuideDto }>(`/api/guides/${id}/translate`, { method: 'POST', json: { locale: 'en' } })
@@ -176,6 +226,21 @@ export class DaliliClient {
     return this.req<AssignmentBoardDto>(`/api/guides/${id}/assignments`, { signal })
   }
 
+  /** د١: حالة الدورة لي — 404 حين لا تكون مُسندة إليّ */
+  courseState(guideId: string, signal?: AbortSignal) {
+    return this.req<CourseStateDto>(`/api/courses/${guideId}`, { signal })
+  }
+
+  /** د١ب: الدرس الواحد جاهزاً للمشغّل */
+  courseLesson(courseId: string, lessonId: string, signal?: AbortSignal) {
+    return this.req<LessonDto>(`/api/courses/${courseId}/lessons/${lessonId}`, { signal })
+  }
+
+  /** د١: أنهيتُ عنصراً من الدورة (الدليل نفسه أو مضمّناً فيها) */
+  markCourseItem(guideId: string, itemId: string) {
+    return this.req<CourseStateDto>(`/api/courses/${guideId}/items`, { json: { itemId } })
+  }
+
   async createFolder(name: string) {
     return this.req<FolderDto>('/api/folders', { json: { name } })
   }
@@ -188,8 +253,97 @@ export class DaliliClient {
     await this.req<void>(`/api/folders/${id}`, { method: 'DELETE' })
   }
 
-  async updateGuideMeta(id: string, meta: { folderId?: string | null; starred?: boolean; tags?: string[]; visibility?: 'private' | 'workspace' }) {
+  async updateGuideMeta(id: string, meta: { folderId?: string | null; starred?: boolean; tags?: string[]; visibility?: 'private' | 'workspace'; ownerTeamId?: string | null }) {
     return this.req<GuideSummaryDto>(`/api/guides/${id}/meta`, { method: 'PATCH', json: meta })
+  }
+
+  /** ت (§٥): «قرأت هذا الدليل» — من العارض وقارئ اللوحة فقط، فيُحسب في 👁 وتختفي «جديد» و«تحديث» */
+  markGuideRead(id: string) {
+    return this.req<void>(`/api/guides/${id}/read`, { method: 'POST' })
+  }
+
+  /** ث٢: نتائج تدريب منتهٍ — الموظف المسجّل عبر الدليل فتُعرف شركته، والضيف برمز المشاركة */
+  sendTrainRun(guideId: string, body: TrainRunBody) {
+    return this.req<void>(`/api/guides/${guideId}/train-runs`, { json: body })
+  }
+
+  sendSharedTrainRun(token: string, body: TrainRunBody) {
+    return this.req<void>(`/api/share/${token}/train-runs`, { json: body })
+  }
+
+  /** ث٢: هل الدليل معطوب، وأي خطوة، ومنذ متى، وفي كم شركة — لمن يحرّره */
+  guideHealth(id: string, signal?: AbortSignal) {
+    return this.req<GuideHealthDto>(`/api/guides/${id}/health`, { signal })
+  }
+
+  // ——— ب: النشر والإيقاف والتوثيق والتثبيت ———
+
+  /** النشر الأول و«انشر التحديث» معاً — يجمّد المسودة الحالية لتصير ما يراه القارئ */
+  publishGuide(id: string) {
+    return this.req<{ ok: true; publishedVersionId: string }>(`/api/guides/${id}/publish`, { method: 'POST' })
+  }
+
+  suspendGuide(id: string, reason: string) {
+    return this.req<{ ok: true }>(`/api/guides/${id}/suspend`, { method: 'POST', json: { reason } })
+  }
+
+  // ——— هـ ج١: «ما هذا؟» — شروح الأزرار —
+
+  /** شروح النظام كما تراها الشركة، وهل لها شريك يُسأل */
+  notes(site: string, signal?: AbortSignal) {
+    return this.req<NotesDto>(`/api/notes?site=${encodeURIComponent(site)}`, { signal })
+  }
+
+  /** مراسي خطوات الأدلة المنشورة المقروءة في هذا النظام */
+  noteSteps(site: string, signal?: AbortSignal) {
+    return this.req<NoteStepDto[]>(`/api/notes/steps?site=${encodeURIComponent(site)}`, { signal })
+  }
+
+  /** لوحة الشريك: شروحه وأدلته الرسمية وعملاؤه على هذا النظام */
+  myNotes(site: string, signal?: AbortSignal) {
+    return this.req<MyNotesDto>(`/api/notes/mine?site=${encodeURIComponent(site)}`, { signal })
+  }
+
+  createNote(input: NoteInput) {
+    return this.req<{ id: string }>('/api/notes', { json: input })
+  }
+
+  updateNote(id: string, input: Omit<NoteInput, 'systemId' | 'anchor' | 'screenKey' | 'label'>) {
+    return this.req<{ id: string }>(`/api/notes/${id}`, { method: 'PATCH', json: input })
+  }
+
+  /** طلب شرح زر لا شرح له — يصل الشريك باسم الشركة والعدد */
+  requestHelp(input: { site: string; screenKey: string; anchor: AnchorCandidateDto[]; label: string }) {
+    return this.req<{ ok: true }>('/api/help-requests', { json: input })
+  }
+
+  /** قائمة طلبات الشرح للشريك */
+  helpRequests(signal?: AbortSignal) {
+    return this.req<HelpRequestDto[]>('/api/help-requests', { signal })
+  }
+
+  resumeGuide(id: string) {
+    return this.req<{ ok: true }>(`/api/guides/${id}/resume`, { method: 'POST' })
+  }
+
+  verifyGuide(id: string) {
+    return this.req<{ ok: true }>(`/api/guides/${id}/verify`, { method: 'POST' })
+  }
+
+  unverifyGuide(id: string) {
+    return this.req<{ ok: true }>(`/api/guides/${id}/verify`, { method: 'DELETE' })
+  }
+
+  pinGuide(id: string) {
+    return this.req<{ ok: true }>(`/api/guides/${id}/pin`, { method: 'POST' })
+  }
+
+  unpinGuide(id: string) {
+    return this.req<{ ok: true }>(`/api/guides/${id}/pin`, { method: 'DELETE' })
+  }
+
+  getLibraryHealth(signal?: AbortSignal) {
+    return this.req<LibraryHealthDto>('/api/team/library-health', { signal })
   }
 
   duplicateGuide(id: string) {
@@ -351,23 +505,40 @@ export class DaliliClient {
 
   // ——— الفرق ككيان (المرحلة د — WS-08، ترحيل 0010) ——
 
-  listTeams(signal?: AbortSignal) {
-    return this.req<TeamDto[]>('/api/team/teams', { signal })
+  /** الأقسام الحية — includeArchived يضم المؤرشفة (لوحة الأقسام وحدها تحتاجها) */
+  listTeams(signal?: AbortSignal, includeArchived = false) {
+    return this.req<TeamDto[]>(`/api/team/teams${includeArchived ? '?all=1' : ''}`, { signal })
   }
 
-  async createTeam(name: string) {
-    return this.req<TeamDto>('/api/team/teams', { json: { name } })
+  async createTeam(name: string, parentId: string | null = null) {
+    return this.req<TeamDto>('/api/team/teams', { json: { name, parentId } })
   }
 
-  async renameTeam(id: string, name: string) {
-    return this.req<{ id: string; name: string }>(`/api/team/teams/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      json: { name },
-    })
+  async updateTeam(id: string, patch: { name?: string; parentId?: string | null }) {
+    return this.req<TeamDto>(this.teamPath(id), { method: 'PATCH', json: patch })
   }
 
+  /** ORG-01: الأرشفة هي الطريق العادي — 409 E-ORG-01 إن بقي فيه أعضاء أو فروع */
+  async archiveTeam(id: string) {
+    return this.req<TeamDto>(this.teamPath(id, '/archive'), { method: 'POST' })
+  }
+
+  async unarchiveTeam(id: string) {
+    return this.req<TeamDto>(this.teamPath(id, '/unarchive'), { method: 'POST' })
+  }
+
+  /** ORG-02: يستبدل قائمة مدراء القسم كاملة */
+  async setTeamManagers(id: string, userIds: string[]) {
+    return this.req<TeamDto>(this.teamPath(id, '/managers'), { method: 'PUT', json: { userIds } })
+  }
+
+  /** حذف فعلي لقسم فارغ تماماً فقط (أُنشئ خطأً) — غيره 409 ويُؤرشف */
   async deleteTeam(id: string) {
-    await this.req<void>(`/api/team/teams/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    await this.req<void>(this.teamPath(id), { method: 'DELETE' })
+  }
+
+  private teamPath(id: string, suffix = '') {
+    return `/api/team/teams/${encodeURIComponent(id)}${suffix}`
   }
 
   // ——— دعوات المساحة (WS-01) — رابط يُرسل واتساب، بلا SMTP ——
@@ -387,6 +558,200 @@ export class DaliliClient {
       method: 'POST',
       json: input,
     })
+  }
+
+  /** ORG-00: حساب قائم مسجَّل الدخول ينضم بالدعوة — تصير مساحتها النشطة */
+  joinInvite(token: string) {
+    return this.req<{ workspaceId: string }>(`/api/invites/${encodeURIComponent(token)}/join`, { method: 'POST' })
+  }
+
+  // ——— المساحات (ORG-00) والتعطيل (ORG-07) والسجل (ORG-08) ——
+
+  // ——— م٢: لوحة الشركة ———
+
+  getCompanyAccount(signal?: AbortSignal) {
+    return this.req<CompanyAccountDto>('/api/team/account', { signal })
+  }
+
+  renameCompanyAccount(name: string) {
+    return this.req<CompanyAccountDto>('/api/team/account', { method: 'PATCH', json: { name } })
+  }
+
+  // ——— م٢: إدارة المنصة (PLATFORM_ADMINS + تحقق بخطوتين) ———
+
+  platformMfa(signal?: AbortSignal) {
+    return this.req<PlatformMfaDto>('/api/platform/mfa', { signal })
+  }
+
+  platformVerifyMfa(code: string) {
+    return this.req<{ ok: true }>('/api/platform/mfa', { method: 'POST', json: { code } })
+  }
+
+  platformSummary(signal?: AbortSignal) {
+    return this.req<PlatformSummaryDto>('/api/platform/summary', { signal })
+  }
+
+  platformAccounts(filters: { kind?: string; status?: string; q?: string }, signal?: AbortSignal) {
+    const qs = new URLSearchParams(Object.entries(filters).filter(([, v]) => v) as [string, string][]).toString()
+    return this.req<PlatformAccountDto[]>(`/api/platform/accounts${qs ? `?${qs}` : ''}`, { signal })
+  }
+
+  platformCreateAccount(input: { kind: 'company' | 'partner'; name: string; adminEmail: string; note?: string }) {
+    return this.req<{ account: PlatformAccountDto; invite: { inviteUrl: string; emailed: boolean } }>('/api/platform/accounts', { method: 'POST', json: input })
+  }
+
+  platformAccount(id: string, signal?: AbortSignal) {
+    return this.req<PlatformAccountDetailDto>(`/api/platform/accounts/${encodeURIComponent(id)}`, { signal })
+  }
+
+  platformUpdateAccount(id: string, patch: { name?: string; note?: string }) {
+    return this.req<PlatformAccountDto>(`/api/platform/accounts/${encodeURIComponent(id)}`, { method: 'PATCH', json: patch })
+  }
+
+  platformSetStatus(id: string, status: AccountStatus, reason?: string) {
+    return this.req<PlatformAccountDto>(`/api/platform/accounts/${encodeURIComponent(id)}/status`, { method: 'POST', json: { status, reason } })
+  }
+
+  platformAdminInvite(id: string, email: string) {
+    return this.req<{ inviteUrl: string; emailed: boolean }>(`/api/platform/accounts/${encodeURIComponent(id)}/admin-invite`, { method: 'POST', json: { email } })
+  }
+
+  platformUser(email: string, signal?: AbortSignal) {
+    return this.req<PlatformUserDto>(`/api/platform/users?email=${encodeURIComponent(email)}`, { signal })
+  }
+
+  platformResetLink(userId: string) {
+    return this.req<{ ok: true }>(`/api/platform/users/${encodeURIComponent(userId)}/reset-link`, { method: 'POST' })
+  }
+
+  platformEndSessions(userId: string) {
+    return this.req<{ ok: true }>(`/api/platform/users/${encodeURIComponent(userId)}/end-sessions`, { method: 'POST' })
+  }
+
+  platformAudit(signal?: AbortSignal) {
+    return this.req<PlatformAuditDto[]>('/api/platform/audit', { signal })
+  }
+
+  // ج١: الأنظمة — المنصة تعرّفها بنطاقاتها ومقدّميها، والشركة تختار أنظمتها وشريكها
+  platformSystems(signal?: AbortSignal) {
+    return this.req<PlatformSystemDto[]>('/api/platform/systems', { signal })
+  }
+
+  platformCreateSystem(input: { name: string; domains: string[] }) {
+    return this.req<PlatformSystemDto>('/api/platform/systems', { method: 'POST', json: input })
+  }
+
+  platformUpdateSystem(id: string, patch: { name?: string; domains?: string[]; hidden?: boolean }) {
+    return this.req<PlatformSystemDto>(`/api/platform/systems/${encodeURIComponent(id)}`, { method: 'PATCH', json: patch })
+  }
+
+  platformAddProvider(id: string, partnerId: string) {
+    return this.req<PlatformSystemDto>(`/api/platform/systems/${encodeURIComponent(id)}/providers`, { method: 'POST', json: { partnerId } })
+  }
+
+  platformRemoveProvider(id: string, partnerId: string) {
+    return this.req<PlatformSystemDto>(`/api/platform/systems/${encodeURIComponent(id)}/providers/${encodeURIComponent(partnerId)}`, { method: 'DELETE' })
+  }
+
+  platformUploadSystemLogo(id: string, file: Blob) {
+    const fd = new FormData()
+    fd.append('file', file, 'logo')
+    return this.req<PlatformSystemDto>(`/api/platform/systems/${encodeURIComponent(id)}/logo`, { body: fd })
+  }
+
+  // ش١: لوحة الشريك — الملف العام، والشعار، وأنظمته وعملاؤه، ونظام الدليل الرسمي وجمهوره
+  partnerConsole(signal?: AbortSignal) {
+    return this.req<PartnerConsoleDto>('/api/admin/partner', { signal })
+  }
+
+  /** ش٢: «أوقف الخدمة لهذه الشركة» لنظام — يعيد لوحة الشريك بعدها */
+  stopPartnerService(companyId: string, systemId: string) {
+    return this.req<PartnerConsoleDto>(`/api/admin/partner/clients/${encodeURIComponent(companyId)}/${encodeURIComponent(systemId)}/stop`, { method: 'POST' })
+  }
+
+  partnerReports(signal?: AbortSignal) {
+    return this.req<PartnerReportsDto>('/api/admin/partner/reports', { signal })
+  }
+
+  /** ش٢: الجرس في المساحة النشطة */
+  notifications(signal?: AbortSignal) {
+    return this.req<NotificationsDto>('/api/notifications', { signal })
+  }
+
+  /** بلا ids يُعلَّم الكل مقروءاً */
+  markNotificationsRead(ids?: string[]) {
+    return this.req<void>('/api/notifications/read', { method: 'POST', json: ids ? { ids } : {} })
+  }
+
+  partnerProfile(signal?: AbortSignal) {
+    return this.req<PartnerProfileDto>('/api/admin/profile', { signal })
+  }
+
+  updatePartnerProfile(patch: { description?: string; website?: string }) {
+    return this.req<PartnerProfileDto>('/api/admin/profile', { method: 'PATCH', json: patch })
+  }
+
+  uploadPartnerLogo(file: Blob) {
+    const fd = new FormData()
+    fd.append('file', file, 'logo')
+    return this.req<PartnerProfileDto>('/api/admin/profile/logo', { body: fd })
+  }
+
+  updateOfficial(id: string, patch: { official?: boolean; systemId?: string; audience?: 'all' | 'listed'; companyIds?: string[] }) {
+    return this.req<{ official: OfficialDto }>(`/api/guides/${encodeURIComponent(id)}/official`, { method: 'PATCH', json: patch })
+  }
+
+  companySystems(signal?: AbortSignal) {
+    return this.req<CompanySystemDto[]>('/api/admin/systems', { signal })
+  }
+
+  companyAddSystem(id: string) {
+    return this.req<CompanySystemDto>(`/api/admin/systems/${encodeURIComponent(id)}`, { method: 'POST' })
+  }
+
+  companyRemoveSystem(id: string) {
+    return this.req<CompanySystemDto>(`/api/admin/systems/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  }
+
+  companyChoosePartner(id: string, partnerId: string | null) {
+    return this.req<CompanySystemDto>(`/api/admin/systems/${encodeURIComponent(id)}/partner`, { method: 'PUT', json: { partnerId } })
+  }
+
+  companyAddDomain(id: string, domain: string) {
+    return this.req<CompanySystemDto>(`/api/admin/systems/${encodeURIComponent(id)}/domains`, { method: 'POST', json: { domain } })
+  }
+
+  companyRemoveDomain(id: string, domain: string) {
+    return this.req<CompanySystemDto>(`/api/admin/systems/${encodeURIComponent(id)}/domains/${encodeURIComponent(domain)}`, { method: 'DELETE' })
+  }
+
+  listMyWorkspaces(signal?: AbortSignal) {
+    return this.req<WorkspaceDto[]>('/api/me/workspaces', { signal })
+  }
+
+  switchWorkspace(workspaceId: string) {
+    return this.req<{ workspaceId: string }>('/api/me/workspace', { method: 'PUT', json: { workspaceId } })
+  }
+
+  deactivateMember(userId: string) {
+    return this.req<MemberDto>(`/api/team/${encodeURIComponent(userId)}/deactivate`, { method: 'POST' })
+  }
+
+  reactivateMember(userId: string) {
+    return this.req<MemberDto>(`/api/team/${encodeURIComponent(userId)}/reactivate`, { method: 'POST' })
+  }
+
+  listAudit(filters: { action?: string; before?: string } = {}, signal?: AbortSignal) {
+    const qs = new URLSearchParams()
+    if (filters.action) qs.set('action', filters.action)
+    if (filters.before) qs.set('before', filters.before)
+    const q = qs.toString()
+    return this.req<{ items: AuditEntryDto[] }>(`/api/audit${q ? `?${q}` : ''}`, { signal })
+  }
+
+  /** رابط تنزيل CSV — يُفتح مباشرة فيرسل المتصفح الكوكي */
+  auditCsvUrl(action?: string) {
+    return `${this.base}/api/audit.csv${action ? `?action=${encodeURIComponent(action)}` : ''}`
   }
 
   // ——— البوكمارك (WS-04) ——

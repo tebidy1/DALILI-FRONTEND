@@ -4,8 +4,10 @@ import { siteLabel } from '@dalili/core'
 import { webShareUrl } from '../api'
 import { IconShare } from '../ui/icons'
 import { t } from '../i18n'
-import { ownerNameFromEmail, arDigits, relativeTimeAr, dualDateAr } from '../lib/format'
+import { displayName, arDigits, relativeTimeAr, dualDateAr } from '../lib/format'
 import { GuideMenuActions } from './GuideMenuActions'
+import { SystemTile } from '../console/SystemTile'
+import type { ModerateFn } from './moderation'
 
 /**
  * LIB-05: الشريط الجانبي لبطاقة الدليل — مربّع التحديد خارج البطاقة، محاذٍ لرأسها.
@@ -68,6 +70,8 @@ export interface GuideCardProps {
   onRemove: () => void
   onRestore: () => void
   onSite: (site: string) => void
+  onModerate: ModerateFn
+  teams: { id: string; name: string }[] | null
 }
 
 export function GuideCard(p: GuideCardProps) {
@@ -75,7 +79,8 @@ export function GuideCard(p: GuideCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const dateIso = p.inTrash && g.deletedAt ? g.deletedAt : g.updatedAt
   const folderName = p.folders.find((f) => f.id === g.folderId)?.name
-  const author = ownerNameFromEmail(g.ownerEmail)
+  // ش٢: منشئ الدليل الرسمي هو الشريك
+  const author = g.source === 'official' ? (g.partner?.name ?? g.creatorName ?? '') : displayName({ name: g.ownerName, email: g.ownerEmail })
   return (
     <div className="guide-card-row">
       {/* LIB-05: مربّع التحديد خارج البطاقة على اليمين (أول عنصر في RTL) — مثل StepRail */}
@@ -129,6 +134,35 @@ export function GuideCard(p: GuideCardProps) {
         <span className="chip">
           {t(g.kind === 'booklet' ? 'common.blocks' : 'common.steps', { count: arDigits(g.stepCount) })}
         </span>
+        {/* ش٢: الدليل الرسمي — منشئه الشريك، بشعاره، على وجه البطاقة */}
+        {g.source === 'official' && g.partner && (
+          <span className="chip partner-chip" title={t('home.officialFrom', { name: g.partner.name })}>
+            <SystemTile name={g.partner.name} logoUrl={g.partner.logoUrl ?? null} size={16} />
+            <bdi>{g.partner.name}</bdi>
+          </span>
+        )}
+        {/* ORG-04: القسم المالك */}
+        {g.ownerTeamName && (
+          <span className="chip dept-chip" title={t('home.teamChipA11y', { name: g.ownerTeamName })}>
+            <bdi>{g.ownerTeamName}</bdi>
+          </span>
+        )}
+        {/* ب: المثبّت والموثّق يراهما الجميع، والموقوف لا يصل إلا لمحرريه */}
+        {g.pinned && <span className="chip pin-chip">{t('home.badgePinned')}</span>}
+        {/* ت (§٥.١): «جديد» و«تحديث» لهذا الموظف وحده */}
+        {g.fresh && <span className={`chip fresh-chip ${g.fresh}`}>{t(g.fresh === 'new' ? 'home.badgeNew' : 'home.badgeUpdated')}</span>}
+        {/* ت (§٥): 👁 على البطاقة نفسها = أشخاص مختلفون فتحوه */}
+        {(g.readerCount ?? 0) > 0 && (
+          <span className="chip readers-chip" title={t('home.readersHint', { count: arDigits(g.readerCount ?? 0) })}>
+            {`👁 ${arDigits(g.readerCount ?? 0)}`}
+          </span>
+        )}
+        {g.verified && (
+          <span className="chip verified-chip" title={t('home.badgeVerifiedHint', { name: g.verified.byName, when: relativeTimeAr(g.verified.at) })}>
+            {t('home.badgeVerified')}
+          </span>
+        )}
+        {g.suspended && <span className="chip suspended-chip">{t('home.badgeSuspended')}</span>}
       </div>
 
       {menuOpen && (
@@ -159,6 +193,7 @@ export function GuideCard(p: GuideCardProps) {
                 </span>
                 {/* BKL-01: الكرّاسة تعيش مع الأدلة في نفس القوائم — الشارة وحدها تميّزها */}
                 {g.kind === 'booklet' && <span className="chip kind-chip">{t('library.kindBooklet')}</span>}
+                {g.kind === 'course' && <span className="chip kind-chip">{t('library.kindCourse')}</span>}
                 {folderName && (
                   <span className="chip">
                     <bdi>{folderName}</bdi>
@@ -180,10 +215,10 @@ export function GuideCard(p: GuideCardProps) {
                     {t('library.commentCount', { count: g.commentCount })}
                   </span>
                 )}
-                {/* المرحلة ج: مشاهدات المشاركة داخل القائمة */}
+                {/* المرحلة ج: مشاهدات رابط المشاركة داخل القائمة */}
                 {g.views > 0 && (
                   <span className="chip views-chip" title={t('home.colViews')}>
-                    {`👁 ${arDigits(g.views)}`}
+                    {`🔗 ${arDigits(g.views)}`}
                   </span>
                 )}
                 {g.tags.map((tag) => (
@@ -221,6 +256,8 @@ export function GuideCard(p: GuideCardProps) {
               onMove={p.onMove}
               onRemove={p.onRemove}
               onRestore={p.onRestore}
+              onModerate={p.onModerate}
+              teams={p.teams}
             />
           </div>
         </>

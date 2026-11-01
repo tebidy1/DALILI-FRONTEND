@@ -30,6 +30,7 @@ import {
   createRecordingControls,
 } from './recorder/bridge'
 import { applyLocale, readLocale, setLocale, subscribeLocale, t, arDigits } from './i18n'
+import { accountLabel, switcherVisible, type DesktopAccount } from './accounts'
 
 const app = document.getElementById('app')
 
@@ -548,7 +549,45 @@ if (isPebble) {
     if (code) code.textContent = authSnapshot.userCode ?? '····-····'
     const mail = document.getElementById('acctMail')
     if (mail) mail.textContent = authSnapshot.email ?? ''
+    void loadAccounts()
   }
+
+  // ش١: مبدّل الحساب — القائمة من الخادم برمز الجهاز، والتبديل يحرسه Rust (التسجيل والطابور)
+  const accountsApi = createDesktopAuth()
+  let accounts: DesktopAccount[] = []
+  function fillAccounts(list: DesktopAccount[]): void {
+    accounts = list
+    const box = document.getElementById('acctSwitch')
+    const sel = document.getElementById('acctSelect') as HTMLSelectElement | null
+    if (!box || !sel) return
+    box.hidden = !switcherVisible(list)
+    sel.replaceChildren(...list.filter((a) => a.status === 'active').map((a) => new Option(accountLabel(a), a.id, false, a.active)))
+  }
+  async function loadAccounts(): Promise<void> {
+    if (authSnapshot.phase !== 'paired') return fillAccounts([])
+    try {
+      fillAccounts(await accountsApi.accounts())
+    } catch {
+      fillAccounts([]) // بلا شبكة: لا مبدّل بدل مبدّلٍ ميت
+    }
+  }
+  document.getElementById('acctSelect')?.addEventListener('change', (e) => {
+    const sel = e.currentTarget as HTMLSelectElement
+    const note = document.getElementById('acctNote')
+    const before = accounts
+    sel.disabled = true
+    accountsApi
+      .switchAccount(sel.value)
+      .then((list) => {
+        fillAccounts(list)
+        if (note) note.textContent = t('dt.acctSwitched', { name: list.find((a) => a.active)?.name ?? '' })
+      })
+      .catch((err: unknown) => {
+        fillAccounts(before)
+        if (note) note.textContent = typeof err === 'string' ? err : t('dt.acctNote')
+      })
+      .finally(() => (sel.disabled = false))
+  })
 
   /** عدّاد الخطوات الحقيقيّ يبثّه المتحكّم صدىً من الحصاة — للتأكيد والتوست.
    *  آخر حملة تُحفظ كي يعيد تبديلُ اللغة رسمها بالنصّ الجديد */

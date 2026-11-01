@@ -12,15 +12,17 @@ import { useReloadSeq } from '../lib/reload-seq'
 import { BulkBar } from '../components/BulkBar'
 import { emptySelection, toggleSelect, rangeSelect, selectAll, isPicked, type Selection } from '../lib/selection'
 import { useOverview } from '../shell/OverviewContext'
+import { OnboardingChecklist } from '../admin/OnboardingChecklist'
 import { AssignedBand } from '../assigned/AssignedBand'
 import { GuideCard } from './GuideCard'
 import { GuideTable } from './GuideTable'
 import { HomeSearch } from './HomeSearch'
-import { FiltersPanel, ActiveFilters } from './FiltersPanel'
+import { FiltersPanel, ActiveFilters, CLEARED_FILTERS } from './FiltersPanel'
 import { FoldersView } from './FoldersView'
 import { ReportStrip } from './ReportStrip'
 import { LibraryEmpty } from './LibraryEmpty'
 import { useGuideActions } from './useGuideActions'
+import { useAdminDepartments } from './useAdminDepartments'
 import { SCREEN_META, readLayout, type HomeScreen, type Layout } from './screen'
 
 /**
@@ -41,6 +43,8 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
   const creator = sp.get('creator')
   const when = sp.get('when')
   const site = sp.get('site')
+  const team = sp.get('team')
+  const source = sp.get('source')
   const folder = sp.get('folder')
   const page = Number(sp.get('page') ?? '1') || 1
   const sort = sp.get('sort') ?? 'updated-desc'
@@ -98,6 +102,8 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
       if (creator && screen === 'home') q.creator = creator
       if (when) q.when = when
       if (site) q.site = site
+      if (team) q.team = team
+      if (source) q.source = source
       if (folder && screen === 'home') q.folder = folder
     }
     client
@@ -143,7 +149,7 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
   }
 
   function clearFilters() {
-    setParams({ visibility: null, creator: null, when: null, site: null, folder: null })
+    setParams(CLEARED_FILTERS)
   }
 
   function switchLayout(next: Layout) {
@@ -196,12 +202,15 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
   const list = data?.items ?? []
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1
   const isViewer = overview?.myRole === 'viewer'
-  const advancedCount = [visibility, creator, when, site, folder && screen === 'home' ? folder : null].filter(Boolean).length
+  const teamChoices = useAdminDepartments(overview?.myRole === 'admin')
+  const advancedCount = [visibility, creator, when, site, team, source, folder && screen === 'home' ? folder : null].filter(Boolean).length
   const anyFilter = advancedCount > 0
   const meta = SCREEN_META[screen]
 
   return (
     <div className="page home">
+      {/* م٢: قائمة البداية لمدير الشركة — على الرئيسية فقط */}
+      {screen === 'home' && <OnboardingChecklist state={overview?.onboarding ?? null} />}
       {/* — شريط الأعلى: العنوان يمينًا، وأدوات العرض يسارًا (نمط المرجع) — */}
       <div className="toolbar">
         <h1 className="row screen-title">
@@ -216,9 +225,13 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
               creator={creator}
               when={when}
               site={site}
+              team={team}
+              source={source}
+              hasOfficial={(overview?.counts.official ?? 0) > 0}
               sort={sort}
               isViewer={isViewer}
               sites={overview?.sites ?? []}
+              teams={overview?.teams ?? []}
               advancedCount={advancedCount}
               setParams={setParams}
             />
@@ -264,6 +277,10 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
               <Button variant="ghost" onClick={actions.newBooklet} busy={actions.creating}>
                 {t('library.newBooklet')}
               </Button>
+              {/* د١ب: الدورة خيار ثالث — دروس يمرّ بها المتدرّب */}
+              <Button variant="ghost" onClick={actions.newCourse} busy={actions.creating}>
+                {t('library.newCourse')}
+              </Button>
             </>
           )}
         </div>
@@ -298,6 +315,9 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
               creator={creator}
               when={when}
               site={site}
+              team={team}
+              teamName={overview?.teams?.find((d) => d.id === team)?.name ?? ''}
+              source={source}
               folder={folder}
               folderName={folders.find((f) => f.id === folder)?.name ?? ''}
               setParams={setParams}
@@ -365,6 +385,8 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
                   onPublish={(g) => void actions.toggleVisibility(g)}
                   onDuplicate={(g) => void actions.duplicate(g)}
                   onMove={(g, fid) => void actions.moveTo(g, fid)}
+                  onModerate={actions.moderate}
+                  teams={teamChoices}
                 />
               ) : (
                 <div className={`grid-cards${screen === 'saved' ? ' saved-grid' : ''}`}>
@@ -386,6 +408,8 @@ export function HomePage({ screen }: { screen: HomeScreen }) {
                       onRemove={() => void actions.remove(g)}
                       onRestore={() => void actions.restore(g)}
                       onSite={(s) => setParams({ site: s })}
+                      onModerate={(m) => actions.moderate(g, m)}
+                      teams={teamChoices}
                     />
                   ))}
                 </div>

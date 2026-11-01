@@ -4,11 +4,16 @@ import { IconFilter } from '../ui/icons'
 import { Button } from '../ui/Button'
 import { t } from '../i18n'
 import { arDigits } from '../lib/format'
+import type { LibraryTeamCountDto } from '@dalili/shared'
 import type { HomeScreen } from './screen'
+
+/** مفاتيح الفلاتر في الرابط — مصدر واحد لـ«امسح الفلاتر» هنا وفي الرئيسية */
+export const FILTER_PARAMS = ['visibility', 'creator', 'when', 'site', 'team', 'folder', 'source'] as const
+export const CLEARED_FILTERS: Record<string, null> = Object.fromEntries(FILTER_PARAMS.map((k) => [k, null]))
 
 /**
  * زر «فلاتر ▾» بلوحة منسدلة — الفلاتر لا تزاحم الشاشة (طلب المالك 2026-09-03):
- * الحالة والمنشئ والنافذة الزمنية والموقع والترتيب، مع عدّاد الفلاتر النشطة
+ * الحالة والمنشئ والنافذة الزمنية والموقع والقسم والترتيب، مع عدّاد الفلاتر النشطة
  * على الزر ورقاقات الفلاتر المطبَّقة فوق القائمة.
  */
 
@@ -24,16 +29,22 @@ interface FiltersPanelProps {
   creator: string | null
   when: string | null
   site: string | null
+  /** ORG-04: القسم المالك */
+  team: string | null
+  /** ش٢: مصدر الدليل — يظهر فلتره حين توجد أدلة رسمية */
+  source: string | null
+  hasOfficial: boolean
   sort: string
   isViewer: boolean
   sites: Array<{ site: string; count: number }>
+  teams: LibraryTeamCountDto[]
   advancedCount: number
   setParams: (patch: Record<string, string | null>) => void
 }
 
 export function FiltersPanel(p: FiltersPanelProps) {
   const [open, setOpen] = useState(false)
-  const clearFilters = () => p.setParams({ visibility: null, creator: null, when: null, site: null, folder: null })
+  const clearFilters = () => p.setParams(CLEARED_FILTERS)
 
   return (
     <div className="filters-wrap">
@@ -75,6 +86,18 @@ export function FiltersPanel(p: FiltersPanelProps) {
                 onChange={(k) => p.setParams({ creator: k })}
               />
             )}
+            {p.hasOfficial && (
+              <FilterRow
+                label={t('home.filterSource')}
+                value={p.source}
+                options={[
+                  { key: null, label: t('home.filterAllLabel') },
+                  { key: 'company', label: t('home.sourceCompany') },
+                  { key: 'official', label: t('home.sourceOfficial') },
+                ]}
+                onChange={(k) => p.setParams({ source: k })}
+              />
+            )}
             <FilterRow
               label={t('home.filterWhen')}
               value={p.when}
@@ -95,6 +118,17 @@ export function FiltersPanel(p: FiltersPanelProps) {
                   ...p.sites.map((s) => ({ key: s.site, label: siteLabel(s.site), count: s.count })),
                 ]}
                 onChange={(k) => p.setParams({ site: k })}
+              />
+            )}
+            {p.teams.length > 0 && (
+              <FilterRow
+                label={t('home.filterTeam')}
+                value={p.team}
+                options={[
+                  { key: null, label: t('home.filterAllLabel') },
+                  ...p.teams.map((d) => ({ key: d.id, label: d.name, count: d.count })),
+                ]}
+                onChange={(k) => p.setParams({ team: k })}
               />
             )}
             <FilterRow
@@ -128,6 +162,9 @@ export function ActiveFilters(a: {
   creator: string | null
   when: string | null
   site: string | null
+  team: string | null
+  teamName: string
+  source: string | null
   folder: string | null
   folderName: string
   setParams: (patch: Record<string, string | null>) => void
@@ -150,6 +187,13 @@ export function ActiveFilters(a: {
         <ActiveChip label={`${t('home.filterWhen')}: ${whenLabel(a.when)}`} onClear={() => a.setParams({ when: null })} />
       )}
       {a.site && <ActiveChip label={`${t('home.filterSite')}: ${siteLabel(a.site)}`} onClear={() => a.setParams({ site: null })} />}
+      {a.source && (
+        <ActiveChip
+          label={`${t('home.filterSource')}: ${a.source === 'official' ? t('home.sourceOfficial') : t('home.sourceCompany')}`}
+          onClear={() => a.setParams({ source: null })}
+        />
+      )}
+      {a.team && <ActiveChip label={`${t('home.filterTeam')}: ${a.teamName}`} onClear={() => a.setParams({ team: null })} />}
       {a.folder && a.screen === 'home' && (
         <ActiveChip
           label={`${t('home.navFolders')}: ${a.folderName}`}

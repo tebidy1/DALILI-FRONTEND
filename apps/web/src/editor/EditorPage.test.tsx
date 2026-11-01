@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { GuideDetailsDto, GuideDto } from '@dalili/shared'
 import { t } from '../i18n'
@@ -15,6 +15,7 @@ vi.mock('../api', () => ({
     revokeShare: vi.fn(),
     transcribeGuide: vi.fn(),
     guideComments: vi.fn().mockResolvedValue({ comments: [] }),
+    markGuideRead: vi.fn().mockResolvedValue(undefined),
     me: vi.fn().mockResolvedValue({ id: 'u1', email: 'owner@example.com' }),
     uploadBlob: vi.fn().mockResolvedValue({ fileId: 'up1', thumbFileId: undefined }),
   },
@@ -244,6 +245,22 @@ describe('VOX-05: تفريغ الصوت إلى نص في المحرِّر', () =
   })
 })
 
+describe('شارة القسم المالك في العارض (أ٢ — ORG-04)', () => {
+  it('تظهر باسم القسم في صف البيانات، وتغيب لدليل بلا قسم', async () => {
+    const { client } = await import('../api')
+    vi.mocked(client.getGuide).mockResolvedValue({ ...fixture(), ownerTeam: { id: 't-buy', name: 'المشتريات' } })
+    const { unmount } = renderEditor()
+    await screen.findByText('دليل الفواتير')
+    expect(screen.getByTitle(t('home.teamChipA11y', { name: 'المشتريات' })).textContent).toBe('المشتريات')
+    unmount()
+
+    vi.mocked(client.getGuide).mockResolvedValue(fixture())
+    renderEditor()
+    await screen.findByText('دليل الفواتير')
+    expect(document.querySelector('.guide-meta .dept-chip')).toBeNull()
+  })
+})
+
 describe('وضعا العرض والتعديل — التحرير باختيار صريح', () => {
   it('يفتح على وضع العرض: العنوان نصّ لا حقل، وبلا أدوات تحرير', async () => {
     const { client } = await import('../api')
@@ -364,6 +381,21 @@ describe('نافذة المشاركة — تبويبات نظيفة بدل ال�
     expect(screen.getByRole('tab', { name: t('editor.shareTabLink') })).toBeTruthy()
     expect(screen.getByRole('tab', { name: t('editor.shareTabEmbed') })).toBeTruthy()
     expect(screen.getByRole('tab', { name: t('editor.shareTabExport') })).toBeTruthy()
+  })
+
+  it('بلاغ المالك: رفض «الرابط السري» بلا صلاحية النشر يظهر داخل النافذة لا خلفها', async () => {
+    const { client } = await import('../api')
+    const { DaliliApiError } = await import('@dalili/shared')
+    vi.mocked(client.getGuide).mockResolvedValue({ ...fixture(), visibility: 'private' })
+    vi.mocked(client.createShare).mockRejectedValueOnce(new DaliliApiError(403, 'لا تملك صلاحية النشر في هذه المساحة. اطلبها من المدير (E-PUB-01)', 'E-PUB-01'))
+    renderEditor()
+    await screen.findByText('دليل الفواتير')
+    fireEvent.click(screen.getByRole('button', { name: t('editor.shareOpen') }))
+    fireEvent.click(screen.getByRole('button', { name: t('editor.shareSecretCreate') }))
+    const dialog = within(screen.getByRole('dialog'))
+    expect(await dialog.findByText('لا تملك صلاحية النشر في هذه المساحة. اطلبها من المدير (E-PUB-01)')).toBeTruthy()
+    // الملف بلا تصفير عام للمحاكيات — لا نترك نداءنا يُحسب على الاختبار التالي
+    vi.mocked(client.createShare).mockClear()
   })
 
   it('قرار المالك 2026-09-10: فتح النافذة لا ينشئ الرابط — زر «أنشئ رابط مشاركة» هو الذي ينشئه', async () => {
@@ -584,6 +616,27 @@ describe('دربني في شاشة التحرير — جرّب التدريب ب
       const guide = (call![0] as { guide?: { steps?: Array<{ target?: { anchor?: unknown[] } }> } }).guide
       expect(guide?.steps?.[0]?.target?.anchor).toEqual([{ k: 'id', v: 'btn-new-invoice' }])
     })
+    postSpy.mockRestore()
+  })
+
+  const trainCall = (spy: { mock: { calls: unknown[][] } }) => spy.mock.calls.find((c) => (c[0] as { t?: string })?.t === 'train-start')?.[0] as { trial?: boolean; hosts?: unknown } | undefined
+
+  it('ث٢: المحرر يقول صراحة إنها تجربة المؤلف', async () => {
+    vi.mocked(client.getGuide).mockResolvedValue(fixtureAnchored())
+    const postSpy = vi.spyOn(window, 'postMessage')
+    renderTrainEditor()
+    fireEvent.click(await screen.findByRole('button', { name: t('viewer.train') }))
+    await waitFor(() => expect(trainCall(postSpy)?.trial).toBe(true))
+    postSpy.mockRestore()
+  })
+
+  it('ث٢+ث٣: قارئ الدليل الرسمي ليس تجربة، ويحمل نطاقات نسخة شركته', async () => {
+    const trainHosts = { hosts: ['alofuq.odoo.com'], patterns: ['*.odoo.com'] }
+    vi.mocked(client.getGuide).mockResolvedValue({ ...fixtureAnchored(), access: { owner: false, edit: false, publish: false, moderate: false }, source: 'official', partner: { id: 'p1', name: 'نُظم' }, trainHosts })
+    const postSpy = vi.spyOn(window, 'postMessage')
+    renderTrainEditor()
+    fireEvent.click(await screen.findByRole('button', { name: t('viewer.train') }))
+    await waitFor(() => expect(trainCall(postSpy)).toMatchObject({ trial: false, hosts: trainHosts }))
     postSpy.mockRestore()
   })
 
@@ -822,6 +875,18 @@ describe('شريط المسودة في صفحة الدليل (قرار الما�
     fireEvent.click(screen.getByRole('button', { name: t('editor.publishDraftBar') }))
     await waitFor(() => expect(vi.mocked(client.updateGuideMeta)).toHaveBeenCalledWith('g1', { visibility: 'workspace' }))
     await waitFor(() => expect(screen.queryByText(t('editor.draftBarTitle'))).toBeNull())
+  })
+
+  it('بلاغ المالك: النشر بلا صلاحية يعرض سبب الخادم (E-PUB-01) ويبقى الدليل مسودة', async () => {
+    const { client } = await import('../api')
+    const { DaliliApiError } = await import('@dalili/shared')
+    vi.mocked(client.getGuide).mockResolvedValue({ ...fixture(), visibility: 'private' })
+    vi.mocked(client.updateGuideMeta).mockRejectedValueOnce(new DaliliApiError(403, 'لا تملك صلاحية النشر في هذه المساحة. اطلبها من المدير (E-PUB-01)', 'E-PUB-01'))
+    renderEditor()
+    await ready(false)
+    fireEvent.click(screen.getByRole('button', { name: t('editor.publishDraftBar') }))
+    expect(await screen.findByText('لا تملك صلاحية النشر في هذه المساحة. اطلبها من المدير (E-PUB-01)')).toBeTruthy()
+    expect(screen.getByText(t('editor.draftBarTitle'))).toBeTruthy()
   })
 
   it('الدليل المنشور لا يعرض شريط المسودة', async () => {

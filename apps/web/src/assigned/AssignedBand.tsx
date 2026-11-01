@@ -3,18 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import type { AssignedItemDto } from '@dalili/shared'
 import { client } from '../api'
 import { t } from '../i18n'
-import { useOverview } from '../shell/OverviewContext'
 import { AssignedList } from './AssignedList'
 import { useAssignmentActions } from './useAssignmentActions'
 
 /**
  * ASG: قسم «أُسند إليّ» أعلى الرئيسية — يظهر فقط إن وُجد عنصر مُسنَد. عرض مضغوط،
  * وشريط إعلان بعدد غير المفتوح يختفي بعد الفتح (لا بعد وقت). الفتح يسجّل «فُتح»
- * وينتقل للدليل؛ «تمّ» يبدّل ويعيد الجلب ويحدّث شارة الشريط الجانبي.
+ * وينتقل للدورة؛ د١: الإكمال يحسبه الخادم من العناصر المنتهية، فلا «تمّ» يدوي.
  */
 export function AssignedBand() {
   const navigate = useNavigate()
-  const { reload: reloadOverview } = useOverview()
   const [items, setItems] = useState<AssignedItemDto[] | null>(null)
 
   const load = useCallback((signal?: AbortSignal) => {
@@ -35,7 +33,7 @@ export function AssignedBand() {
     return () => ac.abort()
   }, [load])
 
-  const { onOpen, onToggleDone } = useAssignmentActions({ navigate, setItems, load, reloadOverview })
+  const { onOpen, onContinue } = useAssignmentActions({ navigate })
 
   if (!items || items.length === 0) return null
   const newCount = items.filter((it) => it.openedAt === null).length
@@ -48,7 +46,7 @@ export function AssignedBand() {
         </div>
       )}
       <h2 className="assigned-band-title">{t('assigned.title')}</h2>
-      <AssignedList items={items} onOpen={onOpen} onToggleDone={onToggleDone} compact />
+      <AssignedList items={items} onOpen={onOpen} onContinue={onContinue} compact />
     </section>
   )
 }

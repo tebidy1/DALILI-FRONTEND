@@ -1,5 +1,5 @@
-import type { AnchorCandidate, StepKind } from '@dalili/core'
-import type { GuideDto } from '@dalili/shared'
+import type { AnchorCandidate, AnchorConfidence, StepKind } from '@dalili/core'
+import type { GuideDto, TrainHostsDto, NoteDto, NoteStepDto, MyNoteDto } from '@dalili/shared'
 
 /** رسائل الامتداد — البروتوكول بين content/popup والخلفية */
 
@@ -115,11 +115,15 @@ export type BgMsg =
   /** VOX-AUTO: زر الميك داخل الوضع التلقائي — مفتاح إيقاف/تشغيل التعليق التلقائي — الرد AutoMemoToggleAck */
   | { t: 'auto-memo-toggle' }
   /** دربني: طلب بدء تدريب من الويب (يرحّله سكربت المحتوى) — رمز عام من العارض أو الدليل نفسه من المحرر — الرد TrainAck */
-  | { t: 'train-start'; token?: string; guide?: GuideDto }
+  | { t: 'train-start'; token?: string; guide?: GuideDto; trial?: boolean; hosts?: TrainHostsDto }
   /** دربني: تقدّم من تبويب التدريب — done خطوة نجحت، skip تخطٍّ، stop إنهاء */
   | { t: 'train-progress'; result: TrainResult }
+  /** ث١: نتيجة خطوة — تسبق train-progress لها، وقد تأتي لاحقًا لـ idx-1 ترقيةً من declared إلى verified */
+  | { t: 'train-outcome'; idx: number; outcome: TrainOutcome; confidence: AnchorConfidence | null }
   /** AUTH-LIVE: دخول/خروج تم في تبويب الويب (يرحّله سكربت المحتوى) — الخلفية تختم AUTH_PING_KEY فتعيد اللوحة فحص الجلسة */
   | { t: 'auth-changed' }
+  /** هـ ج١: ترحيل اللوحة رسالة إلى التبويب النشط — كما تُرحَّل blur-mode */
+  | { t: 'help-tab'; msg: ToTabMsg }
 
 /** VOX-09: رد زر الميك في اللوحة (بدء أو إيقاف) */
 export interface MemoToggleAck {
@@ -149,18 +153,47 @@ export interface TrainStep {
   note?: string
   anchor: AnchorCandidate[]
   url: string
+  /** ث١: صورة الزر كما سُجّل — للعين البشرية في «هل ترى؟» و«غير موجود». غيابها = لا صورة */
+  shot?: { url: string; mark: { x: number; y: number; w: number; h: number } }
+}
+
+/** ث١: هامش قصّ صورة الزر حول تحديدها ببكسل الصورة — فحص التمويه والعرض يستعملانه معًا (مراجعة C3) */
+export const TRAIN_SHOT_PAD = 12
+
+/** ث١: كيف أُنجزت الخطوة — متحقق، أكّده الموظف، بإقرار الموظف، لم توجد */
+export type TrainOutcome = 'verified' | 'confirmed' | 'declared' | 'missing'
+export interface TrainStepOutcome {
+  stepId: string
+  outcome: TrainOutcome
+  confidence: AnchorConfidence | null
+}
+
+/** ث١: طابور التدريبات المنتهية — بلا هوية الموظف؛ ث٢ يرسله للخادم ويفرّغه (lib/train-runs.ts) */
+export const TRAIN_RUNS_PENDING_KEY = 'trainRunsPending'
+/** ث٢: حدّ الطابور — موظف خارج الجلسة طويلاً لا يملأ التخزين؛ الأقدم يسقط */
+export const TRAIN_RUNS_MAX = 50
+export interface PendingTrainRun {
+  /** ث٢: يولد مع التشغيل ويبقى ثابتاً عبر المحاولات — الخادم يتجاهل الإعادة. طابور ث١ بلا معرّف */
+  runId?: string
+  guideId: string
+  token?: string
+  steps: TrainStepOutcome[]
 }
 
 /** جلسة تدريب قائمة — الخلفية مصدر الحقيقة للفهرس الجاري */
 export interface TrainSession {
   /** رمز المشاركة إن بدئ من العارض — بدء المحرر بلا رمز */
   token?: string
+  /** ث٢ (مراجعة ٢): تجربة المؤلف من محرر الويب — لا تُرسل نتائجها، فمسودته لا تعدّ خطوات المنشور معطوبة */
+  trial?: boolean
   guideId: string
   guideTitle: string
   steps: TrainStep[]
   idx: number
   tabId: number | null
   startedAt: number
+  /** ث١: نتيجة كل خطوة بموضعها — فراغ = لم تُبلَّغ بعد */
+  outcomes?: Array<TrainStepOutcome | undefined>
 }
 
 export type TrainResult = 'done' | 'skip' | 'stop'
@@ -193,6 +226,36 @@ export type ToTabMsg =
   | { t: 'train-step'; step: TrainStep; idx: number; total: number; guideTitle: string }
   /** دربني: انتهى التدريب أو استُبدل — finished تعرض بطاقة الإنجاز ثم تُفكك الطبقة */
   | { t: 'train-stop'; reason: 'finished' | 'replaced' | 'stopped' }
+  // ——— هـ ج١ (HLP) «ما هذا؟» — الوضع داخل الصفحة ———
+  /** تشغيل الوضع: سؤال الموظف (بالشروح ومراسي الخطوات)، أو كتابة الشريك */
+  | { t: 'help-on'; mode: 'ask'; notes: NoteDto[]; steps: NoteStepDto[]; canRequest: boolean }
+  | { t: 'help-on'; mode: 'author'; notes: MyNoteDto[] }
+  /** الشريك نشر شرحًا — النقاط تُحدَّث والوضع قائم */
+  | { t: 'help-notes'; notes: MyNoteDto[] }
+  /** طلب الشرح وصل الخادم — بطاقة «اطلب شرحاً» تصير تأكيد الوصول */
+  | { t: 'help-requested' }
+  /** إطفاء الوضعتين وإعادة الصفحة كما كانت */
+  | { t: 'help-off' }
+
+// ——— هـ ج١: رسائل من التبويب إلى اللوحة (chrome.runtime.sendMessage — الخلفية تتجاهلها) ———
+
+/** التقاط زر مضغوط في وضع «ما هذا؟» — المرساة الآمنة ومفتاح الشاشة واسم الزر وموقع الصفحة */
+export interface HelpPick {
+  anchor: AnchorCandidate[]
+  screenKey: string
+  label: string
+  site: string
+}
+
+export type HelpOutMsg =
+  /** الشريك اختار زرًا في وضع الكتابة — noteId إن كان عليه شرح */
+  | { t: 'help-pick'; pick: HelpPick; noteId?: string }
+  /** الموظف طلب شرح زر */
+  | { t: 'help-request'; pick: HelpPick }
+  /** فتح الدليل المربوط — قراءة أو دربني */
+  | { t: 'help-open'; guideId: string; train: boolean }
+  /** خروج المستخدم من الوضع (Escape) */
+  | { t: 'help-exit' }
 
 /** خطوة مخزنة محليًا — البيانات الخفيفة فقط؛ اللقطة (dataURL) تُخزَّن تحت shotKey منفصل */
 export interface StoredStep {

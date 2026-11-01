@@ -24,3 +24,12 @@ export function guidesCountAr(n: number): string {
   if (n >= 3 && n <= 10) return t('ext.guidesFew', { count: toArabicDigits(n) })
   return t('ext.guidesMany', { count: toArabicDigits(n) })
 }
+
+/** ت (§٥): تلميح 👁 — «شخص واحد فتحه / شخصان فتحاه / ٥ أشخاص فتحوه / ٢٤ شخصًا فتحوه» */
+export function readersTitle(n: number): string {
+  if (n <= 0) return t('ext.readersNone')
+  if (n === 1) return t('ext.readersOne')
+  if (n === 2) return t('ext.readersTwo')
+  if (n <= 10) return t('ext.readersFew', { count: toArabicDigits(n) })
+  return t('ext.readersMany', { count: toArabicDigits(n) })
+}

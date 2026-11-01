@@ -123,7 +123,7 @@ describe('resolveAnchor — أول مرشح فريد يفوز (GM-01 يقف عل
     ]
     const dom = fakeDom({ '[id="save"]': ['btn-save'] })
     const hit = resolveAnchor(chain, dom)
-    expect(hit).toEqual({ el: 'btn-save', via: 0 })
+    expect(hit).toMatchObject({ el: 'btn-save', via: 0 })
   })
 
   it('مرشح ملتبس (تطابقان) يُتجاوز ويسقط الترتيب إلى التالي الفريد', () => {
@@ -132,7 +132,7 @@ describe('resolveAnchor — أول مرشح فريد يفوز (GM-01 يقف عل
       { k: 'aria', v: 'حفظ' },
     ]
     const dom = fakeDom({ '[data-testid="row"]': ['a', 'b'], '[aria-label="حفظ"]': ['btn'] })
-    expect(resolveAnchor(chain, dom)).toEqual({ el: 'btn', via: 1 })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'btn', via: 1 })
   })
 
   it('مرشح النص: يفلتر عناصر النص التفاعلية بالنص المطوَّع ويشترط الفرادة', () => {
@@ -141,7 +141,7 @@ describe('resolveAnchor — أول مرشح فريد يفوز (GM-01 يقف عل
       { [TEXT_ANCHOR_SEL]: ['btn-a', 'btn-b', 'btn-c'] },
       { 'btn-a': 'إلغاء', 'btn-b': '  حفظ   التغييرات ', 'btn-c': 'حفظ' },
     )
-    expect(resolveAnchor(chain, dom)).toEqual({ el: 'btn-b', via: 0 })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'btn-b', via: 0 })
   })
 
   it('نص ملتبس (زران بنفس الكلمة) لا يُحل — صدق لا تخمين', () => {
@@ -166,7 +166,7 @@ describe('resolveAnchor — أول مرشح فريد يفوز (GM-01 يقف عل
       { '[id="_r_6_"]': ['wrong-el'], [TEXT_ANCHOR_SEL]: ['right-el'] },
       { 'right-el': 'فعّل cowork' },
     )
-    expect(resolveAnchor(chain, dom)).toEqual({ el: 'right-el', via: 1 }) // النص لا المعرّف المتطاير
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'right-el', via: 1 }) // النص لا المعرّف المتطاير
   })
 
   it('نص عنصر menuitemradio يُحل (علة الخطوة الأخيرة: اختيار النموذج في قائمة حديثة)', () => {
@@ -177,7 +177,7 @@ describe('resolveAnchor — أول مرشح فريد يفوز (GM-01 يقف عل
       { k: 'text', v: 'Opus 4.8' },
     ]
     const dom = fakeDom({ [TEXT_ANCHOR_SEL]: ['radio-a', 'radio-b'] }, { 'radio-a': 'Opus 4.7', 'radio-b': 'Opus 4.8' })
-    expect(resolveAnchor(chain, dom)).toEqual({ el: 'radio-b', via: 1 })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'radio-b', via: 1 })
   })
 
   it('يتجاوز مرشّح مسار يحوي معرّفًا متطايرًا — سلف بمعرّف React لا يوثَّق به', () => {
@@ -186,7 +186,84 @@ describe('resolveAnchor — أول مرشح فريد يفوز (GM-01 يقف عل
       { k: 'aria', v: 'إلغاء' },
     ]
     const dom = fakeDom({ '[id="_r_rr_"] > div:nth-of-type(2)': ['wrong'], '[aria-label="إلغاء"]': ['right'] })
-    expect(resolveAnchor(chain, dom)).toEqual({ el: 'right', via: 1 })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'right', via: 1 })
+  })
+})
+
+describe('resolveAnchor — حلّ متين لصفوف الجداول والقوائم المتولّدة (بلاغ أودو 2026-10-31)', () => {
+  it('معرّف موضعي فريد يناقض نص الخطوة يُرفض ويُحل بالنص (autocomplete_0_0 = أول خيار أيًّا كان)', () => {
+    // أودو يرقّم خيارات الإكمال التلقائي بموضعها — على صفحة التدريب قد يكون «الأول» منتجًا آخر
+    const chain: AnchorChain = [
+      { k: 'id', v: 'autocomplete_0_0' },
+      { k: 'text', v: 'Mechanical Keyboard' },
+      { k: 'path', v: '[id="autocomplete_0_0"]' },
+    ]
+    const dom = fakeDom(
+      { '[id="autocomplete_0_0"]': ['opt-mouse'], [TEXT_ANCHOR_SEL]: ['opt-mouse', 'opt-kb'] },
+      { 'opt-mouse': 'Wireless Mouse', 'opt-kb': 'Mechanical Keyboard' },
+    )
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'opt-kb', via: 1 })
+  })
+
+  it('المعرّف الذي يوافق النص يبقى أقوى مرساة — لا تغيير لما يعمل', () => {
+    const chain: AnchorChain = [{ k: 'id', v: 'save' }, { k: 'text', v: 'حفظ' }]
+    const dom = fakeDom({ '[id="save"]': ['b'], [TEXT_ANCHOR_SEL]: ['b'] }, { b: 'حفظ' })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'b', via: 0 })
+  })
+
+  it('عنصر بلا نص (حقل) لا يُعدّ مناقضًا — الحقول لا نص لها', () => {
+    const chain: AnchorChain = [{ k: 'name', v: 'qty' }, { k: 'text', v: 'الكمية' }]
+    const dom = fakeDom({ '[name="qty"]': ['inp'] }, { inp: '' })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'inp', via: 0 })
+  })
+
+  it('مطابقات ملتبسة يضيّقها المنفذ (المرئي وحده) إلى واحد = حل', () => {
+    const chain: AnchorChain = [{ k: 'path', v: '[name="product_id"] textarea' }]
+    const dom: AnchorDom<string> = {
+      ...fakeDom({ '[name="product_id"] textarea': ['hidden-tpl', 'row-edit'] }),
+      narrow: (els) => els.filter((e) => e !== 'hidden-tpl'),
+    }
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'row-edit', via: 0 })
+  })
+
+  it('إجماع: مرشّحان ملتبسان يلتقيان في عنصر واحد = حل (اسم العمود ∩ المسار)', () => {
+    const chain: AnchorChain = [
+      { k: 'name', v: 'partner_id' },
+      { k: 'path', v: 'tbody > tr:nth-of-type(1) > td:nth-of-type(4)' },
+    ]
+    const dom = fakeDom({
+      '[name="partner_id"]': ['td1', 'td2', 'td3'],
+      'tbody > tr:nth-of-type(1) > td:nth-of-type(4)': ['td1', 'other-table-td'],
+    })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'td1', via: 0 })
+  })
+
+  it('إجماع بنص الخطوة: خلية الجدول ليست زرًا لكن نصها يحسم بين خلايا العمود', () => {
+    const chain: AnchorChain = [
+      { k: 'name', v: 'partner_id' },
+      { k: 'text', v: 'Mohamed Tebidy' },
+      { k: 'path', v: 'tbody > tr:nth-of-type(1) > td:nth-of-type(4)' },
+    ]
+    // الصف الأول صار عميلًا آخر — المسار يشير لخلية خاطئة، والنص يحسم
+    const dom = fakeDom(
+      { '[name="partner_id"]': ['td1', 'td2', 'td3'], 'tbody > tr:nth-of-type(1) > td:nth-of-type(4)': ['td1'] },
+      { td1: 'Azure Interior', td2: 'Mohamed Tebidy', td3: 'Deco Addict' },
+    )
+    expect(resolveAnchor(chain, dom)?.el).toBe('td2')
+  })
+
+  it('إجماع متعادل بلا نص يحسم = لا حل — صدق لا تخمين', () => {
+    const chain: AnchorChain = [
+      { k: 'name', v: 'x' },
+      { k: 'path', v: 'td' },
+    ]
+    const dom = fakeDom({ '[name="x"]': ['a', 'b'], td: ['a', 'b'] })
+    expect(resolveAnchor(chain, dom)).toBeNull()
+  })
+
+  it('مرشّح واحد ملتبس لا يصنع إجماعًا وحده', () => {
+    const dom = fakeDom({ '[name="x"]': ['a', 'b'] })
+    expect(resolveAnchor([{ k: 'name', v: 'x' }], dom)).toBeNull()
   })
 })
 
@@ -199,7 +276,7 @@ describe('AnchorDom.find — منفذ بلا CSS (تمهيد محوّل UIA لت
         return c.k === 'automationId' && c.v === 'btnSave' ? ['uia-save'] : []
       },
     }
-    expect(resolveAnchor([{ k: 'automationId', v: 'btnSave' }], dom)).toEqual({ el: 'uia-save', via: 0 })
+    expect(resolveAnchor([{ k: 'automationId', v: 'btnSave' }], dom)).toMatchObject({ el: 'uia-save', via: 0 })
     expect(seen).toEqual([{ k: 'automationId', v: 'btnSave' }])
   })
 
@@ -211,7 +288,7 @@ describe('AnchorDom.find — منفذ بلا CSS (تمهيد محوّل UIA لت
       { k: 'controlType', v: 'Button' },
       { k: 'text', v: 'موافق' },
     ]
-    expect(resolveAnchor(chain, dom)).toEqual({ el: 'ok', via: 1 })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'ok', via: 1 })
   })
 
   it('المرشّحات المتطايرة تُتجاوز قبل سؤال المحوّل أصلًا', () => {
@@ -240,5 +317,65 @@ describe('AnchorDom.find — منفذ بلا CSS (تمهيد محوّل UIA لت
     expect(chain.map((c) => c.k)).toEqual(['automationId', 'text', 'controlType', 'path'])
     const web = buildAnchorChain({ tag: 'button', id: 'save', text: 'حفظ' })
     expect(web.map((c) => c.k)).toEqual(['id', 'text'])
+  })
+})
+
+/** درجة الثقة (ث١): محوّل زائف يضيف تسمية الحقل وسياقه */
+function sightDom(bySel: Record<string, string[]>, texts: Record<string, string> = {}, ctxs: Record<string, string> = {}, labels: Record<string, string> = {}): AnchorDom<string> {
+  return { ...fakeDom(bySel, texts), ctxOf: (el) => ctxs[el] ?? '', labelOf: (el) => labels[el] ?? '' }
+}
+
+describe('resolveAnchor — درجة الثقة (ث١ دربني الواثق)', () => {
+  it('معرّف ثابت فريد + نص موافق = عالية', () => {
+    expect(resolveAnchor([{ k: 'id', v: 'save' }, { k: 'text', v: 'حفظ' }], sightDom({ '[id="save"]': ['A'], [TEXT_ANCHOR_SEL]: ['A'] }, { A: 'حفظ' }))?.confidence).toBe('high')
+  })
+
+  it('مسار وحده = متوسطة — الأدلة القديمة لا تُرسم بثقة كاملة', () => {
+    expect(resolveAnchor([{ k: 'path', v: 'div > button' }], sightDom({ 'div > button': ['A'] }))?.confidence).toBe('medium')
+  })
+
+  it('معرّف وحده بلا إشارة ثانية = متوسطة', () => {
+    expect(resolveAnchor([{ k: 'id', v: 'save' }], sightDom({ '[id="save"]': ['A'] }, { A: '' }))?.confidence).toBe('medium')
+  })
+
+  it('مسار + تسمية موافقة = عالية (الحقول بلا نص)', () => {
+    const chain: AnchorChain = [{ k: 'label', v: 'الزبون' }, { k: 'path', v: 'form > input' }, { k: 'name', v: 'partner_id' }]
+    expect(resolveAnchor(chain, sightDom({ 'form > input': ['A'], '[name="partner_id"]': ['A'] }, { A: '' }, {}, { A: 'الزبون' }))?.confidence).toBe('high')
+  })
+
+  it('سياق يناقض = متوسطة لا منخفضة — اسم السجل أو لغة الواجهة تتغيّر والزر صحيح (مراجعة C1)', () => {
+    const chain: AnchorChain = [{ k: 'id', v: 'save' }, { k: 'text', v: 'حفظ' }, { k: 'ctx', v: 'فاتورة' }]
+    expect(resolveAnchor(chain, sightDom({ '[id="save"]': ['A'], [TEXT_ANCHOR_SEL]: ['A'] }, { A: 'حفظ' }, { A: 'أمر شراء' }))?.confidence).toBe('medium')
+  })
+
+  it('صف بالموضع: name يطابق كل الصفوف + مسار فريد + تسمية العمود توافق = متوسطة لا عالية (مراجعة I7، علة GM-08)', () => {
+    const chain: AnchorChain = [{ k: 'name', v: 'qty' }, { k: 'label', v: 'الكمية' }, { k: 'path', v: 'tr:nth-of-type(3) input' }]
+    const dom = sightDom({ '[name="qty"]': ['R1', 'R2', 'R3'], 'tr:nth-of-type(3) input': ['R3'] }, { R1: '', R2: '', R3: '' }, {}, { R1: 'الكمية', R2: 'الكمية', R3: 'الكمية' })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'R3', confidence: 'medium' })
+  })
+
+  it('حقل أودو قديم: name فريد + مسار = عالية (مراجعة I8)', () => {
+    const chain: AnchorChain = [{ k: 'name', v: 'partner_id' }, { k: 'path', v: 'form > div > input' }]
+    expect(resolveAnchor(chain, sightDom({ '[name="partner_id"]': ['A'], 'form > div > input': ['A'] }, { A: '' }))?.confidence).toBe('high')
+  })
+
+  it('الحسم بالإجماع وحده = متوسطة على الأكثر', () => {
+    const chain: AnchorChain = [{ k: 'name', v: 'qty' }, { k: 'path', v: 'td input' }]
+    const dom = sightDom({ '[name="qty"]': ['R1', 'R2'], 'td input': ['R2', 'R3'] }, { R1: '', R2: '', R3: '' })
+    expect(resolveAnchor(chain, dom)).toMatchObject({ el: 'R2', confidence: 'medium' })
+  })
+
+  it('label وctx متحقِّقان لا باحثان: سلسلة منهما وحدهما = لا حل', () => {
+    expect(resolveAnchor([{ k: 'label', v: 'الزبون' }, { k: 'ctx', v: 'فاتورة' }], sightDom({}))).toBeNull()
+    expect(anchorToSelector({ k: 'label', v: 'x' })).toBeNull()
+    expect(anchorToSelector({ k: 'ctx', v: 'x' })).toBeNull()
+  })
+})
+
+describe('buildAnchorChain — التسمية والسياق (ث١)', () => {
+  it('يلحق label وctx بعد النص وقبل المسار، مطبّعين', () => {
+    const chain = buildAnchorChain({ tag: 'input', name: 'partner_id', label: ' الزبون ', ctx: 'فاتورة   جديدة', path: 'form > input' })
+    expect(chain.map((c) => c.k)).toEqual(['name', 'label', 'ctx', 'path'])
+    expect(chain[2]).toEqual({ k: 'ctx', v: 'فاتورة جديدة' })
   })
 })

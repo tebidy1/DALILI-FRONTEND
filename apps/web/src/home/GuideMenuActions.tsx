@@ -4,6 +4,8 @@ import { Button } from '../ui/Button'
 import { t } from '../i18n'
 import { AssignDialog } from '../assigned/AssignDialog'
 import { AssigneesPanel } from '../assigned/AssigneesPanel'
+import { SuspendDialog } from './SuspendDialog'
+import type { ModerateFn } from './moderation'
 
 /**
  * المرحلة ٣ (قرار المالك): إجراءات الدليل مصدر واحد لسطحَي العرض — بطاقة الشبكة
@@ -22,10 +24,16 @@ export function GuideMenuActions(p: {
   onMove: (folderId: string | null) => void
   onRemove: () => void
   onRestore: () => void
+  /** ب: إشراف المدير ومدير القسم — يظهر حين access.moderate */
+  onModerate: ModerateFn
+  /** أقسام المساحة للمدير وحده (تغيير القسم المالك) — null لغيره */
+  teams: { id: string; name: string }[] | null
 }) {
   const g = p.g
   const [showAssign, setShowAssign] = useState(false)
   const [showAssignees, setShowAssignees] = useState(false)
+  const [showSuspend, setShowSuspend] = useState(false)
+  const moderate = !p.inTrash && !!g.access?.moderate
   return (
     <div className="guide-menu-actions">
       {p.inTrash ? (
@@ -83,10 +91,46 @@ export function GuideMenuActions(p: {
           {t('common.openEditor')}
         </Button>
       )}
+      {/* ب (§٦، §٧، PUB-03): إشراف على المنشور — التثبيت والتوثيق والإيقاف، والقسم للمدير */}
+      {moderate && (
+        <>
+          <Button size="sm" variant="ghost" onClick={() => void p.onModerate({ kind: g.pinned ? 'unpin' : 'pin' })}>
+            {g.pinned ? t('home.unpin') : t('home.pin')}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => void p.onModerate({ kind: g.verified ? 'unverify' : 'verify' })}>
+            {g.verified ? t('home.unverify') : t('home.verify')}
+          </Button>
+          {g.suspended ? (
+            <Button size="sm" variant="ghost" onClick={() => void p.onModerate({ kind: 'resume' })}>
+              {t('home.resume')}
+            </Button>
+          ) : (
+            <Button size="sm" variant="ghost" onClick={() => setShowSuspend(true)}>
+              {t('home.suspend')}
+            </Button>
+          )}
+        </>
+      )}
+      {!p.inTrash && p.teams && g.source !== 'official' && (
+        <select
+          className="lib-move"
+          aria-label={t('home.moveTeam')}
+          value={g.ownerTeamId ?? ''}
+          onChange={(e) => void p.onModerate({ kind: 'team', teamId: e.target.value || null })}
+        >
+          <option value="">{t('home.noTeam')}</option>
+          {p.teams.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+      )}
+      {showSuspend && <SuspendDialog title={g.title} onModerate={p.onModerate} onClose={() => setShowSuspend(false)} />}
       {showAssign && (
         <AssignDialog guideId={g.id} isPrivate={g.visibility === 'private'} onClose={() => setShowAssign(false)} />
       )}
-      {showAssignees && <AssigneesPanel guideId={g.id} onClose={() => setShowAssignees(false)} />}
+      {showAssignees && <AssigneesPanel guideId={g.id} kind={g.kind} onClose={() => setShowAssignees(false)} />}
     </div>
   )
 }

@@ -15,10 +15,12 @@ import {
 } from '../ui/icons'
 import { t } from '../i18n'
 import { notifyAuthChanged } from '../lib/ext-bridge'
-import { arDigits, roleLabelAr } from '../lib/format'
+import { arDigits, nameOrEmail, roleLabelAr } from '../lib/format'
 import { PathMark } from '../brand/PathMark'
 import { useOverview, OverviewProvider } from './OverviewContext'
 import { FoldersSection } from './FoldersSection'
+import { WorkspaceSwitcher } from './WorkspaceSwitcher'
+import { NotificationBell } from './NotificationBell'
 
 /**
  * قشرة المساحة على نمط المرجع (سكرايب معكوسًا RTL): الشريط يمينًا ببنود التنقل
@@ -57,7 +59,7 @@ function Sidebar() {
     navigate('/login')
   }
 
-  const roleLabel = overview ? roleLabelAr(overview.myRole) : ''
+  const roleLabel = overview ? roleLabelAr(overview.myRole, overview.accountKind) : ''
 
   const assignedNew = overview?.assignedNewCount ?? 0
   // الشارة وحدها لبند /assigned — البقية بلا رقم صفري اصطناعي يُخفى عند الرسم
@@ -66,7 +68,10 @@ function Sidebar() {
     { to: '/mine', label: t('home.navMine'), icon: <IconUser size={17} /> },
     { to: '/saved', label: t('home.navSaved'), icon: <IconBookmark size={17} /> },
     { to: '/assigned', label: t('assigned.nav'), icon: <IconInbox size={17} />, badge: assignedNew },
-    { to: '/team', label: t('home.navTeam'), icon: <IconUsers size={17} /> },
+    // م٢: المدير يدير شركته من لوحتها، والموظف يرى صفحة الفريق
+    overview?.myRole === 'admin'
+      ? { to: '/admin/members', label: t('admin.title'), icon: <IconUsers size={17} /> }
+      : { to: '/team', label: t('home.navTeam'), icon: <IconUsers size={17} /> },
     { to: '/settings', label: t('home.navSettings'), icon: <IconSettings size={17} /> },
   ]
 
@@ -77,8 +82,10 @@ function Sidebar() {
         <div className="side-brand-row">
           <PathMark size={22} />
           <span className="brand">{t('app.name')}</span>
+          {overview && <NotificationBell />}
         </div>
         {overview && <span className="ws-name">{overview.workspaceName || t('home.workspaceFallback')}</span>}
+        <WorkspaceSwitcher />
       </div>
 
       <nav className="side-nav" aria-label={t('home.navNav')}>
@@ -119,10 +126,11 @@ function Sidebar() {
         <div className="side-user">
           {overview && (
             <>
-              <span className="muted side-email">{overview.myEmail}</span>
+              <span className="muted side-email" title={overview.myEmail}>{nameOrEmail({ name: overview.myName, email: overview.myEmail })}</span>
               <span className="chip role-chip">{roleLabel}</span>
             </>
           )}
+          {overview?.isPlatformAdmin && <Link className="side-item" to="/platform">{t('platform.title')}</Link>}
           <Button size="sm" variant="ghost" onClick={logout}>
             {t('common.logout')}
           </Button>

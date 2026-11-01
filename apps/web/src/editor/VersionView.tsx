@@ -1,12 +1,11 @@
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { DEFAULT_MARK_COLOR, stepNumbers } from '@dalili/core'
 import type { GuideVersionDetailsDto } from '@dalili/shared'
 import { client } from '../api'
 import { t } from '../i18n'
 import { IconArrowRight } from '../ui/icons'
 import { fmtDateTime, relativeTimeAr } from '../lib/format'
-import { StepCard } from '../components/StepCard'
+import { ReadOnlyGuide } from './ReadOnlyGuide'
 
 /**
  * VER-01: عرض نسخة قديمة من الدليل — قراءة فقط، بشريط علوي بديل يعلن
@@ -20,8 +19,6 @@ type Load =
   | { kind: 'loading' }
   | { kind: 'ok'; details: GuideVersionDetailsDto }
   | { kind: 'not-found' }
-
-const NOOP = () => {}
 
 export function VersionView() {
   const { id, vid } = useParams<{ id: string; vid: string }>()
@@ -78,7 +75,6 @@ export function VersionView() {
   const guide = details.guide
   const rel = relativeTimeAr(details.createdAt)
   const abs = fmtDateTime(details.createdAt)
-  const nums = stepNumbers(guide.steps)
 
   return (
     <div className="editor-page-wrapper version-view">
@@ -90,47 +86,7 @@ export function VersionView() {
         <div className="editor-bar-end" />
       </div>
       <div className="page editor-page">
-        <header className="guide-head">
-          <div className="guide-head-read">
-            <h1 className="guide-title-read" dir="rtl">
-              <bdi>{guide.title}</bdi>
-            </h1>
-            {guide.description && (
-              <p className="guide-desc-read" dir="auto">
-                <bdi>{guide.description}</bdi>
-              </p>
-            )}
-          </div>
-        </header>
-        {guide.steps.map((s, i) => (
-          <Fragment key={s.id}>
-            <div id={`step-${s.id}`} className="step-block">
-              <StepCard
-                index={i}
-                step={s}
-                displayNo={nums[i] ?? null}
-                canUp={false}
-                canDown={false}
-                editing={false}
-                tool={'select'}
-                markColor={DEFAULT_MARK_COLOR}
-                onChange={NOOP}
-                onMove={NOOP}
-                onRemove={NOOP}
-                onDuplicate={NOOP}
-                onMoveMark={NOOP}
-                onAttachShot={NOOP}
-                picked={false}
-                onPick={NOOP}
-                dragging={false}
-                onDragStart={NOOP}
-                onDragOver={NOOP}
-                onDrop={NOOP}
-                onDragEnd={NOOP}
-              />
-            </div>
-          </Fragment>
-        ))}
+        <ReadOnlyGuide guide={guide} />
       </div>
     </div>
   )

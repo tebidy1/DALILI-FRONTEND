@@ -49,6 +49,11 @@ const BOOKLET_ITEMS: MenuItem[] = [
   { kind: 'divider', key: 'editor.addDivider', glyph: '—' },
 ]
 
+/** د١ب: درس الصفحة — كتل الكرّاسة بلا تضمين (الأدلة دروس مستقلة) */
+const PAGE_ITEMS: MenuItem[] = BOOKLET_ITEMS.filter((i) => i.kind !== 'embed')
+
+const MENUS: Record<'guide' | 'booklet' | 'page', MenuItem[]> = { guide: GUIDE_ITEMS, booklet: BOOKLET_ITEMS, page: PAGE_ITEMS }
+
 /**
  * CAP-17→BKL-01 (قرار المالك 2026-09-10): موضع إدراج «+» بين الشرائح — منبثقة
  * بأنواع الكتل، وتسميتها حسب نوع المستند: «أضف خطوات» للدليل و«أضف كتلة» للكرّاسة
@@ -60,10 +65,10 @@ export function InsertStep({ label, insertAt, onInsert, busy, docKind = 'guide' 
   onInsert: (kind: InsertKind, insertAt: number) => void
   busy?: boolean
   /** BKL-01: نوع المستند يحدد القائمة والتسمية — غيابه دليل */
-  docKind?: 'guide' | 'booklet'
+  docKind?: 'guide' | 'booklet' | 'page'
 }) {
-  const ITEMS = docKind === 'booklet' ? BOOKLET_ITEMS : GUIDE_ITEMS
-  const addLabel = docKind === 'booklet' ? t('editor.blockMenuOpen') : t('editor.addStepsShort')
+  const ITEMS = MENUS[docKind]
+  const addLabel = docKind === 'guide' ? t('editor.addStepsShort') : t('editor.blockMenuOpen')
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useDismissOnOutside(open, ref, () => setOpen(false), document)

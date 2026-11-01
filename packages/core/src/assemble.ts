@@ -1,7 +1,7 @@
 import { deriveGuideTitle, type Guide, type Step, type StepKind, type StepSource, type StepTarget, type ScreenshotMeta, type MissingScreenshot, type StepVoice } from './guide'
 import { stepTitle } from './titles'
 
-function cryptoId(): string {
+export function cryptoId(): string {
   const g = globalThis as { crypto?: { randomUUID?: () => string } }
   if (g.crypto?.randomUUID) return g.crypto.randomUUID()
   return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36)

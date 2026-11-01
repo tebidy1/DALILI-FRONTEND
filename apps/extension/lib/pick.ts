@@ -47,7 +47,7 @@ const MAX_CURSOR_HOPS = 14
 const SKIP_TAGS = new Set(['HTML', 'BODY', 'DALILI-OVERLAY', 'DALILI-CONTROLLER'])
 
 /** هل العنصر داخل طبقة دليلي نفسها (شريط/ستار)؟ — لا تُؤشَّر عناصرنا أبدًا */
-function insideOurLayer(el: Element): boolean {
+export function insideOurLayer(el: Element): boolean {
   let cur: Element | null = el
   while (cur) {
     if (cur.tagName?.toUpperCase().startsWith('DALILI-')) return true

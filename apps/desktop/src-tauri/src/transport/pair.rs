@@ -106,7 +106,7 @@ pub fn http_url(base: &str, path: &str) -> Result<String, String> {
     }
 }
 
-fn client() -> Result<reqwest::blocking::Client, String> {
+pub(crate) fn client() -> Result<reqwest::blocking::Client, String> {
     reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(10))
         .build()

@@ -1,9 +1,6 @@
-import type { Dispatch, SetStateAction } from 'react'
 import type { MeDto } from '@dalili/shared'
-import type { DiscoverResponseDto } from '@dalili/shared'
-import type { RecentGuide } from '@/lib/recent'
-import { searchHref, relativeTimeAr, filterByTitle } from '@/lib/recent'
-import { guidesCountAr } from '@/lib/discover'
+import { relativeTimeAr } from '@/lib/recent'
+import { EMPTY_FILTERS, type SearchFilters } from '@/lib/search'
 import { capabilities, capsPanel } from '@/lib/capabilities'
 import { WEB_BASE } from '@/lib/config'
 import { toArabicDigits } from '@/lib/ar-digits'
@@ -12,6 +9,9 @@ import { t, i18nLocale } from '@/lib/i18n'
 import { RecordIcon, MicIcon, SearchIcon } from './icons'
 import { ItqanLockup } from '@/lib/itqan-mark'
 import { GuideRow } from './GuideRow'
+import { DiscoverArea } from './ListStates'
+import { SearchPanel } from './SearchPanel'
+import type { useLibrary } from './useLibrary'
 
 /** شاشة الخمول في اللوحة الجانبية — الاقتطاع من App.tsx لقانون الحجم (المكوّن ≤250) */
 
@@ -55,28 +55,39 @@ function BrandPhrase() {
 export function IdleScreen({
   send,
   me,
-  query,
-  setQuery,
-  discover,
-  recent,
-  recentErr,
+  search,
+  setSearch,
+  lib,
   preferredStart = 'plain',
   onOpenHere,
+  help,
 }: {
   send: (t: SendMsg) => void
   me: MeDto | null
-  query: string
-  setQuery: Dispatch<SetStateAction<string>>
-  discover: DiscoverResponseDto | null
-  recent: RecentGuide[]
-  recentErr: string
+  /** بحث اللوحة: null = الشاشة العادية، والقيمة = وضع البحث (يملكها App لتبقى بعد ↵) */
+  search: SearchFilters | null
+  setSearch: (next: SearchFilters | null) => void
+  /** ت (§٣.٥): الحسابات وأدلة التبويب والأخيرة — من useLibrary */
+  lib: Pick<ReturnType<typeof useLibrary>, 'accounts' | 'discover' | 'recent' | 'recentErr' | 'retry' | 'searchAll'>
   /** الإعدادات: طريقة البدء المفضّلة — تقود أيّ الزرّين يكون الأساسي (النصوص والترتيب ثابتان) */
   preferredStart?: PreferredStart
   /** PNL-01: زر ↵ — يفتح الدليل داخل اللوحة */
   onOpenHere?: (id: string) => void
+  /** هـ ج١: شريط «ما هذا؟» أسفل اللوحة — يُبنى في App حيث العميل والقارئ */
+  help?: React.ReactNode
 }) {
   const audioFirst = preferredStart === 'audio'
-  const visible = filterByTitle(recent, query)
+  const { recent, recentErr } = lib
+  // المشاهد لا يلتقط أدلة للشركة، فلا يُعرض عليه «سجّل أول دليل»
+  const canCreate = lib.accounts.find((a) => a.active)?.role !== 'viewer'
+  // وضع البحث (طلب المالك 2026-10-30): الالتقاط يختفي والبحث وفلاتره في أعلى اللوحة
+  if (me && search) {
+    return (
+      <div className="body">
+        <SearchPanel filters={search} onChange={setSearch} load={lib.searchAll} onExit={() => setSearch(null)} onOpenHere={onOpenHere} />
+      </div>
+    )
+  }
   return (
     <div className="body">
       <button className={audioFirst ? 'cta cta-2' : 'cta'} onClick={() => send('start')}>
@@ -96,49 +107,20 @@ export function IdleScreen({
 
       {me ? (
         <>
-          {/* بحث في الوسط — تصفية فورية للأخيرة، وEnter يفتح البحث الكامل في الويب */}
+          {/* مدخل وضع البحث: التركيز (أو أول حرف) ينقل إلى شاشة البحث وفلاتره */}
           <div className="search">
             <SearchIcon />
             <input
               type="search"
               placeholder={t('ext.searchGuides')}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key !== 'Enter') return
-                const href = searchHref(WEB_BASE, query)
-                if (href) window.open(href, '_blank')
-              }}
+              value=""
+              onFocus={() => setSearch(EMPTY_FILTERS)}
+              onChange={(e) => setSearch({ ...EMPTY_FILTERS, query: e.target.value })}
             />
           </div>
 
-          {/* SRCH-04 تطوّر: مجموعتان — أدلة هذه الشاشة أولًا ثم بقية الموقع (الأكثر مشاهدة أولًا) */}
-          {discover && (
-            <div className="discover">
-              {discover.onScreen.length > 0 && (
-                <>
-                  <div className="discover-head">
-                    <span className="discover-badge">{guidesCountAr(discover.onScreen.length)}</span>
-                    <span>{t('ext.onThisScreen')}</span>
-                  </div>
-                  {discover.onScreen.map((g) => (
-                    <GuideRow key={g.id} id={g.id} title={g.title} sub={relativeTimeAr(g.updatedAt)} onOpenHere={onOpenHere} />
-                  ))}
-                </>
-              )}
-              {discover.onSite.length > 0 && (
-                <>
-                  <div className="discover-head">
-                    <span className="discover-badge">{guidesCountAr(discover.count)}</span>
-                    <span>{t('ext.onThisSite')}</span>
-                  </div>
-                  {discover.onSite.map((g) => (
-                    <GuideRow key={g.id} id={g.id} title={g.title} sub={relativeTimeAr(g.updatedAt)} onOpenHere={onOpenHere} />
-                  ))}
-                </>
-              )}
-            </div>
-          )}
+          {/* SRCH-04 تطوّر + ت (§٥.٢): مجموعتان مرتّبتان في الخادم، وحالاتهما الأربع */}
+          <DiscoverArea state={lib.discover} canCreate={canCreate} onRetry={lib.retry} onStart={() => send('start')} onOpenHere={onOpenHere} />
 
           <div className="recent">
             <div className="recent-head">
@@ -146,21 +128,18 @@ export function IdleScreen({
               <a href={`${WEB_BASE}/`} target="_blank" rel="noreferrer">{t('ext.libraryLink')}</a>
             </div>
             {recentErr && <div className="muted center small">{recentErr}</div>}
-            {!recentErr && visible.length === 0 && (
-              <div className="muted center small">
-                {query.trim() ? t('ext.noMatch') : t('ext.noGuides')}
-              </div>
-            )}
-            {visible.map((g) => (
+            {!recentErr && recent.length === 0 && <div className="muted center small">{t('ext.noGuides')}</div>}
+            {recent.map((g) => (
               <GuideRow
                 key={g.id}
-                id={g.id}
-                title={g.title}
+                g={g}
                 sub={`${relativeTimeAr(g.updatedAt)} · ${t('ext.stepsCount', { count: toArabicDigits(g.stepCount) })}`}
                 onOpenHere={onOpenHere}
               />
             ))}
           </div>
+
+          {help}
         </>
       ) : (
         <div className="signin">

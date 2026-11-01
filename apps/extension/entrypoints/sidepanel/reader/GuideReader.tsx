@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { translationOverlay, type GuideDto, type ShareInfoDto } from '@dalili/shared'
+import { translationOverlay, type GuideDto, type ShareInfoDto, type TrainHostsDto } from '@dalili/shared'
 import { readerItems } from '@/lib/reader'
 import { t, i18nLocale } from '@/lib/i18n'
 import { useGuideReader, type ReaderLoad } from './useGuideReader'
@@ -12,9 +12,12 @@ export interface ReaderDeps {
   webBase: string
   load: ReaderLoad
   createShare: (id: string) => Promise<ShareInfoDto>
-  startTrain: (guide: GuideDto) => Promise<{ ok: boolean; errorAr?: string }>
+  /** ث٣: hosts لدليل الشريك عند موظف الشركة — أين يُفتح بدل نسخة الشريك */
+  startTrain: (guide: GuideDto, hosts?: TrainHostsDto) => Promise<{ ok: boolean; errorAr?: string }>
   copyText: (text: string) => Promise<void>
   openTab: (url: string) => void
+  /** ت (§٥): «قرأت هذا الدليل» — 👁 وإطفاء «جديد»/«تحديث» */
+  markRead: (id: string) => Promise<void>
 }
 
 /**
@@ -28,6 +31,11 @@ export function GuideReader({ guideId, deps, onBack }: { guideId: string; deps: 
   useEffect(() => {
     backRef.current?.focus()
   }, [guideId])
+
+  // ت (§٥): الفتح هنا قراءة — فشل التسجيل لا يمسّ القراءة نفسها
+  useEffect(() => {
+    deps.markRead(guideId).catch(() => {})
+  }, [guideId, deps])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -63,7 +71,14 @@ export function GuideReader({ guideId, deps, onBack }: { guideId: string; deps: 
 
       {!details && state.status === 'loading' && <ReaderSkeleton />}
 
-      {details && (
+      {details && webOnly(details.guide) && (
+        <div className="body reader-web-only">
+          <p>{t(details.guide.kind === 'course' ? 'ext.readOnWebCourse' : 'ext.readOnWebBooklet')}</p>
+          <button type="button" onClick={openWeb}>{t('ext.openInBrowser')}</button>
+        </div>
+      )}
+
+      {details && !webOnly(details.guide) && (
         <div className="reader-body" dir={ov ? 'ltr' : undefined}>
           <ReaderHead guide={details.guide} ov={ov} stepCount={stepCount} stale={state.status === 'ready' && state.stale} onOpenWeb={openWeb} />
           <ol className="reader-list">
@@ -77,4 +92,9 @@ export function GuideReader({ guideId, deps, onBack }: { guideId: string; deps: 
       )}
     </section>
   )
+}
+
+/** د٠: الكرّاسة والدورة لا يقرؤهما قارئ اللوحة بعد (د٣) — تُفتحان على الويب بدل عرض كتلهما خطواتٍ فارغة */
+function webOnly(guide: GuideDto): boolean {
+  return guide.kind !== undefined && guide.kind !== 'guide'
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { urlTokens, rankDiscover, type DiscoverCandidate } from './screen-locator'
+import { urlTokens, rankDiscover, startsAtRecord, screenKey, type DiscoverCandidate } from './screen-locator'
 
 /** SRCH-04 تطوّر: المُجزّئ الموحّد بين الفهرس والامتداد — رموز الشاشة بلا الأجزاء المتغيّرة */
 describe('urlTokens', () => {
@@ -69,4 +69,41 @@ describe('rankDiscover', () => {
     expect(onScreen).toHaveLength(0)
     expect(onSite.map((g) => g.id)).toEqual(['x'])
   })
+})
+
+// هـ ج١ (HLP): مفتاح الشاشة — المسار والـhash فقط، بلا الاستعلام ولا المضيف ولا الأرقام المتغيّرة
+describe('screenKey', () => {
+  it('يهمل الاستعلام وأرقام السجلات ويحفظ رموز المسار والـhash مرتّبة', () => {
+    expect(screenKey('https://a.odoo.com/odoo/action-123/45?debug=1&search=Ahmed')).toBe('action odoo')
+    expect(screenKey('https://a.odoo.com/web#id=7&model=account.move&view_type=form&menu_id=5'))
+      .toBe('account form id menu model move type view web')
+  })
+
+  it('شاشة الفاتورة غير شاشة أمر الشراء', () => {
+    expect(screenKey('https://a.odoo.com/web#model=account.move&view_type=form'))
+      .not.toBe(screenKey('https://a.odoo.com/web#model=purchase.order&view_type=form'))
+  })
+
+  it('لا يتأثر بالمضيف — الشرح يعمل عند كل عملاء الشريك', () => {
+    expect(screenKey('https://demo.odoo.com/odoo/sales')).toBe(screenKey('https://erp.client.sa/odoo/sales'))
+  })
+
+  it('رابط غير صالح → مفتاح فارغ', () => {
+    expect(screenKey('not a url')).toBe('')
+  })
+})
+
+// ث٣ (§٥.٧): دليل يبدأ من سجل محدد قد لا يوجد عند العميل — تنبيه الشريك عند النشر
+describe('startsAtRecord', () => {
+  it.each([
+    ['https://x.odoo.com/odoo/accounting/1/account.move/3', true],
+    ['https://x.odoo.com/odoo/accounting/1/account.move/new', false],
+    ['https://x.odoo.com/odoo/accounting/1/account.move', false],
+    ['https://x.odoo.com/web#id=12&model=sale.order&view_type=form', true],
+    ['https://x.odoo.com/web#model=sale.order&view_type=list', false],
+    ['https://erp.test/orders?id=77', true],
+    ['https://erp.test/orders/', false],
+    ['https://erp.test/#/invoices/45', true],
+    ['not a url', false],
+  ])('%s → %s', (url, want) => expect(startsAtRecord(url)).toBe(want))
 })

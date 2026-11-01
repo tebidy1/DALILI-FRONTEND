@@ -4,7 +4,7 @@
  * لكن سكربت المحتوى محقون في صفحاتنا أصلًا، فالترحيل عبر window.postMessage
  * هو الأنبوب الموثوق: طلب dalili-web ← ترحيل ← ردّ dalili-ext أو مهلة صادقة.
  */
-import type { GuideDto } from '@dalili/shared'
+import type { GuideDto, TrainHostsDto } from '@dalili/shared'
 
 export interface TrainStartResult {
   ok: boolean
@@ -52,7 +52,11 @@ export function requestTrainStart(token: string, timeoutMs = ACK_TIMEOUT_MS): Pr
   return sendAndWait({ t: 'train-start', token }, timeoutMs)
 }
 
-/** دربني من المحرر: الدليل الحالي كاملًا بمراسيه — تجربة بلا حاجة لمشاركة أصلًا */
-export function requestTrainStartGuide(guide: GuideDto, timeoutMs = ACK_TIMEOUT_MS): Promise<TrainStartResult> {
-  return sendAndWait({ t: 'train-start', guide }, timeoutMs)
+/**
+ * دربني من شاشة الدليل: الدليل الحالي كاملًا بمراسيه — بلا حاجة لمشاركة.
+ * ث٢: trial = المحرر يجرّب دليله (لا تُحسب نتائجه)؛ القارئ يرسل false فتُحسب.
+ * ث٣: hosts لدليل الشريك عند موظف الشركة — أين يُفتح بدل نسخة الشريك.
+ */
+export function requestTrainStartGuide(guide: GuideDto, opts: { trial: boolean; hosts?: TrainHostsDto }, timeoutMs = ACK_TIMEOUT_MS): Promise<TrainStartResult> {
+  return sendAndWait({ t: 'train-start', guide, trial: opts.trial, hosts: opts.hosts }, timeoutMs)
 }

@@ -5,6 +5,7 @@ import type { AssignedItemDto } from '@dalili/shared'
 import { t } from '../i18n'
 import { client } from '../api'
 import { AssignedBand } from './AssignedBand'
+import { assignedItem } from './test-fixtures'
 
 vi.mock('../api', () => ({
   client: {
@@ -13,11 +14,7 @@ vi.mock('../api', () => ({
   },
 }))
 
-const mk = (over: Partial<AssignedItemDto> = {}): AssignedItemDto => ({
-  assignmentId: 'a1', guideId: 'g1', title: 'دورة التأهيل', kind: 'guide', site: 'erp.example',
-  stepCount: 5, assignerEmail: 'mgr@x.sa', note: '', createdAt: '2026-09-10T00:00:00Z', openedAt: null, doneAt: null,
-  ...over,
-})
+const mk = (over: Partial<AssignedItemDto> = {}): AssignedItemDto => assignedItem({ title: 'دورة التأهيل', ...over })
 
 function renderBand() {
   return render(

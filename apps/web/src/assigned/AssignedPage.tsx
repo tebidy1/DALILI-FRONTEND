@@ -11,7 +11,7 @@ import { useAssignmentActions } from './useAssignmentActions'
 
 /**
  * ASG: شاشة «أُسند إليّ» — كل ما أُسند إليّ (أنا/فريقي/المساحة) بحالاته. فتح العنصر
- * يسجّل «فُتح» تلقائيًا ثم ينتقل للدليل؛ «تمّ» يبدّل الإتمام ويعيد الجلب. حالات UX الأربع.
+ * يسجّل «فُتح» تلقائيًا ثم ينتقل للدورة أو عنصرها التالي (د١). حالات UX الأربع.
  */
 export function AssignedPage() {
   const navigate = useNavigate()
@@ -30,7 +30,7 @@ export function AssignedPage() {
     load()
   }, [load])
 
-  const { onOpen, onToggleDone } = useAssignmentActions({ navigate, setItems, load })
+  const { onOpen, onContinue } = useAssignmentActions({ navigate })
 
   return (
     <div className="page assigned-page">
@@ -53,7 +53,7 @@ export function AssignedPage() {
       ) : items.length === 0 ? (
         <StateView kind="empty" icon={<IconInbox size={28} />} title={t('assigned.empty')} />
       ) : (
-        <AssignedList items={items} onOpen={onOpen} onToggleDone={onToggleDone} />
+        <AssignedList items={items} onOpen={onOpen} onContinue={onContinue} />
       )}
     </div>
   )

@@ -6,6 +6,7 @@ import { arDigits, relativeTimeAr } from '../lib/format'
 import { Button } from '../ui/Button'
 import { isPicked, type Selection } from '../lib/selection'
 import { GuideMenuActions } from './GuideMenuActions'
+import type { GuideModeration } from './moderation'
 
 /**
  * عرض «قائمة» على نمط المرجع: جدول حقيقي بأعمدة (العنوان · المجلد · الموقع ·
@@ -30,6 +31,9 @@ export interface GuideTableProps {
   onPublish: (g: GuideSummaryDto) => void
   onDuplicate: (g: GuideSummaryDto) => void
   onMove: (g: GuideSummaryDto, folderId: string | null) => void
+  /** ب: إشراف المدير ومدير القسم — لا يُغلق القائمة قبل نافذة الإيقاف */
+  onModerate: (g: GuideSummaryDto, m: GuideModeration) => Promise<boolean>
+  teams: { id: string; name: string }[] | null
 }
 
 function SortHead({ label, col, sort, onSort }: { label: string; col: 'title' | 'created' | 'updated'; sort: string; onSort: GuideTableProps['onSort'] }) {
@@ -145,6 +149,8 @@ export function GuideTable(p: GuideTableProps) {
                                 onMove={(fid) => act(() => p.onMove(g, fid))}
                                 onRemove={() => act(() => p.onRemove(g))}
                                 onRestore={() => act(() => p.onRestore(g))}
+                                onModerate={(m) => p.onModerate(g, m)}
+                                teams={p.teams}
                               />
                             </div>
                           </>

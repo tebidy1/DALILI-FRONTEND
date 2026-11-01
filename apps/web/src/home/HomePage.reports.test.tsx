@@ -198,10 +198,24 @@ describe('الإجراءات السريعة على بطاقات أدلتي (ال
     expect(within(card).queryByText(t('home.share'))).toBeNull()
   })
 
+  it('م١: سطر الكاتب في «⋯» يعرض اسم المنشئ، ويعود لما قبل @ حين لا اسم', async () => {
+    renderHome('/', [
+      { ...MINE, id: 'n1', mine: false, ownerEmail: 'sara@dalili.sa', ownerName: 'سارة العتيبي', title: 'دليل باسم' },
+      { ...MINE, id: 'n2', mine: false, ownerEmail: 'khalid@dalili.sa', ownerName: null, title: 'دليل بلا اسم' },
+    ])
+    const named = await screen.findByText('دليل باسم').then((el) => el.closest('.guide-card') as HTMLElement)
+    fireEvent.click(within(named).getByLabelText(t('library.moreActions')))
+    expect(within(named).getByText('سارة العتيبي')).toBeTruthy()
+    const unnamed = screen.getByText('دليل بلا اسم').closest('.guide-card') as HTMLElement
+    fireEvent.click(within(unnamed).getByLabelText(t('library.moreActions')))
+    expect(within(unnamed).getByText('Khalid')).toBeTruthy()
+  })
+
   it('عدّاد مشاهدات الدليل داخل قائمة «⋯» عند وجود مشاهدات (تقرير لكل دليل)', async () => {
     renderHome('/', [{ ...MINE, mine: false, views: 7, title: 'دليل مشاهد' }])
     const card = await screen.findByText('دليل مشاهد').then((el) => el.closest('.guide-card') as HTMLElement)
     fireEvent.click(within(card).getByLabelText(t('library.moreActions')))
-    expect(within(card).getByText('👁 ٧')).toBeTruthy()
+    // ت (§٥): 👁 صار لعدد القرّاء على البطاقة، ومشاهدات رابط المشاركة بعلامة الرابط
+    expect(within(card).getByText('🔗 ٧')).toBeTruthy()
   })
 })

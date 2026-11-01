@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { MemberDto, TeamDto, UpdateMemberReq } from '@dalili/shared'
 import { client, webInviteUrl } from '../api'
 import { Button } from '../ui/Button'
@@ -8,11 +9,12 @@ import { t } from '../i18n'
 import { arDigits, copyToClipboard, hijriDateAr, roleLabelAr } from '../lib/format'
 import { useOverview } from '../shell/OverviewContext'
 import { useConfirm } from '../components/ConfirmProvider'
+import { DepartmentsPanel } from './DepartmentsPanel'
 
 /**
  * المرحلة د (الفرق — WS-08) على نمط المرجع داخل القشرة: جدول أعضاء (بريد + حالة
  * الدعوة + الدور + الفريق + الانضمام + عدد أدلته)، دعوة برابط يُنسخ ويُرسل واتساب
- * (بلا SMTP)، وفرق ككيان تُنشأ وتُحذف ويُجمَّع فيها الأعضاء. **الإزالة تنقل ملكية
+ * (بلا SMTP)، والأقسام في لوحتها (`DepartmentsPanel`، ORG-01/02) ويُجمَّع فيها الأعضاء. **الإزالة تنقل ملكية
  * أدلة المنقول للمدير** فلا دليل يتيم — والتأكيد يذكر ذلك بعددها. الإدارة للمدير
  * وحده، والقائمة قراءة مشتركة («من في المنظمة»).
  */
@@ -23,6 +25,7 @@ export function TeamPage() {
   const { overview } = useOverview()
   const confirm = useConfirm()
   const isAdmin = overview?.myRole === 'admin'
+  const kind = overview?.accountKind
 
   const [members, setMembers] = useState<MemberDto[] | null>(null)
   const [teams, setTeams] = useState<TeamDto[]>([])
@@ -33,13 +36,16 @@ export function TeamPage() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<TeamRole>('creator')
   const [inviteLink, setInviteLink] = useState('')
-  const [newTeam, setNewTeam] = useState('')
+  /** م١: بريد من وصلته الدعوة — فارغ إن تعطّل البريد فالرابط للنسخ وحده */
+  const [inviteEmailedTo, setInviteEmailedTo] = useState('')
+  /** PUB-01: قيمة «ينشر» المرسلة ولم يرد الخادم بعد — تُعرض فوراً والمفتاح مقفل، فلا تعكسها نقرة ثانية */
+  const [pubPending, setPubPending] = useState<Record<string, boolean>>({})
 
   const reload = useCallback(() => setReloadSeq((s) => s + 1), [])
 
   useEffect(() => {
     const ac = new AbortController()
-    Promise.all([client.getTeamMembers(), client.listTeams(ac.signal).catch(() => [])])
+    Promise.all([client.getTeamMembers(), client.listTeams(ac.signal, true).catch(() => [])])
       .then(([m, ts]) => {
         setMembers(m)
         setTeams(ts)
@@ -59,6 +65,7 @@ export function TeamPage() {
     try {
       const inv = await client.createInvite({ email, role: inviteRole })
       setInviteLink(webInviteUrl(inv.inviteUrl))
+      setInviteEmailedTo(inv.emailed ? inv.email : '')
     } catch (err) {
       const status = (err as { status?: number })?.status
       if (status === 409) {
@@ -81,13 +88,13 @@ export function TeamPage() {
     else setNotice(t('home.shareManual', { url: inviteLink }))
   }
 
-  /** تعديل عضو (دور/فريق) — التحديث ثم إعادة الجلب، والفشل رسالة صادقة */
+  /** تعديل عضو (دور/قسم) — التحديث ثم إعادة جلب الأعضاء والأقسام (عدّاداتها)، والفشل بسبب الخادم */
   async function updateMember(id: string, patch: UpdateMemberReq) {
     try {
       await client.updateMember(id, patch)
       reload()
-    } catch {
-      setError(t('team.actionError'))
+    } catch (err) {
+      setError((err as Error)?.message || t('team.actionError'))
     }
   }
 
@@ -108,31 +115,48 @@ export function TeamPage() {
     }
   }
 
-  async function createTeam(e: React.FormEvent) {
-    e.preventDefault()
-    const name = newTeam.trim()
-    if (!name) return
+  /** ORG-07: تعطيل لا حذف — المحتوى يبقى، والوصول يُقطع في الطلب التالي */
+  async function setCanPublish(m: MemberDto, value: boolean) {
+    if (m.id in pubPending) return
+    setPubPending((p) => ({ ...p, [m.id]: value }))
+    setError('')
     try {
-      await client.createTeam(name)
-      setNewTeam('')
-      reload()
-    } catch (err) {
-      setError((err as { message?: string })?.message ?? t('team.inviteError'))
+      await client.updateMember(m.id, { canPublish: value })
+      setMembers((list) => list?.map((x) => (x.id === m.id ? { ...x, canPublish: value } : x)) ?? list)
+      setNotice(t(value ? 'team.publishGranted' : 'team.publishRevoked', { email: m.email }))
+    } catch {
+      setError(t('team.actionError'))
+    } finally {
+      setPubPending(({ [m.id]: _, ...rest }) => rest)
     }
   }
 
-  async function deleteTeam(tm: TeamDto) {
+  async function deactivate(m: MemberDto) {
     const ok = await confirm({
-      title: t('team.deleteTeam'),
-      body: t('team.deleteTeamConfirm', { name: tm.name }),
+      title: t('team.deactivate'),
+      body: t('team.deactivateConfirm', { email: m.email }),
+      confirmLabel: t('team.deactivateYes'),
       danger: true,
     })
     if (!ok) return
+    setError('')
     try {
-      await client.deleteTeam(tm.id)
+      await client.deactivateMember(m.id)
+      setNotice(t('team.deactivatedNote', { email: m.email }))
       reload()
-    } catch {
-      setError(t('team.actionError'))
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? t('team.actionError'))
+    }
+  }
+
+  async function reactivate(m: MemberDto) {
+    setError('')
+    try {
+      await client.reactivateMember(m.id)
+      setNotice(t('team.reactivatedNote', { email: m.email }))
+      reload()
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? t('team.actionError'))
     }
   }
 
@@ -145,6 +169,11 @@ export function TeamPage() {
           <IconUsers size={20} />
           {t('team.title')}
         </h1>
+        {isAdmin && (
+          <Link className="btn ghost sm" to="/audit">
+            {t('audit.title')}
+          </Link>
+        )}
       </div>
 
       {error && members === null ? (
@@ -165,9 +194,9 @@ export function TeamPage() {
                 <div className="invite-field">
                   <label htmlFor="invite-role">{t('team.role')}</label>
                   <select id="invite-role" value={inviteRole} onChange={(e) => setInviteRole(e.target.value as TeamRole)}>
-                    <option value="admin">{t('team.roleAdmin')}</option>
-                    <option value="creator">{t('team.roleCreator')}</option>
-                    <option value="viewer">{t('team.roleViewer')}</option>
+                    <option value="admin">{roleLabelAr('admin', kind)}</option>
+                    <option value="creator">{roleLabelAr('creator', kind)}</option>
+                    <option value="viewer">{roleLabelAr('viewer', kind)}</option>
                   </select>
                 </div>
                 <Button type="submit" icon={<IconPlus size={16} />}>
@@ -176,7 +205,7 @@ export function TeamPage() {
               </form>
               {inviteLink && (
                 <div className="invite-box">
-                  <div className="muted">{t('team.inviteLinkTitle')}</div>
+                  <div className="muted">{inviteEmailedTo ? t('team.inviteEmailed', { email: inviteEmailedTo }) : t('team.inviteLinkTitle')}</div>
                   <div className="row invite-link-row">
                     <code className="invite-url" dir="ltr">{inviteLink}</code>
                     <Button size="sm" onClick={copyInvite}>{t('team.copyLink')}</Button>
@@ -187,25 +216,8 @@ export function TeamPage() {
             </div>
           )}
 
-          {isAdmin && (
-            <div className="row teams-row" role="group" aria-label={t('team.teamsTitle')}>
-              <span className="muted">{t('team.teamsTitle')}:</span>
-              {teams.map((tm) => (
-                <span className="chip team-chip" key={tm.id}>
-                  {tm.name} ({arDigits(tm.memberCount)})
-                  <button className="af-x" aria-label={`${t('team.deleteTeam')} — ${tm.name}`} onClick={() => void deleteTeam(tm)}>
-                    ✕
-                  </button>
-                </span>
-              ))}
-              <form className="row team-new" onSubmit={createTeam}>
-                <input aria-label={t('team.newTeam')} value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder={t('team.newTeam')} />
-                <Button size="sm" variant="ghost" type="submit">
-                  {t('team.createTeam')}
-                </Button>
-              </form>
-            </div>
-          )}
+          {/* ش١: الشريك بلا أقسام (§٣.٤) */}
+          {isAdmin && members && <DepartmentsPanel teams={teams} members={members} onTeamsChange={setTeams} />}
 
           {members === null ? (
             <div role="status" aria-live="polite" className="muted">{t('library.loadingA11y')}</div>
@@ -219,6 +231,7 @@ export function TeamPage() {
                     <th>{t('team.colTeam')}</th>
                     <th>{t('team.colJoined')}</th>
                     <th>{t('team.colGuides')}</th>
+                    {isAdmin && <th>{t('team.colPublish')}</th>}
                     {isAdmin && <th>{t('team.colActions')}</th>}
                   </tr>
                 </thead>
@@ -226,28 +239,39 @@ export function TeamPage() {
                   {members.map((m) => {
                     // توحيد القاموس: تاريخ الانضمام هجري كبقية الواجهة (النتائج والتقارير)
                     const joined = m.joinedAt ? hijriDateAr(m.joinedAt) : '—'
+                    const isMe = m.email === overview?.myEmail
+                    const off = m.status === 'deactivated'
+                    // المدير ينشر دائماً (PUB-01)، والمشاهد لا ينشر — المفتاح للمنشئ والشريك
+                    const pubFixed = m.role === 'admin' || m.role === 'viewer'
                     return (
-                      <tr key={m.id}>
+                      <tr key={m.id} className={off ? 'member-off' : undefined}>
                         <td>
-                          <span className="col-title"><bdi>{m.email}</bdi></span>
+                          {m.name ? (
+                            <span className="col-title">
+                              <bdi>{m.name}</bdi> <small className="muted"><bdi>{m.email}</bdi></small>
+                            </span>
+                          ) : (
+                            <span className="col-title"><bdi>{m.email}</bdi></span>
+                          )}
                           {m.pending && <span className="chip pending-chip">{t('team.pending')}</span>}
+                          {off && <span className="chip off-chip">{t('team.deactivated')}</span>}
                         </td>
                         <td>
                           {isAdmin ? (
                             <select aria-label={t('team.roleA11y')} value={m.role} onChange={(e) => void updateMember(m.id, { role: e.target.value as TeamRole })}>
-                              <option value="admin">{t('team.roleAdmin')}</option>
-                              <option value="creator">{t('team.roleCreator')}</option>
-                              <option value="viewer">{t('team.roleViewer')}</option>
+                              <option value="admin">{roleLabelAr('admin', kind)}</option>
+                              <option value="creator">{roleLabelAr('creator', kind)}</option>
+                              <option value="viewer">{roleLabelAr('viewer', kind)}</option>
                             </select>
                           ) : (
-                            <span className="chip">{roleLabelAr(m.role)}</span>
+                            <span className="chip">{roleLabelAr(m.role, kind)}</span>
                           )}
                         </td>
                         <td>
                           {isAdmin ? (
                             <select aria-label={t('team.colTeam')} value={m.teamId ?? ''} onChange={(e) => void updateMember(m.id, { teamId: e.target.value || null })}>
                               <option value="">{t('team.noTeam')}</option>
-                              {teams.map((tm) => (
+                              {teams.filter((tm) => !tm.archivedAt || tm.id === m.teamId).map((tm) => (
                                 <option key={tm.id} value={tm.id}>
                                   {tm.name}
                                 </option>
@@ -261,11 +285,35 @@ export function TeamPage() {
                         <td className="col-views">{arDigits(m.guideCount ?? 0)}</td>
                         {isAdmin && (
                           <td>
-                            {m.email !== overview?.myEmail && (
+                            <input
+                              type="checkbox"
+                              aria-label={t('team.canPublishA11y', { email: m.email })}
+                              title={pubFixed ? t(m.role === 'admin' ? 'team.publishAdminAlways' : 'team.publishViewerNever') : undefined}
+                              checked={m.role === 'admin' || (m.role !== 'viewer' && (pubPending[m.id] ?? m.canPublish !== false))}
+                              disabled={pubFixed || m.id in pubPending}
+                              onChange={(e) => void setCanPublish(m, e.target.checked)}
+                            />
+                          </td>
+                        )}
+                        {isAdmin && (
+                          <td>
+                            <div className="row member-actions">
+                            {!isMe &&
+                              (off ? (
+                                <Button size="sm" variant="ghost" onClick={() => void reactivate(m)}>
+                                  {t('team.reactivate')}
+                                </Button>
+                              ) : (
+                                <Button size="sm" variant="ghost" onClick={() => void deactivate(m)}>
+                                  {t('team.deactivate')}
+                                </Button>
+                              ))}
+                            {!isMe && (
                               <Button size="sm" variant="ghost" icon={<IconTrash size={14} />} onClick={() => void remove(m)}>
                                 {t('team.remove')}
                               </Button>
                             )}
+                            </div>
                           </td>
                         )}
                       </tr>

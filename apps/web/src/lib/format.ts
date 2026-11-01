@@ -16,6 +16,19 @@ export function arDigits(n: number): string {
   return digits(n)
 }
 
+/** م٢: حجم التخزين بوحدة مقروءة — «٣٫٥ م.ب» */
+export function formatBytes(bytes: number): string {
+  const units = ['بايت', 'ك.ب', 'م.ب', 'ج.ب']
+  let v = bytes
+  let i = 0
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024
+    i++
+  }
+  const shown = v.toLocaleString(getLocale() === 'en' ? 'en-US' : 'ar-EG', { maximumFractionDigits: i > 0 && v < 10 ? 1 : 0 })
+  return `${shown} ${units[i]}`
+}
+
 /** رقم منسّق بوعي اللغة — لما يُمرَّر العدد داخل t() من مواضع مبعثرة */
 export function fmtDigits(n: number): string {
   return digits(n)
@@ -86,7 +99,17 @@ export function shotOf(step: GuideDto['steps'][number]) {
   return step.screenshot && !('missing' in step.screenshot) ? step.screenshot : null
 }
 
-/** اسم مالك مشتق من البريد (لا اسم/صورة في MeDto) — الجزء قبل @ بحرف كبير */
+/** م١: الاسم الظاهر لشخص — اسمه إن وُجد، وإلا اسم مشتق من بريده. كل الشاشات تمر من هنا */
+export function displayName(p: { name?: string | null; email?: string }): string {
+  return p.name?.trim() || ownerNameFromEmail(p.email)
+}
+
+/** م٢: في شاشات الإدارة البريد أنفع من اسم مشتق منه — الاسم إن وُجد وإلا البريد كما هو */
+export function nameOrEmail(p: { name?: string | null; email: string }): string {
+  return p.name?.trim() || p.email
+}
+
+/** اسم مشتق من البريد لحساب بلا اسم — الجزء قبل @ بحرف كبير */
 export function ownerNameFromEmail(email: string | undefined): string {
   if (!email) return ''
   const local = email.split('@')[0] ?? ''
@@ -94,9 +117,10 @@ export function ownerNameFromEmail(email: string | undefined): string {
 }
 
 /** اسم الدور المساحي بالعربية — أسرة `home.role*` وحدها (نصوص `team.role*` مطابقة لها حرفيًا)، وmember القديم يُطَّع منشئًا */
-export function roleLabelAr(role: string): string {
-  const key = role === 'admin' ? 'home.roleAdmin' : role === 'viewer' ? 'home.roleViewer' : 'home.roleCreator'
-  return t(key)
+/** ش١: قيم الأدوار واحدة، وتسميتها في الشريك مختلفة (مدير الشريك، ومحرّر الشريك، ومراجع) */
+export function roleLabelAr(role: string, kind?: string | null): string {
+  const r = role === 'admin' ? 'Admin' : role === 'viewer' ? 'Viewer' : 'Creator'
+  return t(kind === 'partner' ? (`home.partnerRole${r}` as const) : (`home.role${r}` as const))
 }
 
 const hijriFmt = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { dateStyle: 'medium' })

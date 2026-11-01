@@ -106,7 +106,7 @@ function ViewerNavigate({
 /** العارض العام — يفتح بلا حساب من رابط المشاركة، نظيف وقابل للطباعة. embed=true نسخة التضمين بلا قشرة */
 export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { token } = useParams<{ token: string }>()
   const [data, setData] = useState<PublicGuideDto | null>(null)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<'' | 'gone' | 'suspended'>('')
   const [reloadSeq, bumpReload] = useReloadSeq()
   // GM-05: تعليقات الضيف — تُجلب جنبًا إلى جنب، وفشلها لا يُسقط الدليل
   const [comments, setComments] = useState<StepCommentDto[]>([])
@@ -135,7 +135,8 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
       })
       .catch((err) => {
         if (err instanceof DOMException && err.name === 'AbortError') return
-        setError(t('viewer.goneTitle'))
+        // ب (PUB-03): الموقوف يُقال صراحةً — الرابط سليم والدليل متوقف مؤقتاً
+        setError((err as { code?: string })?.code === 'E-PUB-04' ? 'suspended' : 'gone')
       })
     return () => ac.abort()
   }, [token, reloadSeq])
@@ -235,14 +236,15 @@ export function ViewerPage({ embed = false }: { embed?: boolean }) {  const { to
   )
 
   if (error) {
+    const suspended = error === 'suspended'
     return (
       <div className="page">
         <StateView
           kind="error"
           icon={<IconCloudOff size={30} />}
-          title={t('viewer.goneTitle')}
-          desc={t('viewer.goneDesc')}
-          action={{ label: t('common.retry'), onAction: retry }}
+          title={suspended ? t('viewer.suspendedTitle') : t('viewer.goneTitle')}
+          desc={suspended ? t('viewer.suspendedDesc') : t('viewer.goneDesc')}
+          action={suspended ? undefined : { label: t('common.retry'), onAction: retry }}
         />
       </div>
     )

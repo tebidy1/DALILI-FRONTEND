@@ -87,7 +87,8 @@ describe('تعليقات المحرر (GM-05)', () => {
     }))
     renderEditor()
 
-    fireEvent.click(await screen.findByRole('button', { name: t('comments.toggleA11y', { count: 1 }) }))
+    // التعليقات تُجلب بعد تحميل الدليل (سلسلتان) — تحت حمل الحزمة الكاملة تتجاوز الثانية الافتراضية
+    fireEvent.click(await screen.findByRole('button', { name: t('comments.toggleA11y', { count: 1 }) }, { timeout: 4000 }))
     expect(screen.getByText('هل يلزم دور المدير؟')).toBeTruthy()
     // المالك بلا حقل اسم — هويته شارة صاحب الدليل
     expect(screen.queryByLabelText(t('comments.nameA11y'))).toBeNull()

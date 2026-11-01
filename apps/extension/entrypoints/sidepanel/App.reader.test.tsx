@@ -84,6 +84,16 @@ describe('App — قارئ اللوحة (PNL-01)', () => {
     await waitFor(() => expect((document.activeElement as HTMLElement | null)?.dataset.guide).toBe('g1'))
   })
 
+  it('التركيز على البحث يُخفي الالتقاط ويرفع البحث وفلاتره، و«رجوع» يعيدهما', async () => {
+    render(<App />)
+    fireEvent.focus(await screen.findByPlaceholderText('ابحث في أدلتك…'))
+    expect(screen.queryByRole('button', { name: /ابدأ الالتقاط/ })).toBeNull()
+    expect(screen.getByRole('group', { name: 'الحالة' })).toBeTruthy()
+    expect(await screen.findByText('إصدار فاتورة')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'رجوع' }))
+    expect(await screen.findByRole('button', { name: /ابدأ الالتقاط/ })).toBeTruthy()
+  })
+
   it('فتح اللوحة يستعيد الدليل المفتوح من storage.session', async () => {
     session[READER_KEY] = 'g1'
     render(<App />)

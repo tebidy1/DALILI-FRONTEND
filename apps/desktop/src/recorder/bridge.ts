@@ -3,6 +3,7 @@
  *  `Bridge` المزيّف؛ هذا الملفّ يغطيه typecheck والبناء وحدهما. `ready()` تضمن
  *  تسجيل اشتراكات IPC كلّها قبل أول نبضة/حدث — كي لا يُفوَّت شيء من البدء. */
 import { listen } from '@tauri-apps/api/event'
+import type { DesktopAccount } from '../accounts'
 import { invoke } from '@tauri-apps/api/core'
 import type { DesktopFacts } from '@dalili/core'
 import type { Bridge, FramePickResult } from './session'
@@ -57,6 +58,9 @@ export function createDesktopAuth() {
     forget: () => invoke<void>('auth_forget'),
     // اق-١: فتح صفحة موافقة الاقتران — الرابط يُبنى في Rust والرمز محروس هناك
     openVerify: (code: string) => invoke<void>('auth_open_verify', { code }),
+    // ش١: حسابات الجهاز والتبديل — Rust يرفض التبديل أثناء التسجيل أو والطابور غير فارغ
+    accounts: () => invoke<DesktopAccount[]>('auth_accounts'),
+    switchAccount: (id: string) => invoke<DesktopAccount[]>('auth_switch_account', { id }),
     onAuthEvent: (evt: AuthEvent, cb: (p: unknown) => void) => {
       const unlisten = listen(evt, (e) => cb(e.payload))
       return toUnlisten(unlisten)

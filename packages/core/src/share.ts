@@ -2,6 +2,7 @@
 import { escapeHtml as esc } from './escape'
 import { richToHtml, type RichText } from './rich-text'
 import { youtubeId, youtubeWatchUrl } from './youtube'
+import type { BlockKind } from './guide'
 
 /** النموذج الهيكلي الذي تحتاجه الدالة من GuideDto — core لا يعتمد على حزم أخرى */
 interface HtmlGuideStep {
@@ -13,7 +14,7 @@ interface HtmlGuideStep {
   alt?: string
   screenshot?: { fileId: string; fileUrl?: string; blurRects?: unknown[] } | { missing: true; reason?: string }
   /** BLK-01 + BKL-01: نوع الكتلة — غيابه خطوة عادية تُرقَّم */
-  block?: 'tip' | 'alert' | 'header' | 'text' | 'embed' | 'divider' | 'link' | 'image' | 'video'
+  block?: BlockKind
   /** BKL-01: نص كتلة text المنسّق */
   rich?: RichText
 }

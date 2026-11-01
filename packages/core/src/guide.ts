@@ -88,7 +88,16 @@ export interface MissingScreenshot {
  * BLK-01 + BKL-01: نوع الكتلة غير الملتقطة — غيابه في الخطوة = خطوة عادية (ملتقطة أو يدوية).
  * الثلاثة الأولى للأدلة والكرّاسات معًا، والخمسة بعدها كتل كرّاسة.
  */
-export type BlockKind = 'tip' | 'alert' | 'header' | 'text' | 'embed' | 'divider' | 'link' | 'image' | 'video'
+export type BlockKind = 'tip' | 'alert' | 'header' | 'text' | 'embed' | 'divider' | 'link' | 'image' | 'video' | 'lesson'
+
+/** د١ب: درس الدورة (block='lesson') — كتل درس الصفحة تليه مسطّحة حتى الدرس التالي */
+export interface StepLesson {
+  type: 'guide' | 'video' | 'page'
+  title: string
+  guideId?: string
+  video?: { url: string }
+  note?: string
+}
 
 /**
  * BKL-01: مرجع حيّ لدليل مضمّن — نخزّن المعرّف فقط فيتبع التضمينُ تحديثاتِ الدليل
@@ -148,6 +157,8 @@ export interface Step {
   rich?: RichText
   /** BKL-01: الدليل المضمّن (block='embed') — اختياري جمعيًا */
   embed?: GuideEmbed
+  /** د١ب: درس الدورة (block='lesson') */
+  lesson?: StepLesson
   /** VOX-09: تعليق صوتي للخطوة — اختياري جمعيًا (الأدلة القديمة بلا تعليق صالحة) */
   voice?: StepVoice
 }
@@ -169,7 +180,7 @@ export interface Guide {
   /** DTOP-01: القراءة تقبل ١ و٢، والكتابة ٢ دائمًا (assembleGuide + بوّابة الخادم) */
   schemaVersion: 1 | 2
   /** BKL-01: نوع المستند — غيابه يعني دليلًا. الأدلة القائمة كلها تعبر بلا ترحيل محتوى. */
-  kind?: 'guide' | 'booklet'
+  kind?: 'guide' | 'booklet' | 'course'
   title: string
   description?: string
   locale: 'ar'

@@ -38,9 +38,25 @@ function deps(over: Partial<ReaderDeps> = {}): ReaderDeps {
     startTrain: vi.fn().mockResolvedValue({ ok: true }),
     copyText: vi.fn().mockResolvedValue(undefined),
     openTab: vi.fn(),
+    markRead: vi.fn().mockResolvedValue(undefined),
     ...over,
   }
 }
+
+describe('GuideReader — ت (§٥)', () => {
+  it('فتح الدليل في اللوحة يسجّل القراءة مرة', async () => {
+    const d = deps()
+    render(<GuideReader guideId="g1" deps={d} onBack={() => {}} />)
+    await screen.findByRole('heading', { name: 'إصدار فاتورة' })
+    expect(d.markRead).toHaveBeenCalledTimes(1)
+    expect(d.markRead).toHaveBeenCalledWith('g1')
+  })
+
+  it('فشل تسجيل القراءة لا يكسر القارئ', async () => {
+    render(<GuideReader guideId="g1" deps={deps({ markRead: vi.fn().mockRejectedValue(new Error('net')) })} onBack={() => {}} />)
+    expect(await screen.findByRole('heading', { name: 'إصدار فاتورة' })).toBeTruthy()
+  })
+})
 
 describe('GuideReader — PNL-01', () => {
   it('هيكل عظمي أثناء التحميل ثم العنوان والبطاقة المرقّمة', async () => {
@@ -83,6 +99,15 @@ describe('GuideReader — PNL-01', () => {
     fireEvent.click(await screen.findByRole('button', { name: /دربني/ }))
     await waitFor(() => expect(screen.getByText('افتح الصفحة الهدف أولًا')).toBeTruthy())
     expect((d.startTrain as ReturnType<typeof vi.fn>).mock.calls[0]![0].id).toBe('g1')
+  })
+
+  it('ث٣: دليل الشريك يحمل نطاقات نسخة الشركة إلى «دربني»', async () => {
+    const trainHosts = { hosts: ['alofuq.odoo.com'], patterns: ['*.odoo.com'] }
+    const d = deps({ load: vi.fn().mockResolvedValue(details({ source: 'official', trainHosts }, [step({ target: { anchor: [{ k: 'id', v: 'save' }] } })])) })
+    render(<GuideReader guideId="g1" deps={d} onBack={() => {}} />)
+    fireEvent.click(await screen.findByRole('button', { name: /دربني/ }))
+    await waitFor(() => expect(d.startTrain).toHaveBeenCalled())
+    expect((d.startTrain as ReturnType<typeof vi.fn>).mock.calls[0]![1]).toEqual(trainHosts)
   })
 
   it('نسخ الرابط مع مشاركة قائمة: ينسخ ولا ينشئ رمزًا جديدًا أبدًا', async () => {
@@ -169,5 +194,22 @@ describe('GuideReader — PNL-01', () => {
     render(<GuideReader guideId="g1" deps={deps({ load: vi.fn().mockResolvedValue(withTx) })} onBack={() => {}} />)
     expect(await screen.findByRole('heading', { name: 'إصدار فاتورة' })).toBeTruthy()
     expect(screen.queryByText('Auto-translated')).toBeNull()
+  })
+})
+
+describe('GuideReader — د٠', () => {
+  it('booklet opens on the web instead of rendering raw blocks', async () => {
+    const blocks = [
+      step({ id: 'b1', block: 'text', title: '' }),
+      step({ id: 'b2', block: 'embed', title: 'دليل', embed: { guideId: 'g9', expanded: true } }),
+    ]
+    const booklet = details({}, blocks)
+    booklet.guide.kind = 'booklet'
+    const d = deps({ load: vi.fn().mockResolvedValue(booklet) })
+    const { container } = render(<GuideReader guideId="g1" deps={d} onBack={() => {}} />)
+    expect(await screen.findByText('هذه كرّاسة، وتُقرأ على الويب')).toBeTruthy()
+    expect(container.querySelectorAll('.reader-list li')).toHaveLength(0)
+    fireEvent.click(screen.getAllByRole('button', { name: 'افتح في المتصفح ↗' }).at(-1)!)
+    expect(d.openTab).toHaveBeenCalledWith('http://web/g/g1')
   })
 })

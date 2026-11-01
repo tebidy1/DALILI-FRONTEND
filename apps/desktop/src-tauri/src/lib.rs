@@ -143,6 +143,25 @@ fn auth_forget() -> Result<(), String> {
     transport::pair::forget(&transport::pair::api_origin())
 }
 
+/// `auth_accounts` — ش١: حسابات صاحب الجهاز (الاسم والنوع والدور والنشط) برمز الجهاز.
+/// `(async)`: نداء شبكة لا يجري على خيط الواجهة
+#[tauri::command(async)]
+fn auth_accounts() -> Result<Vec<transport::accounts::Account>, String> {
+    transport::accounts::list(&transport::pair::api_origin())
+}
+
+/// `auth_switch_account(id)` — ش١: يبدّل حساب هذا الجهاز ويعيد القائمة. ممنوعٌ أثناء
+/// التسجيل أو والطابور فيه ما لم يُرفع (وإلا هبطت لقطات الحساب القديم في الجديد)
+#[tauri::command(async)]
+fn auth_switch_account(id: String) -> Result<Vec<transport::accounts::Account>, String> {
+    if let Some(reason) = transport::accounts::switch_blocked(hook::is_active(), transport::accounts::unsent_count()) {
+        return Err(reason.to_string());
+    }
+    let origin = transport::pair::api_origin();
+    transport::accounts::switch(&origin, &id)?;
+    transport::accounts::list(&origin)
+}
+
 /// `auth_open_verify(code)` — فتح صفحة موافقة الاقتران في المتصفّح: الرابط
 /// يُبنى في Rust من ‏web_origin عند الحدّ (كأخواته) والرمز محروس قبل البناء
 #[tauri::command]
@@ -280,6 +299,8 @@ pub fn run() {
       auth_status,
       auth_forget,
       auth_open_verify,
+      auth_accounts,
+      auth_switch_account,
       queue_file,
       queue_audio,
       queue_guide,

@@ -169,6 +169,11 @@ struct Session {
 
 static ACTIVE: Mutex<Option<Session>> = Mutex::new(None);
 
+/// ش١: هل جلسة تسجيل قائمة الآن — حارس مبدّل الحساب
+pub fn is_active() -> bool {
+    ACTIVE.lock().map(|g| g.is_some()).unwrap_or(false)
+}
+
 /// يولّد خيط الخطّاف — المنقول من `spawn_hook` موسَّعًا بلوحة المفاتيح على الخيط نفسه
 fn spawn_hook_thread() -> (JoinHandle<()>, u32) {
     let (ttx, trx) = mpsc::channel();

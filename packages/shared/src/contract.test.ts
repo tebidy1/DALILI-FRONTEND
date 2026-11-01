@@ -173,6 +173,16 @@ describe('zStep target.anchor', () => {
     expect(zStep.safeParse({ ...base, target: { anchor: [{ k: 'automationId', v: '' }] } }).success).toBe(false)
     expect(zStep.safeParse({ ...base, target: { anchor: [{ k: 'controlType', v: '' }] } }).success).toBe(false)
   })
+
+  it('ث١: يقبل المتحقِّقين label وctx ويرفض قيمتهما الفارغة — دليل بهما يُحفظ ولا يسقط', () => {
+    const sight = [
+      { k: 'label', v: 'الزبون' },
+      { k: 'ctx', v: 'فاتورة جديدة' },
+    ]
+    expect(zStep.safeParse({ ...base, target: { anchor: sight } }).success).toBe(true)
+    expect(zStep.safeParse({ ...base, target: { anchor: [{ k: 'label', v: '' }] } }).success).toBe(false)
+    expect(zStep.safeParse({ ...base, target: { anchor: [{ k: 'ctx', v: 'x'.repeat(61) }] } }).success).toBe(false)
+  })
 })
 
 /** ANNO-01: شروحات اللقطة (المرحلة ٢) — أشكال وأسهم وأرقام تمرّ عبر عقد اللقطة */
@@ -531,5 +541,25 @@ describe('DTOP-01: مصدر الخطوة', () => {
     expect(zGuide.safeParse({ ...g, schemaVersion: 1 }).success).toBe(true)
     expect(zGuide.safeParse({ ...g, schemaVersion: 2 }).success).toBe(true)
     expect(zGuide.safeParse({ ...g, schemaVersion: 3 }).success).toBe(false)
+  })
+})
+
+/** د١ب: درس الدورة خطوة block='lesson' — الدليل يحتاج معرّفاً، والفيديو رابطاً */
+describe('zStep lesson', () => {
+  const base = { id: 'l1', kind: 'navigate', title: '', target: {}, sensitive: false, url: '', pageTitle: '', ts: 1, block: 'lesson' }
+  it('lesson step parses', () => {
+    expect(zStep.safeParse({ ...base, lesson: { type: 'page', title: 'مرجع' } }).success).toBe(true)
+    expect(zStep.safeParse({ ...base, lesson: { type: 'guide', title: 'فاتورة', guideId: 'g1' } }).success).toBe(true)
+  })
+  it('guide lesson without guideId is rejected', () => {
+    expect(zStep.safeParse({ ...base, lesson: { type: 'guide', title: 'فاتورة' } }).success).toBe(false)
+  })
+  it('video lesson without url is rejected', () => {
+    expect(zStep.safeParse({ ...base, lesson: { type: 'video', title: 'ترحيب' } }).success).toBe(false)
+    expect(zStep.safeParse({ ...base, lesson: { type: 'video', title: 'ترحيب', video: { url: 'https://youtu.be/x' } } }).success).toBe(true)
+  })
+  it('course kind parses', () => {
+    const g = { id: 'c1', schemaVersion: 2, kind: 'course', title: 'دورة', locale: 'ar', dir: 'rtl', createdAt: 'x', updatedAt: 'x', steps: [] }
+    expect(zGuide.safeParse(g).success).toBe(true)
   })
 })

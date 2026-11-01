@@ -1,5 +1,8 @@
 import type { CaptureEvent, StoredPreShot, StoredStep } from './protocol'
 import { t } from './i18n'
+import { isFieldEntryClick, type EntryEnd } from './field-entry'
+
+const entryEnd = (e: CaptureEvent): EntryEnd => ({ kind: e.kind, role: e.target.role, url: e.url, anchor: e.target.anchor, rect: e.rect })
 
 /** منطق الجلسة النقي — بلا chrome.* — قابل للاختبار الكامل */
 
@@ -119,6 +122,9 @@ export function foldWithPrev(prev: StoredStep | undefined, ev: CaptureEvent): Fo
   if (!prev) return 'append'
   const a = prev.ev
   if (a.url !== ev.url) return 'append'
+  // نقرةٌ للدخول إلى حقلٍ ثم الكتابة فيه = خطوة «أدخل» واحدة، بلا نافذة زمنية (يتأمّل
+  // المستخدم قبل الكتابة). نقرة الزر لا تُطوى أبدًا — الحدّ في field-entry (فخ 45).
+  if (isFieldEntryClick(entryEnd(a), entryEnd(ev))) return 'replace'
   if (Math.abs(ev.ts - a.ts) > GESTURE_FOLD_WINDOW_MS) return 'append'
   if (!sameAnchor(a, ev) && !sameRect(a, ev)) return 'append'
   // النقرة الخام تُستبدل بحدث القيمة الأغنى معنًى، وتُهمل إن سبقها هو

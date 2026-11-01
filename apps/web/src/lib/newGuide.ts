@@ -1,3 +1,4 @@
+import type { StepDto } from '@dalili/shared'
 import { client } from '../api'
 import { t } from '../i18n'
 
@@ -20,6 +21,14 @@ async function createGuide(kind: 'guide' | 'booklet'): Promise<string> {
 
 export async function createAndOpenGuide(): Promise<string> {
   return createGuide('guide')
+}
+
+/** د١ب: دورة — فارغة من «جديد»، أو بدروس جاهزة من «حوّل إلى دورة» */
+export async function createCourse(title = t('course.untitled'), steps: StepDto[] = []): Promise<string> {
+  const now = new Date().toISOString()
+  const { assembleGuide } = await import('@dalili/core')
+  const { id } = await client.createGuide({ ...assembleGuide([], Date.now()), kind: 'course', title, steps, createdAt: now, updatedAt: now })
+  return id
 }
 
 /** BKL-01: كرّاسة فارغة — نفس مسار الإنشاء، والنوع وحده يفرّق */

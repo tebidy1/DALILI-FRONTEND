@@ -821,6 +821,11 @@
       body[data-phase="paired"] .acct [data-show="paired"] { display: block; }
       body[data-phase="unknown"] .acct [data-show="unknown"] { display: block; }
       /* الرمز القصير — الرمز السرّي في خزنة ويندوز لا تراه أيّ شاشة */
+      .acct .pswitch { margin: 8px 0 4px; display: flex; flex-direction: column; gap: 4px; }
+      .acct .pswitch[hidden] { display: none !important; }
+      .acct .pswitch label { font-size: 12px; font-weight: 600; color: #1c2b33; }
+      .acct .pswitch select { font: inherit; font-size: 13px; padding: 5px 6px; border: 1px solid rgba(28, 43, 51, 0.28); border-radius: 4px; background: #fff; }
+      .acct .pswitch .hint { font-size: 11px; color: #5a6b75; }
       .acct .pcode {
         margin: 8px 0;
         background: #f4f2ec;
@@ -1067,6 +1072,12 @@
             <div class="prow">
               <span class="tcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
               <span><span class="pmail" id="acctMail">…</span><br />الأدلّة تُشحن إلى مساحتك تلقائيًّا وتُفتح في الويب.</span>
+            </div>
+            <!-- ش١: مبدّل الحساب — لمن له أكثر من حساب، والتسجيل التالي يهبط في المختار -->
+            <div class="pswitch" id="acctSwitch" hidden>
+              <label for="acctSelect" id="acctLabel">الحساب</label>
+              <select id="acctSelect"></select>
+              <small class="hint" id="acctNote" role="status">التقاطك التالي يُحفظ في الحساب المختار.</small>
             </div>
             <button class="ptext" id="btnForget" type="button">فك الربط</button>
           </div>

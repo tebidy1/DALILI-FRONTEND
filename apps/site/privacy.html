@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#F6F5F2">
+<title>سياسة الخصوصية — إتقان</title>
+<meta name="description" content="سياسة خصوصية إضافة كروم «إتقان — مسجّل خطوات الشاشة»: ما نجمعه داخل جلسة تسجيل تبدؤها أنت، والطمس قبل الرفع، وتعليل كل صلاحية، وحقوقك في الوصول والحذف.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css?v=5">
+<link rel="stylesheet" href="assets/site-v2.css?v=15">
+<link rel="stylesheet" href="assets/site-pages.css?v=1">
+<link rel="stylesheet" href="assets/site-system.css?v=1">
+<style>
+  /* نصّ قانوني: بنود مرقَّمة بالعربية — أنماط موضعية حتى تبقى الصفحة ملفًّا واحدًا
+     لا يمسّ ملفات الأنماط المنشورة. */
+  .legal { max-width: 46rem; }
+  .legal-meta {
+    display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
+    margin: 0 0 34px; padding: 14px 18px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md);
+    font-size: .92rem; color: var(--muted);
+  }
+  .legal-meta b { color: var(--ink); font-weight: 600; }
+  .legal-clause { margin: 0 0 40px; }
+  .legal-clause > h2 {
+    display: flex; align-items: baseline; gap: 12px;
+    font-size: 1.32rem; line-height: 1.45; margin: 0 0 12px;
+  }
+  .legal-clause > h2 span {
+    flex: 0 0 auto; min-width: 1.9rem; height: 1.9rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--sage-tint); color: var(--sage-deep);
+    border-radius: 999px; font-size: .86rem; font-weight: 600;
+  }
+  .legal p { line-height: 1.95; color: var(--ink); margin: 0 0 14px; }
+  .legal ul { margin: 0 0 14px; padding-inline-start: 1.15rem; }
+  .legal li { line-height: 1.9; margin-bottom: 9px; }
+  .legal-note {
+    margin: 18px 0 0; padding: 14px 18px;
+    background: var(--clay-tint); border-inline-start: 3px solid var(--clay);
+    border-radius: var(--r-sm); line-height: 1.85;
+  }
+  .legal-table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; font-size: .95rem; }
+  .legal-table th, .legal-table td {
+    text-align: start; padding: 11px 12px; border-bottom: 1px solid var(--line);
+    vertical-align: top; line-height: 1.75;
+  }
+  .legal-table th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .legal-table td:first-child { font-family: 'IBM Plex Mono', monospace; direction: ltr; white-space: nowrap; }
+  .legal-en { margin-top: 10px; direction: ltr; text-align: left; }
+  .legal-en p, .legal-en h2 { text-align: left; }
+  @media (max-width: 620px) {
+    .legal-table, .legal-table tbody, .legal-table tr, .legal-table td, .legal-table th { display: block; }
+    .legal-table th { display: none; }
+    .legal-table tr { border-bottom: 1px solid var(--line); padding: 10px 0; }
+    .legal-table td { border: 0; padding: 2px 0; }
+    .legal-table td:first-child { color: var(--sage-deep); }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">تجاوز إلى المحتوى</a>
+
+<!-- ═══════════════ الترويسة ═══════════════ -->
+<header class="site-header" id="site-header" role="banner">
+  <div class="header-inner container">
+    <a class="header-logo" href="index.html" aria-label="إتقان — الرئيسية">
+      <img class="brand-logo-img" src="assets/brand/itqan-mark.svg" alt="إتقان" width="421" height="204">
+      <span class="header-tagline">Active SOP</span>
+    </a>
+    <nav class="header-nav" aria-label="التنقل الرئيسي">
+      <a href="standard.html">المعيار</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="sop-arabic.html">SOP بالعربي</a>
+    </nav>
+    <div class="header-action">
+      <a class="btn btn-primary" href="request.html">اطلب عرضًا</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" type="button"
+            aria-expanded="false" aria-controls="mobile-menu"
+            aria-label="فتح القائمة">
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+      <span class="nav-toggle-bar"></span>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mobile-menu" hidden>
+    <nav aria-label="قائمة الجوال">
+      <a href="standard.html">المعيار</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="sop-arabic.html">SOP بالعربي</a>
+      <a class="btn btn-primary btn-full" href="request.html">اطلب عرضًا</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ═══════════════ الافتتاحية ═══════════════ -->
+<section class="page-hero" aria-labelledby="priv-heading">
+  <div class="container">
+    <p class="eyebrow">سياسة الخصوصية</p>
+    <h1 id="priv-heading">لا نجمع شيئًا خارج جلسة تسجيل تبدؤها أنت.</h1>
+    <p class="page-lead">هذه السياسة تخصّ إضافة كروم «إتقان — مسجّل خطوات الشاشة» وخدمة إتقان المرتبطة بها. مكتوبة لتُقرأ، لا لتُوقَّع دون قراءة.</p>
+    <div class="page-chips">
+      <span><i></i>الطمس قبل الرفع</span>
+      <span><i></i>قائمة أسرارك لا تغادر جهازك</span>
+      <span><i></i>لا بيع ولا إعلانات ولا تدريب نماذج</span>
+    </div>
+  </div>
+  <div class="section-divider" style="margin-top:56px" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════ البنود ═══════════════ -->
+<section class="section-standard" aria-label="بنود السياسة">
+  <div class="container">
+    <div class="legal">
+
+      <div class="legal-meta">
+        <span><b>آخر تحديث:</b> ٣ أكتوبر ٢٠٢٦</span>
+        <span><b>تخصّ:</b> إضافة كروم «إتقان — مسجّل خطوات الشاشة» وخدمة الويب <bdi>daleel.sootnote.com</bdi></span>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>١</span>ما نجمعه</h2>
+        <p>نجمع ما تُنشئه أنت حصرًا، وداخل جلسة تسجيل تبدؤها بنفسك:</p>
+        <ul>
+          <li><b>لقطات الخطوات:</b> صور للشاشة تُلتقط لحظة كل خطوة أثناء الجلسة، ويظهر فيها موضع النقر والعنصر الذي تعاملت معه.</li>
+          <li><b>سياق الخطوة:</b> عنوان الصفحة ورابطها ونصّ الزرّ أو الحقل الذي استخدمته — ليعود كل خطوة إلى موضعها الصحيح في النظام الذي توثّقه.</li>
+          <li><b>تعليقاتك الصوتية:</b> إن اخترت التسجيل الصوتي أثناء التوثيق.</li>
+          <li><b>محتوى الدليل:</b> العناوين والملاحظات والتعليقات التي تكتبها، وما تختاره من مشاركة أو إسناد.</li>
+          <li><b>بيانات الحساب الأساسية:</b> البريد الإلكتروني وكلمة مرور مُعمَّاة (hash) لإنشاء حسابك وحماية أدلّتك، ومساحة العمل التي تنتمي إليها.</li>
+        </ul>
+        <p class="legal-note">سكربت الإضافة موجود في الصفحات لكنه <b>خامل</b>: لا يضيف مستمعي أحداث ولا يقرأ محتوى الصفحة إلا بعد أن تبدأ جلسة تسجيل، ويعود إلى الخمول بإيقافها.</p>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>٢</span>ما لا نجمعه</h2>
+        <ul>
+          <li>لا سجلّ تصفّح: لا نقرأ تاريخ متصفّحك ولا صفحاتك خارج الجلسة.</li>
+          <li>لا تتبّع سلوكي ولا تحليلات استخدام لأغراض إعلانية.</li>
+          <li>لا كلمات مرورك المحفوظة في المتصفح ولا بيانات الملء التلقائي.</li>
+          <li>لا موقع جغرافي ولا دفتر عناوين ولا ملفّات من جهازك لم ترفعها أنت.</li>
+        </ul>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>٣</span>الطمس قبل الرفع</h2>
+        <p>قبل أن يغادر أي دليل جهازك، يعمل الطمس التلقائي <b>على جهازك</b> ليخفي ما يُكتشف من بيانات حسّاسة في اللقطات — كلمات المرور وأرقام الهوية وأرقام الجوال والحسابات البنكية والبريد الإلكتروني — إضافةً إلى ما تطمسه يدويًّا.</p>
+        <ul>
+          <li><b>«قائمة أسراري» الخاصة بك تُخزَّن على جهازك فقط ولا تُرفع أبدًا</b> — لا نعرف ما تحتويه ولا نقدر على معرفته.</li>
+          <li>الطمس يقع قبل أن تُحزَم اللقطة، لا بعد وصولها؛ النسخة المطمّسة هي ما يُرفع.</li>
+        </ul>
+        <p class="legal-note">الطمس التلقائي أداة مساعدة قوية وليس ضمانةً مطلقة. راجع الدليل قبل مشاركته — فأنت من يقرّر ما يُنشر ويتحمّل مسؤوليته.</p>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>٤</span>لماذا نستخدمها — غرض واحد</h2>
+        <p>نستخدم ما نجمعه لغرض واحد فقط: <b>تخزين أدلّتك وإتاحتها لمن تشاركها معهم أنت</b> — برابط سرّي، أو داخل مساحة عمل فريقك، أو بإسنادها إلى من تحدّده. لا نستخدمها لأي غرض آخر.</p>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>٥</span>تعليل كل صلاحية تطلبها الإضافة</h2>
+        <table class="legal-table">
+          <thead>
+            <tr><th>الصلاحية</th><th>لماذا</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>tabs</td><td>قراءة عنوان ورابط التبويب الذي توثّقه، ليعود كل خطوة إلى صفحتها الصحيحة.</td></tr>
+            <tr><td>scripting</td><td>زرع مساعد الالتقاط في التبويب النشط <b>لحظة بدء الجلسة فقط</b>، لتحديد العنصر المنقور وإبراز موضع النقر.</td></tr>
+            <tr><td>&lt;all_urls&gt;</td><td>أنت من يختار الموقع الذي توثّقه وقت التسجيل — منصّات حكومية، أنظمة موارد بشرية، لوحات داخلية — ولا يمكن حصرها مسبقًا.</td></tr>
+            <tr><td>storage · unlimitedStorage</td><td>حفظ مسوّداتك وإعداداتك وقائمة الطمس الخاصة بك على جهازك بين الجلسات.</td></tr>
+            <tr><td>sidePanel</td><td>واجهة المنتج كلّها تسكن اللوحة الجانبية: المكتبة، أزرار التسجيل، المحرّر.</td></tr>
+            <tr><td>offscreen</td><td>تحويل التعليق الصوتي إلى صيغة قابلة للرفع في الخلفية بلا نافذة مرئية.</td></tr>
+          </tbody>
+        </table>
+        <p>لا نطلب أي صلاحية خارج ما يلزم لتوثيق الخطوات.</p>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>٦</span>أطراف ثالثة — ومتى بالضبط</h2>
+        <p>لا نشارك محتواك مع أي طرف ثالث لأغراضه الخاصة. هناك حالتان تقعان <b>بطلبك المباشر فقط</b>:</p>
+        <ul>
+          <li><b>تفريغ التعليق الصوتي إلى نصّ:</b> حين تطلب التفريغ، يُرسَل المقطع الصوتي إلى مزوّد معالجة لغوية (<bdi>Groq</bdi>) لتنفيذ العملية، ويُحفَظ الناتج في دليلك. لا يُرسَل شيء آخر.</li>
+          <li><b>ترجمة الدليل:</b> حين تطلب الترجمة، يُرسَل نصّ الخطوات (لا اللقطات) إلى المزوّد نفسه لتوليد النسخة المترجمة.</li>
+        </ul>
+        <p>خارج هذين الطلبين لا يخرج محتواك من خدمتنا. ويبقى تخزين الأدلّة على خوادم الخدمة لدى مزوّد الاستضافة الذي نتعامل معه، بوصفه معالجًا للبيانات نيابةً عنّا لا مالكًا لها.</p>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>٧</span>التخزين والحذف</h2>
+        <p>في النسخة المتاحة عبر متجر كروم، تُخزَّن أدلّتك على خوادم خدمة إتقان ولا تُتاح إلا لك ولمن أعطيته الرابط أو عضوية مساحة العمل. رموز الدخول الحسّاسة لا تُخزَّن داخل الإضافة نفسها.</p>
+        <ul>
+          <li>يمكنك حذف أي دليل في أي وقت؛ وما يُحذف يمرّ بسلّة المحذوفات قبل الإزالة النهائية.</li>
+          <li>بحذف حسابك تُحذف أدلّتك وملفّاتها من خوادمنا.</li>
+          <li>روابط المشاركة السرّية يمكنك إبطالها في أي لحظة فتتوقف عن العمل فورًا.</li>
+        </ul>
+        <p class="legal-note"><b>النشر داخل نطاق المؤسسة:</b> في تركيبات المؤسسات التي تُنشَر على سيرفر العميل، تسكن الأدلّة وملفّاتها داخل بنية العميل ولا تمرّ بخوادمنا أصلًا — وهذه السياسة تنطبق حينها على الإضافة فقط، وسياسة البيانات تصير سياسة المؤسسة المالكة للسيرفر. <a href="security.html">تفاصيل الأمن والسرية</a>.</p>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>٨</span>ما لا نفعله إطلاقًا</h2>
+        <ul>
+          <li>لا نبيع بياناتك ولا نشاركها مع طرف ثالث لأغراض الإعلان أو التسويق.</li>
+          <li>لا نستخدم محتوى أدلّتك أو لقطاتك لتدريب نماذج ذكاء اصطناعي.</li>
+          <li>لا نستخدم بياناتك لأي غرض لا علاقة له بالغرض الوحيد في البند ٤ — ولا لتقييم جدارة ائتمانية أو إقراض.</li>
+          <li>لا ندرج شاشاتك في موادّنا التسويقية دون إذن مكتوب منك.</li>
+        </ul>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>٩</span>حقوقك</h2>
+        <p>لك في أي وقت: الوصول إلى أدلّتك، وتصديرها، وتصحيحها، وحذفها، وحذف حسابك بالكامل — من داخل الإضافة أو من الموقع. ولك أن تطلب نسخة من بياناتك أو تستفسر عن أي بند هنا عبر <a href="request.html">صفحة التواصل</a>.</p>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>١٠</span>الأمان</h2>
+        <p>الاتصال بالخدمة مُعمَّى عبر <bdi>HTTPS</bdi>، وكلمات المرور تُخزَّن مُعمَّاة لا كنصّ، وجلسات الدخول محدودة المدّة وقابلة للإبطال، وروابط الملفّات موقَّعة لا تُخمَّن. ولا يوجد نظام بلا مخاطر؛ إن اكتشفنا خللًا يمسّ بياناتك أبلغناك بما نعرفه ومتى عرفناه.</p>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>١١</span>الأعمار</h2>
+        <p>إتقان أداة عمل مؤسّسية وليست موجَّهة لمن هم دون ١٣ عامًا، ولا نجمع بيانات منهم عن قصد.</p>
+      </div>
+
+      <div class="legal-clause">
+        <h2><span>١٢</span>التعديلات والتواصل</h2>
+        <p>قد نحدّث هذه السياسة، وسيبقى تاريخ آخر تحديث ظاهرًا في أعلى الصفحة. وإن كان التعديل جوهريًّا أبلغنا مستخدمي الخدمة قبل سريانه. لأي سؤال أو طلب متعلّق بالخصوصية راسلنا عبر <a href="request.html">صفحة التواصل</a>.</p>
+      </div>
+
+      <div class="section-divider" aria-hidden="true"></div>
+
+      <!-- ═══════ ملخّص إنجليزي لفريق مراجعة متجر كروم ═══════ -->
+      <div class="legal-clause legal-en" id="english">
+        <h2><span>EN</span>Privacy Policy — ITQAN (summary)</h2>
+        <p>ITQAN is a Chrome extension that captures on-screen work steps and turns them into shareable Arabic step-by-step guides. We collect only what the user creates during a recording session they actively start: step screenshots with click positions, the documented page's title and URL, optional voice memos, guide text, and basic account information (email and a hashed password). The content script is present on pages but stays idle — it adds no event listeners and reads no page content until a recording session begins.</p>
+        <p>Automatic masking of sensitive fields (passwords, national IDs, phone numbers, bank accounts, emails) runs on the user's device before anything is uploaded; the user's private masking list never leaves their device. Broad host access is required because the user chooses which website to document at capture time and the target site cannot be pre-listed.</p>
+        <p>We use this data for a single purpose: storing the user's guides and serving them to the people the user shares them with. Two operations involve a processor and happen only on the user's explicit request: voice-memo transcription and guide translation, which send the audio clip, or the step text, to a language-processing provider (Groq) to perform that operation. Nothing else leaves the service.</p>
+        <p>We never sell user data, never use it for advertising, never use it to train AI models, and never use it for creditworthiness or lending purposes. Users can access, export, correct, and delete their guides and accounts at any time; deleting an account deletes its guides and files from our servers. For enterprise on-premise deployments, guides live inside the customer's own infrastructure and never reach our servers.</p>
+        <p>Contact: via the contact page on this website.</p>
+      </div>
+
+    </div>
+  </div>
+  <div class="section-divider" aria-hidden="true"></div>
+</section>
+
+<!-- ═══════════════ الخطوة التالية ═══════════════ -->
+<section class="section-compact" aria-label="الخطوة التالية">
+  <div class="container">
+    <div class="next-cta textured">
+      <div>
+        <h2>اسألنا عن كل سطر في هذه الصفحة.</h2>
+        <p>الخصوصية تُناقش وتُفحص، لا تُؤخذ على الثقة. في العرض نفتح بنية النشر والطمس للأسئلة الصعبة.</p>
+      </div>
+      <div class="cta-actions">
+        <a class="btn btn-primary" href="request.html">اطلب عرضًا</a>
+        <a class="link-arrow" href="security.html">الأمن والسرية</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══════════════ التذييل ═══════════════ -->
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-divider" aria-hidden="true"></div>
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <a class="footer-logo" href="index.html" aria-label="إتقان — الرئيسية">
+        <img class="brand-logo-img" src="assets/brand/itqan-mark.svg" alt="إتقان" width="421" height="204">
+      </a>
+      <p class="footer-derivation">
+        <b>إ</b>جراءات ال&zwj;<b>&zwj;ت&zwj;</b>&zwj;شغيل ال&zwj;<b>&zwj;ق&zwj;</b>&zwj;ياسية ال&zwj;<b>&zwj;ن&zwj;</b>&zwj;شطة
+      </p>
+      <p class="footer-tagline">إتقان — المتطلب والمسؤولية والدليل، في سياق واحد.</p>
+      <p class="footer-latin"><bdi>ITQAN</bdi> · <bdi>Active SOP</bdi></p>
+    </div>
+    <nav class="footer-nav-group" aria-label="استكشف">
+      <h3 class="footer-nav-title">استكشف</h3>
+      <a href="index.html">الرئيسية</a>
+      <a href="index.html#how-it-works">كيف يعمل</a>
+      <a href="index.html#roles">إتقان في إدارتك</a>
+      <a href="index.html#faq">أسئلة القرار</a>
+    </nav>
+    <nav class="footer-nav-group" aria-label="تواصل ومعلومات">
+      <h3 class="footer-nav-title">تواصل ومعلومات</h3>
+      <a href="request.html">طلب عرض</a>
+      <a href="standard.html">المعيار الخماسي</a>
+      <a href="security.html">الأمن والسرية</a>
+      <a href="privacy.html" aria-current="page">سياسة الخصوصية</a>
+    </nav>
+  </div>
+  <div class="footer-bottom">
+    <div class="container footer-bottom-inner">
+      <span class="footer-copy">© <span id="footer-year">2026</span> إتقان · <bdi>Active SOP</bdi></span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site-v2.js?v=7"></script>
+</body>
+</html>

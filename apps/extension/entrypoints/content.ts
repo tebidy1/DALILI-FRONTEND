@@ -15,6 +15,8 @@ import { createGestureCollector, type FoldedGesture } from '@/lib/gesture'
 import { pickInteractive } from '@/lib/pick'
 import { anchorOf } from '@/lib/anchor-of'
 import { createTrainMode, type TrainMode } from '@/lib/train-mode'
+import { createHelpMode } from '@/lib/help-mode'
+import { isTrainHosts } from '@/lib/train'
 import { shouldEmitNav } from '@/lib/session'
 import { pickBlurTarget } from '@/lib/blurpick'
 import { createOverlay } from '@/lib/overlay'
@@ -338,11 +340,19 @@ export default defineContentScript({
 
     /** دربني: وضع التدريب يُنشأ كسولًا عند أول خطوة — النتيجة تعلن للخلفية التي تدير الفهرس */
     let trainMode: TrainMode | null = null
+    /** هـ ج١: وضع «ما هذا؟» — كسول مثل التدريب، ويُفكك بخروجه */
+    let helpMode: ReturnType<typeof createHelpMode> | null = null
     function ensureTrainMode(): TrainMode {
       if (!trainMode) {
-        trainMode = createTrainMode((result) => {
-          chrome.runtime.sendMessage({ t: 'train-progress', result }).catch(() => {})
-        })
+        trainMode = createTrainMode(
+          (result) => {
+            chrome.runtime.sendMessage({ t: 'train-progress', result }).catch(() => {})
+          },
+          undefined,
+          undefined,
+          // ث١: نتيجة الخطوة تُرسل قبل تقدّمها — الخلفية تحفظها في موضعها
+          { outcome: (o) => void chrome.runtime.sendMessage({ t: 'train-outcome', ...o }).catch(() => {}) },
+        )
       }
       return trainMode
     }
@@ -354,6 +364,12 @@ export default defineContentScript({
       }
       if (msg.t === 'train-step' || msg.t === 'train-stop') {
         ensureTrainMode().handle(msg)
+        return
+      }
+      // هـ ج١: وضع «ما هذا؟» — يُنشأ كسولًا عند أول تشغيل، وردّه للوحة بـruntime.sendMessage
+      if (msg.t === 'help-on' || msg.t === 'help-notes' || msg.t === 'help-requested' || msg.t === 'help-off') {
+        if (!helpMode) helpMode = createHelpMode((out) => void chrome.runtime.sendMessage(out).catch(() => {}))
+        helpMode.handle(msg)
         return
       }
       // CAP-13: الخلفية التقطت اللقطة الآن — مستطيلات طمس طازجة على التخطيط الحالي.
@@ -415,11 +431,13 @@ export default defineContentScript({
     /** دربني: طلب بدء التدريب من الموقع — ترحيل موثوق عبر postMessage ثم ردّ بإشعار */
     window.addEventListener('message', (e) => {
       if (e.source !== window) return
-      const data = e.data as { source?: string; t?: string; token?: string; guide?: unknown }
+      const data = e.data as { source?: string; t?: string; token?: string; guide?: unknown; trial?: unknown; hosts?: unknown }
       if (data?.source !== 'dalili-web' || location.origin !== WEB_ORIGIN) return // لا نقبل طلبًا إلا من موقع دليلي نفسه
       // العارض يطلب بالرمز العام، والمحرر بالدليل الحالي نفسه (بلا مشاركة) — الرد يرحَّل للصفحة
       if (data.t === 'train-start' && (data.token || data.guide)) {
-        relay({ t: 'train-start', token: data.token, guide: data.guide }, 'train-ack')
+        // ث٢: الويب يقول صراحة إن كانت تجربة المؤلف (المحرر) — قارئ الويب يرسل الدليل أيضاً ونتائجه تُحسب.
+        // ث٣: hosts لدليل الشريك عند موظف الشركة — أين يُفتح بدل نسخة الشريك
+        relay({ t: 'train-start', token: data.token, guide: data.guide, trial: data.trial === true, hosts: isTrainHosts(data.hosts) ? data.hosts : undefined }, 'train-ack')
       }
       // AUTH-LIVE: دخول/خروج تم في صفحة الويب — بلا ردّ، الختم في التخزين هو إشارة اللوحة
       if (data.t === 'auth-changed') void chrome.runtime.sendMessage({ t: 'auth-changed' }).catch(() => {})

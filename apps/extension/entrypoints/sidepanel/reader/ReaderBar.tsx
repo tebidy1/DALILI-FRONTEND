@@ -31,7 +31,7 @@ export function ReaderBar({
     if (!guide || busy !== 'none') return
     setBusy('train')
     setMsg('')
-    const ack = await deps.startTrain(guide).catch(() => ({ ok: false, errorAr: trainFailAr() }))
+    const ack = await deps.startTrain(guide, details?.trainHosts).catch(() => ({ ok: false, errorAr: trainFailAr() }))
     setBusy('none')
     if (!ack.ok) setMsg(ack.errorAr || trainFailAr())
   }

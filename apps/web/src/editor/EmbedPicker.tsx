@@ -52,7 +52,8 @@ export function EmbedPicker({
   }, [onClose])
 
   const shown = useMemo(() => {
-    const guidesOnly = (items ?? []).filter((g) => g.kind !== 'booklet')
+    // د١ب: الدورة لا تُضمّ ولا تكون درساً — الأدلة وحدها (والخادم يحرس بـE-BKL-02/E-CRS-04/08)
+    const guidesOnly = (items ?? []).filter((g) => g.kind !== 'booklet' && g.kind !== 'course')
     const needle = q.trim()
     return needle ? guidesOnly.filter((g) => g.title.includes(needle)) : guidesOnly
   }, [items, q])

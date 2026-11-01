@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveBase } from './config'
+import { defaultBases, PROD_BASES, resolveBase } from './config'
 
 describe('PLAT-02: عناوين بيئية', () => {
   it('بلا متغير أو فارغ → الافتراضي المحلي', () => {
@@ -27,3 +27,26 @@ describe('PLAT-02: عناوين بيئية', () => {
     ).toBe('http://localhost:8787')
   })
 })
+
+describe('PLAT-05: افتراضيات حسب وضع البناء — حزمة المتجر لا تُبنى على localhost', () => {
+  it('وضع الإنتاج → النطاقان الحيّان حتى بلا ‎.env.production', () => {
+    expect(defaultBases({ PROD: true })).toEqual({ api: PROD_BASES.api, web: PROD_BASES.web })
+    expect(defaultBases({ MODE: 'production' })).toEqual({ api: PROD_BASES.api, web: PROD_BASES.web })
+  })
+
+  it('وضع التطوير أو بيئة فارغة → المضيف المحلي', () => {
+    expect(defaultBases({})).toEqual({ api: 'http://localhost:8787', web: 'http://localhost:5174' })
+    expect(defaultBases({ MODE: 'development', PROD: false })).toEqual({
+      api: 'http://localhost:8787',
+      web: 'http://localhost:5174',
+    })
+  })
+
+  it('النطاقان الحيّان https وبلا شرطة ختامية — يُلصقان في مسارات /files و/g مباشرة', () => {
+    for (const b of [PROD_BASES.api, PROD_BASES.web]) {
+      expect(b).toMatch(/^https:\/\//)
+      expect(b.endsWith('/')).toBe(false)
+    }
+  })
+})
+

@@ -15,13 +15,14 @@ export function makeReaderDeps(client: DaliliClient): ReaderDeps {
     webBase: WEB_BASE,
     load: (id, signal) => client.getGuide(id, signal),
     createShare: (id) => client.createShare(id),
-    startTrain: async (guide) => {
-      const ack = (await chrome.runtime.sendMessage({ t: 'train-start', guide }).catch(() => null)) as TrainAck | null
+    startTrain: async (guide, hosts) => {
+      const ack = (await chrome.runtime.sendMessage({ t: 'train-start', guide, hosts }).catch(() => null)) as TrainAck | null
       return ack ?? { ok: false, errorAr: trainFailAr() }
     },
     copyText,
     openTab: (url) => {
       window.open(url, '_blank')
     },
+    markRead: (id) => client.markGuideRead(id),
   }
 }

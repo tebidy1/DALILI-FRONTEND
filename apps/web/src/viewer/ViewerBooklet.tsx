@@ -16,9 +16,15 @@ import { shotOf } from '../lib/format'
 export function ViewerBooklet({
   guide,
   embeds,
+  embedHref = (id) => `#${id}`,
+  outline = true,
 }: {
   guide: GuideDto
   embeds: Record<string, GuideDto>
+  /** د١: أين يفتح المضمّن — الرابط العام يقفز داخل الصفحة، والقارئ العضو يفتحه (وفي الدورة يحمل الدورة معه) */
+  embedHref?: (guideId: string) => string
+  /** د١ب: درس الصفحة في الدورة بلا فهرس جانبي — صفحة قصيرة لا كرّاسة */
+  outline?: boolean
 }) {
   if (guide.steps.length === 0) {
     return <p className="booklet-empty">{t('booklet.empty')}</p>
@@ -26,20 +32,20 @@ export function ViewerBooklet({
 
   // بلا فهرس (لا كتل عنوان) لا يُحجز عمود جانبي — العمود يملأ عرض الدليل ويتوسّط،
   // وإلا سقط المتن في عمود الفهرس الضيّق فتكسّرت الكلمة على سطر (بلاغ المالك 2026-09-10)
-  const hasIndex = bookletOutline(guide.steps).length > 0
+  const hasIndex = outline && bookletOutline(guide.steps).length > 0
   return (
     <div className={`booklet-view booklet-doc${hasIndex ? ' has-index' : ''}`}>
-      <BookletOutline steps={guide.steps} />
+      {outline && <BookletOutline steps={guide.steps} />}
       <div className="booklet-body">
         {guide.steps.map((s) => (
-          <ViewerBookletBlock key={s.id} step={s} embeds={embeds} />
+          <ViewerBookletBlock key={s.id} step={s} embeds={embeds} embedHref={embedHref} />
         ))}
       </div>
     </div>
   )
 }
 
-function ViewerBookletBlock({ step, embeds }: { step: StepDto; embeds: Record<string, GuideDto> }) {
+function ViewerBookletBlock({ step, embeds, embedHref }: { step: StepDto; embeds: Record<string, GuideDto>; embedHref: (guideId: string) => string }) {
   switch (step.block) {
     case 'header':
       return (
@@ -85,7 +91,7 @@ function ViewerBookletBlock({ step, embeds }: { step: StepDto; embeds: Record<st
           expanded={!!step.embed?.expanded && !!g}
           missing={!g}
           missingText={t('booklet.embedUnavailable')}
-          openHref={g ? `#${gid}` : undefined}
+          openHref={g ? embedHref(gid) : undefined}
           onToggle={() => {}}
         >
           {g && <EmbeddedSteps guide={g} />}

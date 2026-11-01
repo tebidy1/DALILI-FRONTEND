@@ -69,18 +69,9 @@ describe('train-card — بطاقة خط اليد بلا خلفية + دائرة
     card.unmount()
   })
 
-  it('حالة البحث: بطاقة تظهر فورًا بنص «أبحث عن الزر…» قبل الحل — لا انتظار أعمى', () => {
-    const card = createTrainCard()
-    card.showStep({ step, idx: 0, total: 1, guideTitle: 'د', target: null })
-    const host = document.querySelector('dalili-train')!
-    expect(host.shadowRoot!.textContent).toContain('أبحث عن الزر')
-    expect((host.shadowRoot!.querySelector('svg.ring') as HTMLElement).style.display).toBe('none')
-    card.unmount()
-  })
-
   it('بعد انقضاء مهلة البحث: رسالة عدم وجود صادقة بدل البحث الأبدي', () => {
     const card = createTrainCard()
-    card.showStep({ step, idx: 0, total: 1, guideTitle: 'د', target: null })
+    card.markPreparing({ step, idx: 0, total: 1, guideTitle: 'د' })
     card.markMissing()
     const host = document.querySelector('dalili-train')!
     expect(host.shadowRoot!.textContent).toContain('لم أجد هذا الزر')
@@ -160,5 +151,122 @@ describe('train-card — بطاقة خط اليد بلا خلفية + دائرة
     expect(styleTxt).not.toContain('#FDBA74')
     expect(styleTxt).not.toContain('#6EE7A0')
     card.unmount()
+  })
+})
+
+describe('ث١: حالات البطاقة الصادقة', () => {
+  const ctx = { step, idx: 0, total: 3, guideTitle: 'دليل الفاتورة' }
+  const root = () => document.querySelector('dalili-train')!.shadowRoot!
+  const text = () => root().querySelector('.card')!.textContent ?? ''
+  const ring = () => root().querySelector<SVGSVGElement>('svg.ring')!
+  const press = (label: string) => [...root().querySelectorAll('button')].find((b) => b.textContent === label)!.click()
+  const shot = { url: 'https://files.test/shot.png', mark: { x: 40, y: 30, w: 100, h: 30 } }
+
+  it('التجهيز: حركة انتظار بلا عبارة توجيه ولا إطار', () => {
+    const card = createTrainCard()
+    card.markPreparing(ctx)
+    expect(text()).toContain('نجهّز الخطوة')
+    expect(text()).not.toContain(step.title)
+    expect(ring().style.display).toBe('none')
+    expect(root().querySelectorAll('.prep i').length).toBe(3)
+  })
+
+  it('مغطّى بنافذة: الرسالة المناسبة بلا إطار', () => {
+    const card = createTrainCard()
+    card.markPreparing(ctx)
+    card.markCovered(ctx, 'dialog')
+    expect(text()).toContain('أغلق النافذة')
+    expect(ring().style.display).toBe('none')
+  })
+
+  it('غير متأكد: إطار متقطّع وسؤال بالجهة وزرّان يبلّغان الجواب', () => {
+    const target = withRect(place('<button>الزبون</button>'))
+    const card = createTrainCard()
+    const got: string[] = []
+    card.onUnsure((a) => got.push(a))
+    card.markPreparing(ctx)
+    card.markUnsure(ctx, target, 'left')
+    expect(text()).toContain('يسار الشاشة')
+    expect(text()).toContain(step.title)
+    expect(ring().classList.contains('unsure')).toBe(true)
+    expect(ring().style.display).toBe('')
+    press('ليس هذا')
+    press('نعم، هذا هو')
+    expect(got).toEqual(['no', 'yes'])
+  })
+
+  it('غير موجود: صورة الزر تظهر إن وُجدت', () => {
+    const card = createTrainCard()
+    card.markPreparing({ ...ctx, step: { ...step, shot } })
+    card.markMissing()
+    expect(root().querySelector('img')?.getAttribute('src')).toBe(shot.url)
+  })
+
+  it('تحميل الصورة يعيد وضع البطاقة — لا تكبر فوق الزر (مراجعة I6)', () => {
+    const target = withRect(place('<button>الزبون</button>'), 300, 300, 80, 30)
+    const card = createTrainCard()
+    card.markUnsure({ ...ctx, step: { ...step, shot } }, target, 'left')
+    withRect(target, 300, 500, 80, 30) // الصفحة تحرّكت قبل أن يصل الملف
+    const img = root().querySelector('img')!
+    Object.defineProperty(img, 'naturalWidth', { value: 800 })
+    Object.defineProperty(img, 'naturalHeight', { value: 600 })
+    img.dispatchEvent(new Event('load'))
+    expect(ring().style.top).toBe(`${500 - 16}px`)
+  })
+
+  it('صورة تفشل في التحميل تُخفى بصمت', () => {
+    const card = createTrainCard()
+    card.markPreparing({ ...ctx, step: { ...step, shot } })
+    card.markMissing()
+    root().querySelector('img')!.dispatchEvent(new Event('error'))
+    expect(root().querySelector<HTMLElement>('.shot')!.hidden).toBe(true)
+  })
+
+  it('المؤكَّد بعد غير المتأكد: الإطار متصل لا متقطّع', () => {
+    const target = withRect(place('<button>الزبون</button>'))
+    const card = createTrainCard()
+    card.markPreparing(ctx)
+    card.markUnsure(ctx, target, 'left')
+    card.showStep({ ...ctx, target })
+    expect(ring().classList.contains('unsure')).toBe(false)
+  })
+
+  it('البطاقة لا تُموضَع فوق مستطيل الهدف', () => {
+    const target = withRect(place('<button>حفظ</button>'), 10, 10, 140, 44)
+    const card = createTrainCard()
+    card.showStep({ ...ctx, target })
+    expect(parseFloat(root().querySelector<HTMLElement>('.card')!.style.top)).toBeGreaterThanOrEqual(54)
+  })
+
+  it('إعادة الوضع لا تعيد رسم الدائرة — لا رمش ولا رسم حي متكرر (مراجعة I2)', () => {
+    const target = withRect(place('<button>حفظ</button>'), 300, 300, 80, 30)
+    const card = createTrainCard()
+    card.showStep({ ...ctx, target })
+    const path = ring().querySelector('path')
+    withRect(target, 300, 340, 80, 30)
+    card.reposition()
+    expect(ring().querySelector('path')).toBe(path)
+    expect(ring().style.top).toBe(`${340 - 16}px`)
+  })
+
+  it('هدف ظاهر في منفذ العرض لا يُمرَّر إليه — لا قفز للصفحة (مراجعة I3)', () => {
+    const target = withRect(place('<button>حفظ</button>'), 300, 300, 80, 30)
+    const scroll = vi.fn()
+    target.scrollIntoView = scroll
+    createTrainCard().showStep({ ...ctx, target })
+    expect(scroll).not.toHaveBeenCalled()
+    withRect(target, 300, 5000, 80, 30)
+    createTrainCard().showStep({ ...ctx, target })
+    expect(scroll).toHaveBeenCalledOnce()
+  })
+
+  it('انتظار الدخول: «افتح الشاشة المطلوبة» يبلّغ', () => {
+    const card = createTrainCard()
+    const open = vi.fn()
+    card.onOpenTarget(open)
+    card.markPreparing(ctx)
+    card.markWaiting()
+    press('افتح الشاشة المطلوبة')
+    expect(open).toHaveBeenCalledOnce()
   })
 })

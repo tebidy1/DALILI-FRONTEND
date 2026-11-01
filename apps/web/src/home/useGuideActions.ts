@@ -6,6 +6,7 @@ import { copyToClipboard } from '../lib/format'
 import { emptySelection, type Selection } from '../lib/selection'
 import { useConfirm } from '../components/ConfirmProvider'
 import type { HomeScreen } from './screen'
+import type { GuideModeration } from './moderation'
 
 /**
  * كل إجراءات أدلة الهوم في خطاف واحد — إجراء الفردي (حذف/استعادة/بوكمارك/تكرار/
@@ -35,11 +36,11 @@ export function useGuideActions(d: GuideActionsDeps) {
   const [creating, setCreating] = useState(false)
 
   /** المسار المشترك لـ«دليل جديد» و«كرّاسة» — الإنشاء ثم إعادة الجلب والفتح، والفشل رسالة صادقة */
-  async function create(kind: 'guide' | 'booklet') {
+  async function create(kind: 'guide' | 'booklet' | 'course') {
     setCreating(true)
     try {
       const mod = await import('../lib/newGuide')
-      const id = kind === 'booklet' ? await mod.createAndOpenBooklet() : await mod.createAndOpenGuide()
+      const id = kind === 'booklet' ? await mod.createAndOpenBooklet() : kind === 'course' ? await mod.createCourse() : await mod.createAndOpenGuide()
       d.reloadOverview()
       d.navigate(`/g/${id}`)
     } catch {
@@ -56,6 +57,11 @@ export function useGuideActions(d: GuideActionsDeps) {
   /** BKL-01: «كرّاسة» — نفس مسار الإنشاء والنوع وحده يفرّق */
   function newBooklet() {
     return create('booklet')
+  }
+
+  /** د١ب: «دورة» — نفس مسار الإنشاء */
+  function newCourse() {
+    return create('course')
   }
 
   /**
@@ -143,6 +149,34 @@ export function useGuideActions(d: GuideActionsDeps) {
       d.reloadOverview()
     } catch {
       d.setError(t('home.publishError'))
+    }
+  }
+
+  /**
+   * ب: إشراف المدير ومدير القسم. التثبيت يغيّر الترتيب والتوثيق يحتاج اسم الموثّق من الخادم،
+   * فالقائمة تُعاد من الخادم (لا لافتة هنا تمسحها). القسم وحده يُحدَّث موضعياً من جواب الخادم.
+   */
+  async function moderate(g: GuideSummaryDto, m: GuideModeration): Promise<boolean> {
+    try {
+      if (m.kind === 'team') {
+        const fresh = await client.updateGuideMeta(g.id, { ownerTeamId: m.teamId })
+        d.setData((prev) => (prev ? { ...prev, items: prev.items.map((x) => (x.id === g.id ? { ...x, ...fresh } : x)) } : prev))
+        d.reloadOverview()
+        return true
+      }
+      switch (m.kind) {
+        case 'suspend': await client.suspendGuide(g.id, m.reason); break
+        case 'resume': await client.resumeGuide(g.id); break
+        case 'pin': await client.pinGuide(g.id); break
+        case 'unpin': await client.unpinGuide(g.id); break
+        case 'verify': await client.verifyGuide(g.id); break
+        case 'unverify': await client.unverifyGuide(g.id); break
+      }
+      d.bumpReload()
+      return true
+    } catch {
+      d.setError(t('home.moderateError'))
+      return false
     }
   }
 
@@ -236,12 +270,14 @@ export function useGuideActions(d: GuideActionsDeps) {
     creating,
     newGuide,
     newBooklet,
+    newCourse,
     remove,
     restore,
     toggleBookmark,
     duplicate,
     moveTo,
     toggleVisibility,
+    moderate,
     shareCopy,
     bulkDelete,
     bulkMove,

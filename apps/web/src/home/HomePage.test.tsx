@@ -166,6 +166,38 @@ describe('شريط الأعلى بنمط المرجع', () => {
   })
 })
 
+describe('القسم المالك (أ٢ — ORG-04)', () => {
+  const WITH_TEAMS: LibraryOverviewDto = { ...ADMIN_VIEW, teams: [{ id: 't-buy', name: 'المشتريات', count: 4 }] }
+
+  it('البطاقة تحمل شارة قسمها، ودليل بلا قسم بلا شارة', async () => {
+    renderHome('/', WITH_TEAMS, [{ ...OTHERS, ownerTeamId: 't-buy', ownerTeamName: 'المشتريات' }, MINE])
+    await screen.findByText('دليل زميلي المنشور')
+    const chips = document.querySelectorAll('.dept-chip')
+    expect(chips).toHaveLength(1)
+    expect(chips[0]!.textContent).toBe('المشتريات')
+  })
+
+  it('فلتر «القسم» يرسل team ويُظهر رقاقته باسم القسم — و«امسح» يرفعه', async () => {
+    renderHome('/', WITH_TEAMS)
+    await screen.findByText('دليلي الخاص')
+    fireEvent.click(screen.getByText(t('home.filters')))
+    const teamRow = within(screen.getByRole('group', { name: t('home.filters') })).getByRole('group', { name: t('home.filterTeam') })
+    fireEvent.click(within(teamRow).getByRole('button', { name: /المشتريات/ }))
+    await waitFor(() => expect(lastListQuery()).toMatchObject({ team: 't-buy' }))
+    const active = screen.getByRole('group', { name: t('home.activeFilters') })
+    expect(within(active).getByText(`${t('home.filterTeam')}: المشتريات`)).toBeTruthy()
+    fireEvent.click(screen.getByText(t('home.clearFilters')))
+    await waitFor(() => expect('team' in lastListQuery()).toBe(false))
+  })
+
+  it('مساحة بلا أقسام: لا صف «القسم» في اللوحة', async () => {
+    renderHome()
+    await screen.findByText('دليلي الخاص')
+    fireEvent.click(screen.getByText(t('home.filters')))
+    expect(within(screen.getByRole('group', { name: t('home.filters') })).queryByRole('group', { name: t('home.filterTeam') })).toBeNull()
+  })
+})
+
 describe('مربع البحث في متن الشاشات الأولى (طلب المالك 2026-09-03)', () => {
   it.each(['/', '/mine', '/saved'])('يظهر مربع البحث في الشاشة %s', async (at) => {
     renderHome(at)
@@ -343,6 +375,20 @@ describe('حالات الفراغ لكل شاشة', () => {
     await screen.findByText(t('home.startTitle'))
     fireEvent.click(screen.getAllByText(t('library.newGuide'))[0]!)
     await waitFor(() => expect(client.createGuide).toHaveBeenCalled())
+  })
+
+  it('د١ب: «دورة» تنشئ دورة فارغة', async () => {
+    vi.mocked(client.createGuide).mockClear()
+    renderHome('/', ADMIN_VIEW, [])
+    fireEvent.click(await screen.findByRole('button', { name: t('library.newCourse') }))
+    await waitFor(() => expect(client.createGuide).toHaveBeenCalled())
+    expect(vi.mocked(client.createGuide).mock.calls[0]![0]).toMatchObject({ kind: 'course', title: t('course.untitled'), steps: [] })
+  })
+
+  it('د١ب: بطاقة الدورة تحمل شارة «دورة»', async () => {
+    renderHome('/', ADMIN_VIEW, [{ ...MINE, id: 'c1', title: 'دورة الفواتير', kind: 'course' }])
+    await screen.findByText('دورة الفواتير')
+    expect(screen.getByText(t('library.kindCourse'))).toBeTruthy()
   })
 
   it('أنشئ بواسطي فارغ → «لم تنشئ أدلة بعد» — والمحفوظات فارغة → «لا محفوظات بعد»', async () => {

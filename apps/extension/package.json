@@ -1,12 +1,13 @@
 {
   "name": "@dalili/extension",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wxt",
     "build": "wxt build -b chrome",
     "zip": "wxt zip -b chrome",
+    "verify:store": "node scripts/verify-store-package.mjs",
     "test": "vitest run",
     "typecheck": "wxt prepare && tsc --noEmit"
   },

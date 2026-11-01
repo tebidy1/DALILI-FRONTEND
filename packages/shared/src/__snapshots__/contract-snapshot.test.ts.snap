@@ -64,6 +64,7 @@ exports[`لقطة عقد الدليل (zGuide) > مخطط JSON مستقر — ك
       "enum": [
         "guide",
         "booklet",
+        "course",
       ],
       "type": "string",
     },
@@ -97,6 +98,7 @@ exports[`لقطة عقد الدليل (zGuide) > مخطط JSON مستقر — ك
               "link",
               "image",
               "video",
+              "lesson",
             ],
             "type": "string",
           },
@@ -130,6 +132,49 @@ exports[`لقطة عقد الدليل (zGuide) > مخطط JSON مستقر — ك
               "keypress",
             ],
             "type": "string",
+          },
+          "lesson": {
+            "additionalProperties": false,
+            "properties": {
+              "guideId": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "note": {
+                "maxLength": 500,
+                "type": "string",
+              },
+              "title": {
+                "maxLength": 120,
+                "type": "string",
+              },
+              "type": {
+                "enum": [
+                  "guide",
+                  "video",
+                  "page",
+                ],
+                "type": "string",
+              },
+              "video": {
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "url",
+                ],
+                "type": "object",
+              },
+            },
+            "required": [
+              "type",
+              "title",
+            ],
+            "type": "object",
           },
           "note": {
             "type": "string",
@@ -590,6 +635,44 @@ exports[`لقطة عقد الدليل (zGuide) > مخطط JSON مستقر — ك
                       "properties": {
                         "k": {
                           "const": "controlType",
+                          "type": "string",
+                        },
+                        "v": {
+                          "maxLength": 60,
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                      },
+                      "required": [
+                        "k",
+                        "v",
+                      ],
+                      "type": "object",
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "k": {
+                          "const": "label",
+                          "type": "string",
+                        },
+                        "v": {
+                          "maxLength": 80,
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                      },
+                      "required": [
+                        "k",
+                        "v",
+                      ],
+                      "type": "object",
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "k": {
+                          "const": "ctx",
                           "type": "string",
                         },
                         "v": {

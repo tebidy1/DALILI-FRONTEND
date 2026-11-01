@@ -95,6 +95,14 @@ export const CloseIcon = () => (
 )
 
 /** PNL-01: ↵ «اعرضه هنا» — شكل مفتاح الإدخال: الدليل يدخل إلى اللوحة */
+/** ت (§٥): 👁 عدد القرّاء — العلامة المألوفة للمشاهدات */
+export const EyeIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+)
+
 export const EnterIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 4v7a4 4 0 0 1-4 4H4" />

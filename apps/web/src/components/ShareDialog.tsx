@@ -34,6 +34,8 @@ interface Props {
    * تلقائيًا ويعرض قائمة فحص أولًا — لا تسريب صامت ولا حجب مفاجئ.
    */
   embedTitles?: string[]
+  /** فشل الرابط أو النشر (منها رفض الصلاحية E-PUB-01) — يُعرض داخل النافذة لا خلفها */
+  error?: string
 }
 
 /** كود التضمين من رمز المشاركة — مسار /embed/s/:token القائم */
@@ -60,6 +62,7 @@ export function ShareDialog({
   copiedHtml,
   onPrint,
   embedTitles,
+  error,
 }: Props) {
   const [tab, setTab] = useState<Tab>('link')
   const [copied, setCopied] = useState(false)
@@ -177,6 +180,11 @@ export function ShareDialog({
         </div>
 
         <div className="dialog-body">
+          {error && (
+            <div className="err" role="alert">
+              {error}
+            </div>
+          )}
           {tab === 'link' && (
             <>
               {share ? (

@@ -40,6 +40,20 @@ export function urlTokens(url: string): UrlTokens {
   }
 }
 
+/**
+ * هـ ج١ (HLP): مفتاح الشاشة — رموز **المسار والـhash فقط** (بلا الاستعلام ولا المضيف)،
+ * صغيرة، بلا مكرر ولا رموز متغيّرة (أرقام السجلات)، مرتّبة ومضمومة بمسافة.
+ * الخصوصية: لا يتسرّب للخادم رقم سجل ولا قيمة بحث؛ والفاتورة تُميَّز عن أمر الشراء.
+ */
+export function screenKey(url: string): string {
+  const u = parseUrl(url)
+  if (!u || !/^https?:$/.test(u.protocol) || !u.hostname) return ''
+  const toks = splitTokens(`${u.pathname} ${u.hash}`)
+    .map((t) => t.toLowerCase())
+    .filter((t) => !isVolatile(t))
+  return [...new Set(toks)].sort().join(' ')
+}
+
 export interface DiscoverRef {
   id: string
   title: string
@@ -87,4 +101,27 @@ export function rankDiscover(
   onScreen.sort(byPopularity)
   onSite.sort(byPopularity)
   return { onScreen: onScreen.slice(0, limit), onSite: onSite.slice(0, limit) }
+}
+
+/** رابط مفسَّر أو null — بديل URL.canParse (Chrome 120+ / Safari 17+ فقط: يُسقط محرر الشريك في متصفح أقدم) */
+export function parseUrl(url: string): URL | null {
+  try {
+    return new URL(url)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * ث٣ (§٥.٧): هل يبدأ الرابط من سجل محدد (فاتورة رقم ٣) لا من قائمة أو «جديد»؟ السجل قد لا يوجد عند العميل.
+ * آخر جزء من المسار (أو من مسار الـhash) رقم، أو id=<رقم> في الاستعلام أو الـhash (أودو القديم #id=12).
+ */
+export function startsAtRecord(url: string): boolean {
+  const u = parseUrl(url)
+  if (!u) return false
+  const lastNumeric = (path: string) => /^\d+$/.test(path.split('/').filter(Boolean).pop() ?? '')
+  const hash = u.hash.replace(/^#!?/, '')
+  const [hashPath = '', hashQuery = ''] = hash.includes('=') && !hash.startsWith('/') ? ['', hash] : hash.split('?')
+  const idParam = (q: string) => /^\d+$/.test(new URLSearchParams(q).get('id') ?? '')
+  return lastNumeric(u.pathname) || lastNumeric(hashPath) || idParam(u.search) || idParam(hashQuery)
 }

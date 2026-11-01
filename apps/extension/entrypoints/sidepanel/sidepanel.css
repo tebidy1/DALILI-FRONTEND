@@ -160,8 +160,30 @@ button.ghost.danger-text.armed { border-color: var(--dl-danger); background: col
 }
 .doc-ic svg { width: 15px; height: 15px; }
 .doc-tx { flex: 1; min-width: 0; font-size: .88rem; line-height: 1.4; }
-.doc-tx bdi { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dl-ink); }
 .doc-tx small { display: block; color: var(--dl-muted); font-size: .74rem; margin-top: 3px; }
+
+/* ت (§٥): السطر الأول ★ ثم العنوان ثم «جديد»/«تحديث» و«موثّق» — العنوان وحده يُقصّ */
+.doc-t { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.doc-t bdi { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dl-ink); }
+.doc-pin { color: #A8761C; flex: none; }
+.doc-fresh { flex: none; font-size: .64rem; font-weight: 700; line-height: 1.6; border-radius: 999px; padding: 0 6px; }
+.doc-fresh.new { background: #1F5F8B; color: #fff; }
+.doc-fresh.updated { color: #1F5F8B; border: 1px solid color-mix(in srgb, #1F5F8B 40%, transparent); background: color-mix(in srgb, #1F5F8B 8%, transparent); }
+.doc-ver { flex: none; font-size: .64rem; font-weight: 600; color: #2F6B4F; border: 1px solid color-mix(in srgb, #2F6B4F 30%, transparent); background: color-mix(in srgb, #2F6B4F 7%, transparent); border-radius: 999px; padding: 0 6px; }
+@media (prefers-color-scheme: dark) {
+  .doc-pin { color: #D9A94A; }
+  .doc-fresh.new { background: #6FA8D6; color: #142434; }
+  .doc-fresh.updated { color: #8FBEE3; }
+  .doc-ver { color: #7FC3A0; }
+}
+/* السطر الثاني: المنشئ · 👁 · القسم */
+.doc-tx small.doc-m { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.doc-by { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.doc-partner { width: 15px; height: 15px; border-radius: 4px; object-fit: contain; display: inline-grid; place-items: center; font-size: .55rem; font-weight: 700; background: var(--dl-ink); color: var(--dl-surface); }
+.doc-eye { display: inline-flex; align-items: center; gap: 3px; }
+.doc-eye svg { width: 13px; height: 13px; }
+.doc-sep { font-style: normal; }
+.doc-dept { border: 1px solid var(--dl-line); background: var(--dl-surface2); border-radius: 999px; padding: 0 7px; color: var(--dl-ink); font-size: .68rem; }
 
 /* PNL-01: زر ↵ «اعرضه هنا» — يظهر بالمرور وبالتركيز، ودائمًا على اللمس */
 .doc-row { position: relative; }
@@ -233,6 +255,36 @@ a:hover { text-decoration: underline; }
 .discover-head { display: flex; align-items: center; gap: 7px; font-size: .76rem; font-weight: 600; color: var(--dl-ink); margin-bottom: 5px; padding: 2px 2px 4px; }
 .discover-badge { background: color-mix(in srgb, var(--dl-brand) 13%, transparent); color: var(--dl-brand); font-weight: 600; border-radius: 999px; padding: 2px 10px; font-size: .72rem; }
 .discover .doc { padding: 10px 4px; }
+
+/* قرار المالك 2026-10-31: شريط أدلة الشريك — زر وعنوان معاً. يلتصق بأسفل اللوحة ما دامت
+   مجموعته تحته، ويقف في مكانه فوقها حين تصل إليها. السهم يشير إلى حيث ستتحرك القائمة */
+.partner-bar {
+  position: sticky; bottom: 10px; z-index: 3;
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: start;
+  font: inherit; color: var(--dl-ink); cursor: pointer;
+  padding: 9px 12px; border-radius: 12px; border: 1px solid var(--dl-line);
+  background: var(--dl-surface2);
+  box-shadow: 0 -6px 18px -10px color-mix(in srgb, var(--dl-ink) 35%, transparent);
+  transition: border-color .15s ease, background .15s ease;
+}
+.partner-bar:hover { filter: none; border-color: var(--dl-brand); }
+.partner-bar:focus-visible { outline: 2px solid var(--dl-brand); outline-offset: 2px; }
+.partner-bar-logo {
+  width: 26px; height: 26px; flex: none; border-radius: 7px; object-fit: contain;
+  display: grid; place-items: center; font-size: .75rem; font-weight: 700;
+  background: var(--dl-ink); color: var(--dl-surface);
+}
+img.partner-bar-logo { background: var(--dl-surface); border: 1px solid var(--dl-line); }
+.partner-bar-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.partner-bar-tx small { font-size: .68rem; color: var(--dl-muted); font-weight: 500; }
+.partner-bar-tx bdi { font-size: .86rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.partner-bar-chev { width: 16px; height: 16px; flex: none; color: var(--dl-muted); transform: rotate(180deg); transition: transform .25s ease; }
+.partner-bar-chev svg { width: 100%; height: 100%; display: block; }
+.partner-bar.open .partner-bar-chev { transform: none; }
+/* القائمة تلتصق بشريطها (جسم اللوحة يفصل أبناءه بـ20px)، ومسافة الصعود تُبقي الشريط في الأعلى ولو قصرت */
+.partner-bar + .partner-list { margin-top: -14px; }
+.partner-list.reach { min-height: calc(100vh - 64px); }
+@media (prefers-reduced-motion: reduce) { .partner-bar-chev { transition: none; } }
 
 /* CAP-19: قائمة القدرات المعلنة — مطويّة هادئة */
 .caps { border: 1px solid var(--dl-line); border-radius: 12px; padding: 10px 13px; font-size: .8rem; }
@@ -515,4 +567,111 @@ a:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) {
   .memo-wave-bars i:nth-child(3n) { height: 72%; }
   .memo-wave-bars i:nth-child(3n+1) { height: 40%; }
+}
+
+/* ——— ت (§٣.٥): شريط الحساب تحت الترويسة ——— */
+.acct-wrap { position: relative; margin: 0 18px; }
+.acct {
+  width: 100%; display: flex; align-items: center; gap: 10px; padding: 7px 10px; margin: 0;
+  border: 1px solid var(--dl-line); border-radius: 11px; background: var(--dl-surface); color: var(--dl-ink); font-weight: 500;
+}
+div.acct { margin: 0 18px; width: auto; }
+button.acct:hover { filter: none; background: var(--dl-surface2); }
+button.acct:disabled { opacity: .6; }
+.acct-logo { width: 26px; height: 26px; border-radius: 7px; flex: none; display: grid; place-items: center; font-size: .7rem; font-weight: 700; background: var(--dl-ink); color: var(--dl-surface); }
+.acct-name { flex: 1; min-width: 0; text-align: start; font-size: .86rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-kind { flex: none; font-size: .68rem; color: var(--dl-muted); border: 1px solid var(--dl-line); border-radius: 999px; padding: 0 7px; }
+.acct-caret { color: var(--dl-muted); font-size: .8rem; }
+.acct-menu {
+  position: absolute; z-index: 20; top: calc(100% + 6px); inset-inline: 0; padding: 6px;
+  background: var(--dl-surface); border: 1px solid var(--dl-line); border-radius: 12px; box-shadow: 0 14px 34px rgb(0 0 0 / .16);
+}
+.acct-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px; border: none; border-radius: 8px; background: transparent; color: var(--dl-ink); font-size: .86rem; }
+.acct-item:hover, .acct-item.on { filter: none; background: var(--dl-surface2); }
+.acct-item .acct-kind { border: none; padding: 0; }
+.acct-note { margin: 4px 8px 2px; font-size: .72rem; color: var(--dl-muted); }
+
+/* ——— ت: حالات القائمة (القانون ٤) ——— */
+.pstate { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 18px 12px; }
+.pstate-t { font-size: .92rem; font-weight: 600; color: var(--dl-ink); }
+.pstate-t.warn { color: var(--dl-danger); }
+.pstate-h { font-size: .82rem; color: var(--dl-muted); }
+button.pstate-btn { background: transparent; color: var(--dl-ink); border-color: var(--dl-line); padding: 8px 16px; }
+button.pstate-btn:hover { filter: none; background: var(--dl-surface2); }
+button.pstate-btn.primary { background: var(--dl-ink); color: var(--dl-surface); border-color: var(--dl-ink); }
+.sk-line, .sk-row { border-radius: 10px; background: var(--dl-surface2); }
+.sk-line { width: 40%; height: 12px; margin: 2px 2px 10px; }
+.sk-row { height: 44px; margin-bottom: 8px; animation: pulse 1.3s infinite; }
+.blocked { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 30px; }
+.blocked-acct { font-size: .8rem; color: var(--dl-muted); }
+.blocked-code { font-size: .7rem; color: var(--dl-muted); direction: ltr; }
+
+/* ——— وضع البحث (2026-10-30): الحقل أعلى اللوحة ثابتًا، وتحته الشارات ثم القائمتان ———
+   ألوان الشارات هي ألوان علامات الصف نفسها، فالفلتر يشبه ما سيجده في القائمة */
+.srch { display: flex; flex-direction: column; gap: 10px; }
+.srch-bar {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 6px;
+  background: var(--dl-surface); padding: 2px 0 4px;
+}
+.srch-bar .search { flex: 1; }
+button.srch-back {
+  width: 36px; height: 36px; padding: 0; flex: none; border: none; border-radius: 10px;
+  background: transparent; color: var(--dl-muted); display: inline-flex; align-items: center; justify-content: center;
+}
+button.srch-back:hover { filter: none; background: var(--dl-surface2); color: var(--dl-ink); }
+button.srch-back svg { width: 18px; height: 18px; }
+.srch-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+button.srch-chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 999px;
+  font-size: .78rem; font-weight: 600; background: transparent; color: var(--dl-ink); border: 1px solid var(--dl-line);
+}
+button.srch-chip:hover { filter: none; background: var(--dl-surface2); }
+button.srch-chip.pinned span { color: #A8761C; }
+button.srch-chip[aria-pressed='true'] { border-color: #1F5F8B; background: color-mix(in srgb, #1F5F8B 10%, transparent); color: #1F5F8B; }
+button.srch-chip.new[aria-pressed='true'] { background: #1F5F8B; color: #fff; }
+button.srch-chip.pinned[aria-pressed='true'] { border-color: #A8761C; background: color-mix(in srgb, #A8761C 12%, transparent); color: #7A5512; }
+.srch-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.srch-selects label { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: .7rem; color: var(--dl-muted); }
+.srch-selects select {
+  font: inherit; font-size: .82rem; color: var(--dl-ink); background: var(--dl-surface2);
+  border: 1px solid var(--dl-line); border-radius: 9px; padding: 7px 8px; min-width: 0;
+}
+.srch-selects select:focus { outline: none; border-color: var(--dl-brand); }
+.srch-count { display: flex; align-items: center; justify-content: space-between; font-size: .74rem; color: var(--dl-muted); padding: 0 2px; }
+button.link-btn { background: none; border: none; padding: 0; font-size: .74rem; font-weight: 600; color: var(--dl-brand); }
+button.link-btn:hover { filter: none; text-decoration: underline; }
+.srch-list { list-style: none; margin: 0; padding: 0; }
+.srch-list li + li { border-top: 1px solid var(--dl-line); }
+.srch-more { align-self: center; font-size: .76rem; color: var(--dl-muted); padding: 6px 0 2px; }
+
+/* ——— هـ ج١: شريط «ما هذا؟» أسفل اللوحة ——— */
+.help-bar { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.help-bar-row { display: flex; gap: 8px; }
+.help-bar-row button { flex: 1; padding: 7px 12px; font-size: .82rem; border-radius: 9px; }
+.help-bar.on { border: 1px solid var(--dl-line); border-radius: 12px; padding: 10px 12px; background: var(--dl-surface); }
+.help-bar-hint { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .8rem; color: var(--dl-ink); }
+.help-bar-hint button { padding: 4px 12px; font-size: .76rem; border-radius: 8px; }
+.help-msg { margin: 0; font-size: .78rem; color: var(--dl-muted); }
+.note-form { display: flex; flex-direction: column; gap: 9px; border-top: 1px solid var(--dl-line); padding-top: 9px; }
+.note-form-head { font-weight: 700; font-size: .84rem; }
+.note-label { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; color: var(--dl-muted); }
+.note-label textarea, .note-form input[type='text'], .note-form select {
+  font: inherit; font-size: .82rem; color: var(--dl-ink); background: var(--dl-surface2);
+  border: 1px solid var(--dl-line); border-radius: 9px; padding: 7px 9px; resize: vertical;
+}
+.note-count { align-self: flex-end; font-size: .7rem; }
+.note-audience { border: 1px solid var(--dl-line); border-radius: 10px; padding: 7px 10px 9px; display: flex; flex-wrap: wrap; gap: 5px 14px; }
+.note-audience legend { font-size: .76rem; color: var(--dl-muted); padding: 0 4px; }
+.note-audience label { display: flex; align-items: center; gap: 5px; font-size: .8rem; color: var(--dl-ink); }
+.note-form-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.note-form-actions button { padding: 6px 14px; font-size: .8rem; border-radius: 9px; }
+.help-requests { border-top: 1px solid var(--dl-line); padding-top: 8px; font-size: .78rem; }
+.help-requests summary { cursor: pointer; color: var(--dl-muted); font-weight: 600; }
+.help-requests ul { list-style: none; margin: 7px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.help-requests li { color: var(--dl-ink); line-height: 1.5; }
+@media (prefers-color-scheme: dark) {
+  button.srch-chip.pinned span { color: #D9A94A; }
+  button.srch-chip[aria-pressed='true'] { border-color: #6FA8D6; background: color-mix(in srgb, #6FA8D6 14%, transparent); color: #8FBEE3; }
+  button.srch-chip.new[aria-pressed='true'] { background: #6FA8D6; color: #142434; }
+  button.srch-chip.pinned[aria-pressed='true'] { border-color: #D9A94A; background: color-mix(in srgb, #D9A94A 14%, transparent); color: #E8C27A; }
 }

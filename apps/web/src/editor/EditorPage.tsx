@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { canAddBlock, canAddEmbed, embedIdsOf, DEFAULT_MARK_COLOR, extractCapturedSites, markShapeOf, mergeSteps, stepNumbers, suggestSimilarBlur, scaleRelativeRect, toMarkdown, type MarkColor, type MarkShape, type Rect, type RelativeRect, type Step, type TargetMark } from '@dalili/core'
 import { buildRichHtml } from '../lib/rich-copy'
 import { filesOrigin } from '../lib/api-base'
-import type { ShareInfoDto, StepDto, GuideDto, StepCommentDto } from '@dalili/shared'
+import type { ShareInfoDto, StepDto, GuideDto, StepCommentDto, GuideAccess, GuideSuspension, OfficialDto, TrainHostsDto } from '@dalili/shared'
 import { client } from '../api'
 import { createHistory, type History } from '../lib/history'
 import { requestTrainStartGuide } from '../lib/ext-bridge'
@@ -26,10 +26,15 @@ import {
 import { GuideComments } from '../components/GuideComments'
 import { InsertStep, type InsertKind } from '../components/InsertStep'
 import { ShareDialog } from '../components/ShareDialog'
+import { OfficialPanel } from './OfficialPanel'
 import { MoreMenu, type MoreMenuItem } from '../components/MoreMenu'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { useConfirm } from '../components/ConfirmProvider'
 import { VersionHistoryPanel } from './VersionHistoryPanel'
+import { ReadOnlyGuide } from './ReadOnlyGuide'
+import { CourseTrack } from '../course/CourseTrack'
+import { CourseLessonList } from '../course/editor/CourseLessonList'
+import { convertBookletToCourse } from '../course/editor/convert'
 import { Button } from '../ui/Button'
 import { StateView } from '../ui/StateView'
 import { SkeletonScreen } from '../ui/Skeleton'
@@ -60,6 +65,15 @@ import { newBlockStep, newStepId, type BlockInsertKind } from './booklet-insert'
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error'
 
+/** PUB-01: رفض الصلاحية سببه صريح من الخادم — «حاول مجدداً» العامة تضلّل من سُحبت صلاحيته */
+/** رسالة الخادم العربية حين يحمل الخطأ أحد هذه الرموز — وإلا null فيُعرض النص العام */
+function serverRefusal(err: unknown, ...codes: string[]): string | null {
+  const e = err as { code?: string; message?: string }
+  return e?.code && codes.includes(e.code) && e.message ? e.message : null
+}
+
+const publishRefusal = (err: unknown) => serverRefusal(err, 'E-PUB-01', 'E-PRT-01')
+
 /** روابط مطلقة للنطاق العام — الملف المُنزَّل يُقرأ خارج التطبيق فالمسار النسبي ينكسر */
 function publicShotUrl(s: Step): string {
   const shot = s.screenshot
@@ -76,6 +90,20 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   const [published, setPublished] = useState(true)
   // شريط المسودة: انتظار النشر يمنع النقر المزدوج (قرار المالك 2026-09-11)
   const [publishingBar, setPublishingBar] = useState(false)
+  // ب: الصلاحيات (غيابها خادم قديم = المالك يحرر)، والتعديلات غير المنشورة، والإيقاف
+  const [access, setAccess] = useState<GuideAccess | null>(null)
+  const [unpublished, setUnpublished] = useState(false)
+  const [suspension, setSuspension] = useState<GuideSuspension | null>(null)
+  // ش١: دليل في حساب شريك — نظامه وجمهوره (غيابه = دليل شركة)
+  const [official, setOfficial] = useState<OfficialDto | null>(null)
+  // ش٢: دليل رسمي يقرؤه موظف شركة — الشريط يقول من أي شريك
+  const [partner, setPartner] = useState<{ name: string } | null>(null)
+  /** ث٣: نطاقات نسخة شركة الموظف لدليل الشريك */
+  const [trainHosts, setTrainHosts] = useState<TrainHostsDto | undefined>(undefined)
+  const canEdit = access?.edit ?? true
+  const canPublish = access?.publish ?? true
+  // المدير ومدير القسم يحرران دليل غيرهما، والمشاركة والحذف والترجمة والتفريغ والتعليقات لصاحبه وحده
+  const isOwner = access?.owner ?? true
   // المرحلة ٤: «تم» تصنع نقطة استعادة — تلميح مطمئن أول ٣ مرات فقط (قرار المالك)
   const [doneHint, setDoneHint] = useState(false)
   const doneHintTimer = useRef<number | undefined>(undefined)
@@ -109,6 +137,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   const [shareOpen, setShareOpen] = useState(false)
   /** بريد المالك لصف البيانات — تجميلي، فشله صامت */
   const [ownerEmail, setOwnerEmail] = useState('')
+  /** ORG-04: القسم المالك — شارة في صف البيانات */
+  const [ownerTeam, setOwnerTeam] = useState<{ id: string; name: string } | null>(null)
   const [reloadSeq, setReloadSeq] = useState(0)
   const [save, setSave] = useState<SaveState>('saved')
   const [tags, setTags] = useState('')
@@ -172,7 +202,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     if (!guide || training) return
     setTraining(true)
     setTrainMsg(null)
-    const res = await requestTrainStartGuide(guide, trainAckTimeoutMs)
+    const res = await requestTrainStartGuide(guide, { trial: canEdit, hosts: trainHosts }, trainAckTimeoutMs)
     setTraining(false)
     if (res.ok) setTrainMsg({ kind: 'ok', text: t('editor.trainStarted') })
     else setTrainMsg({ kind: 'err', text: res.errorAr || t('viewer.trainNoExt') })
@@ -196,6 +226,13 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
         setGuide(d.guide)
         setShare(d.share)
         setPublished(d.visibility !== 'private')
+        setAccess(d.access ?? null)
+        setUnpublished(d.publishState?.hasUnpublishedChanges ?? false)
+        setSuspension(d.suspension ?? null)
+        setOfficial(d.official ?? null)
+        setPartner(d.source === 'official' && d.partner ? d.partner : null)
+        setTrainHosts(d.trainHosts)
+        setOwnerTeam(d.ownerTeam ?? null)
         // LIB-03: الوسوم من بيانات التنظيم — لا تُلمس بالحفظ التلقائي للمحتوى
         if (d.meta) setTags(d.meta.tags.join(getLocale() === 'en' ? ', ' : '، '))
         // EDT-10: الحالة المحمَّلة هي قاعدة التراجع — أول دفعة في المكدس
@@ -203,7 +240,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
       })
       .catch((err) => {
         if (err instanceof DOMException && err.name === 'AbortError') return
-        setLoadError(t('editor.loadError'))
+        // ب (PUB-03): الموقوف يقول ذلك صراحةً بدل خطأ تحميل عام
+        setLoadError(serverRefusal(err, 'E-PUB-04', 'E-OFF-01') ?? t('editor.loadError'))
       })
     return () => ac.abort()
   }, [id, reloadSeq])
@@ -223,9 +261,16 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     }
   }, [])
 
-  /** GM-05: تعليقات الخطوات — قناة مستقلة كي لا يعطّل فشلها فتح المحرر نفسه */
+  /** GM-05: تعليقات الخطوات — قناة مستقلة كي لا يعطّل فشلها فتح المحرر نفسه. بعد تحميل الدليل، ولصاحبه وحده (ب) */
+  const guideLoaded = guide !== null
+
+  // ت (§٥): من يقرأ (لا يحرر) فتح الدليل = قراءة — 👁 وإطفاء «جديد»/«تحديث». المحرر لا يُحسب
   useEffect(() => {
-    if (!id) return
+    if (id && guideLoaded && !canEdit) client.markGuideRead(id).catch(() => {})
+  }, [id, guideLoaded, canEdit])
+
+  useEffect(() => {
+    if (!id || !guideLoaded || !isOwner) return
     const ac = new AbortController()
     setCommentsFailed(false)
     client
@@ -236,7 +281,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
         setCommentsFailed(true)
       })
     return () => ac.abort()
-  }, [id, commentsSeq])
+  }, [id, commentsSeq, guideLoaded, isOwner])
 
   /** GM-05: إضافة/رد/تعديل/وسم/حذف — كلها تحدّث القائمة موضعيًا بعد نجاح الخادم */
   async function addComment(body: string, opts: { kind: 'issue' | 'note'; parentId?: string }) {
@@ -294,6 +339,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
       try {
         await client.updateGuide(id, guide)
         setSave('saved')
+        // ب: مسودة منشور سبقت نسخته — المشاهد لا يرى هذا حتى «انشر التحديث»
+        setUnpublished(true)
       } catch {
         setSave('error')
       }
@@ -807,8 +854,8 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     if (!id || share) return
     try {
       setShare(await client.createShare(id))
-    } catch {
-      setLoadError(t('editor.shareError'))
+    } catch (err) {
+      setLoadError(publishRefusal(err) ?? t('editor.shareError'))
     }
   }
 
@@ -818,9 +865,10 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     try {
       await client.updateGuideMeta(id, { visibility: 'workspace' })
       setPublished(true)
+      setUnpublished(false)
       return true
-    } catch {
-      setLoadError(t('home.publishError'))
+    } catch (err) {
+      setLoadError(publishRefusal(err) ?? t('home.publishError'))
       return false
     }
   }
@@ -831,6 +879,20 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
     setPublishingBar(true)
     try {
       await publishGuide()
+    } finally {
+      setPublishingBar(false)
+    }
+  }
+
+  /** ب (PUB-02): «انشر التحديث» — يجمّد المسودة الحالية لتصير ما يراه المشاهد */
+  async function publishUpdate() {
+    if (!id || publishingBar) return
+    setPublishingBar(true)
+    try {
+      await client.publishGuide(id)
+      setUnpublished(false)
+    } catch (err) {
+      setLoadError(publishRefusal(err) ?? t('editor.publishUpdateError'))
     } finally {
       setPublishingBar(false)
     }
@@ -908,14 +970,16 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   }
 
   if (loadError && !guide) {
+    // رفض صريح من الخادم (موقوف مؤقتاً) يُقال كما هو، وإعادة المحاولة لا تغيّره
+    const refused = loadError !== t('editor.loadError')
     return (
       <div className="page">
         <StateView
           kind="error"
           icon={<IconCloudOff size={30} />}
-          title={t('editor.loadError')}
-          desc={t('editor.loadErrorDesc')}
-          action={{ label: t('common.retry'), onAction: retry }}
+          title={loadError}
+          desc={refused ? undefined : t('editor.loadErrorDesc')}
+          action={refused ? undefined : { label: t('common.retry'), onAction: retry }}
         />
         <div className="row center">
           <Link className="btn ghost" to="/">
@@ -932,12 +996,49 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
   const siteHost = hostOf(guide.steps[0]?.url ?? '')
   // BLK-01: رقم العرض المُصفّى (الكتل بلا رقم) — مصدره الوحيد دالة core النقية
   const nums = stepNumbers(guide.steps)
+  // د١: المضمّن المفتوح من دورة يحمل الدورة في ?course=، وإلا فالدليل نفسه هو الدورة إن أُسند
+  const courseId = new URLSearchParams(location.search).get('course') ?? id ?? null
 
   const saveLabel: Record<SaveState, string> = {
     saved: t('editor.saved'),
     dirty: t('editor.dirty'),
     saving: t('editor.saving'),
     error: t('editor.saveError'),
+  }
+
+  // د١ب: الدورة يمرّ بها المتدرّب في مشغّلها — من لا يحرّرها لا يرى قائمة دروسها هنا
+  if (!canEdit && guide.kind === 'course') return <Navigate to={`/c/${guide.id}`} replace />
+
+  // ب: من لا يحرر يقرأ النسخة المنشورة — بلا تعديل ولا مشاركة ولا «المزيد»، ودربني باقٍ
+  if (!canEdit) {
+    return (
+      <div className="editor-page-wrapper">
+        <div className="editor-bar no-print">
+          <div className="editor-bar-start">
+            <Link className="btn ghost" to="/">
+              <IconArrowRight size={16} />
+              {t('editor.myHome')}
+            </Link>
+          </div>
+          <div className="editor-bar-center version-banner">{partner ? t('home.officialFrom', { name: partner.name }) : t('editor.readOnlyNote')}</div>
+          <div className="editor-bar-end">
+            {trainable && (
+              <Button variant="ghost" onClick={() => void startTrain()} disabled={training} aria-label={t('viewer.train')} icon={<IconTarget size={16} />}>
+                {t('viewer.train')}
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="page editor-page">
+          {trainMsg && (
+            <div className={`card no-print append-msg ${trainMsg.kind}`} role="status">
+              {trainMsg.text}
+            </div>
+          )}
+          <ReadOnlyGuide guide={guide} courseId={courseId} />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -987,9 +1088,11 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
           )}
           {/* قرار المالك 2026-09-10: زر «أضف خطوات» بالشريط أُزيل — الإدراج من أزرار «+»
               بين الشرائح، وهو إدراج يدوي (صورة مرفقة + تعليق) لا التقاط */}
-          <Button variant="solid" onClick={() => setShareOpen(true)} icon={<IconShare size={16} />}>
-            {t('editor.shareOpen')}
-          </Button>
+          {isOwner && (
+            <Button variant="solid" onClick={() => setShareOpen(true)} icon={<IconShare size={16} />}>
+              {t('editor.shareOpen')}
+            </Button>
+          )}
           {/* VER-02: قائمة «المزيد» في آخر الشريط — الإصدارات والحذف فعّالان، البقية تصميم فقط بتلميح «قريبًا».
               طلب المالك 2026-09-09: النقاط الثلاث تعيش آخر الشاشة كما في الاستاندرد (كروم)، وفيها مبدّل «إظهار الأرقام» */}
           <div className="more-menu-wrap">
@@ -1001,12 +1104,13 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
                   // TAM-01 (2026-09-21): «الطمس التلقائي» — مفتاح الرادار: قراءة حقائق
                   // الخطوات وعلّم الشكوش في المحرر حصرًا؛ لا يمس الالتقاط ولا الخادم
                   { key: 'autoMask', label: t('editor.more.autoMask'), icon: <IconWand size={16} />, checked: autoMaskOn, onSelect: toggleAutoMask },
+                  ...(guide.kind === 'booklet' ? [{ key: 'toCourse', label: t('booklet.toCourse'), icon: <IconBookOpen size={16} />, onSelect: () => void convertBookletToCourse(guide).then((cid) => navigate(`/g/${cid}`), () => setLoadError(t('library.createError'))) }] : []),
                   { key: 'sendToBooklet', label: t('editor.more.sendToBooklet'), icon: <IconBookOpen size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
                   { key: 'duplicate', label: t('editor.more.duplicate'), icon: <IconCopy size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
-                  { key: 'translate', label: t('editor.more.translate'), icon: <IconWand size={16} />, onSelect: () => { setTxError(undefined); setTxPhase('info'); setTxOpen(true) } },
+                  ...(isOwner ? [{ key: 'translate', label: t('editor.more.translate'), icon: <IconWand size={16} />, onSelect: () => { setTxError(undefined); setTxPhase('info'); setTxOpen(true) } }] : []),
                   { key: 'versions', label: t('editor.more.versions'), icon: <IconClock size={16} />, onSelect: () => setVersionsOpen((v) => !v) },
                   { key: 'moveTo', label: t('editor.more.moveTo'), icon: <IconFolder size={16} />, disabled: true, disabledHint: t('editor.more.soon') },
-                  { key: 'delete', label: t('editor.more.delete'), icon: <IconTrash size={16} />, onSelect: () => setAskDelete(true), danger: true },
+                  ...(isOwner ? [{ key: 'delete', label: t('editor.more.delete'), icon: <IconTrash size={16} />, onSelect: () => setAskDelete(true), danger: true }] : []),
                 ] satisfies MoreMenuItem[]
               }
             />
@@ -1030,9 +1134,32 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
       {!published && (
         <div className="draft-bar no-print" role="status">
           <span className="draft-bar-tx">{t('editor.draftBarTitle')}</span>
-          <Button size="sm" variant="solid" disabled={publishingBar} onClick={() => void publishFromBar()}>
-            {publishingBar ? t('editor.publishingDraftBar') : t('editor.publishDraftBar')}
-          </Button>
+          {canPublish && (
+            <Button size="sm" variant="solid" disabled={publishingBar} onClick={() => void publishFromBar()}>
+              {publishingBar ? t('editor.publishingDraftBar') : t('editor.publishDraftBar')}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* ب (PUB-03): صاحب الدليل ومحرروه يرون السبب، والمشاهد لا يرى الدليل أصلاً */}
+      {suspension && (
+        <div className="draft-bar suspended-bar no-print" role="alert">
+          <span className="draft-bar-tx">{t('editor.suspendedBar', { byName: suspension.byName, reason: suspension.reason })}</span>
+        </div>
+      )}
+
+      {official && canEdit && id && <OfficialPanel guideId={id} official={official} onChange={setOfficial} firstUrl={guide?.steps.find((st) => st.url)?.url} />}
+
+      {/* ب (PUB-02): المنشور نسخة مجمّدة — المسودة تسبقها حتى «انشر التحديث» */}
+      {published && unpublished && (
+        <div className="draft-bar no-print" role="status">
+          <span className="draft-bar-tx">{canPublish ? t('editor.unpublishedBar') : t('editor.unpublishedNoPerm')}</span>
+          {canPublish && (
+            <Button size="sm" variant="solid" disabled={publishingBar} onClick={() => void publishUpdate()}>
+              {publishingBar ? t('editor.publishingUpdate') : t('editor.publishUpdate')}
+            </Button>
+          )}
         </div>
       )}
 
@@ -1107,6 +1234,11 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
                 count: fmtDigits(guide.steps.length),
               })}
             </span>
+            {ownerTeam && (
+              <span className="meta-item chip dept-chip" title={t('home.teamChipA11y', { name: ownerTeam.name })}>
+                <bdi>{ownerTeam.name}</bdi>
+              </span>
+            )}
             {guide.kind !== 'booklet' && durationMs > 0 && (
               <span className="meta-item">
                 <IconClock size={14} /> {durationAr(durationMs)}
@@ -1145,17 +1277,19 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
               </div>
             )}
 
-            {/* GM-05 تطوّر: التعليقات والمشكلات على مستوى الدليل مع معلومات الرأس */}
-            <GuideComments
-              comments={comments}
-              canModerate
-              failed={commentsFailed}
-              onRetry={() => setCommentsSeq((s2) => s2 + 1)}
-              onAdd={addComment}
-              onEdit={editComment}
-              onResolve={resolveComment}
-              onDelete={deleteComment}
-            />
+            {/* GM-05 تطوّر: التعليقات والمشكلات على مستوى الدليل مع معلومات الرأس — لصاحب الدليل */}
+            {isOwner && (
+              <GuideComments
+                comments={comments}
+                canModerate
+                failed={commentsFailed}
+                onRetry={() => setCommentsSeq((s2) => s2 + 1)}
+                onAdd={addComment}
+                onEdit={editComment}
+                onResolve={resolveComment}
+                onDelete={deleteComment}
+              />
+            )}
           </div>
         </header>
 
@@ -1171,6 +1305,7 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
           }
           onClose={() => setShareOpen(false)}
           onEnsureShare={ensureShare}
+          error={loadError || undefined}
           onToggleShare={toggleShare}
           onPublish={publishGuide}
           published={published}
@@ -1254,9 +1389,11 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
             aria-label={t('editor.audioLabel')}
             src={guide.audio.fileUrl ?? `/files/${guide.audio.fileId}`}
           />
-          <Button variant="solid" onClick={runTranscribe} disabled={transcribing}>
-            {transcribing ? t('editor.transcribing') : t('editor.transcribe')}
-          </Button>
+          {isOwner && (
+            <Button variant="solid" onClick={runTranscribe} disabled={transcribing}>
+              {transcribing ? t('editor.transcribing') : t('editor.transcribe')}
+            </Button>
+          )}
           {transcribeMsg && (
             <span
               className={`save-state ${transcribeMsg.kind === 'ok' ? 'saved' : 'error'}`}
@@ -1326,8 +1463,20 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
             desc={t('editor.emptyDesc')}
           />
         )}
+        {/* د١: من يملك التحرير قد يكون متدرّباً أيضاً — شريط الدورة في وضع العرض، ولا دورة أثناء التعديل */}
+        <CourseTrack guideId={guide.id} courseId={editMode || guide.kind === 'course' ? null : courseId}>
+          {() => (
+        <>
         {/* BKL-01: الكرّاسة لقائمة كتلها، والدليل لحلقته الحالية بلا مساس */}
-        {guide.kind === 'booklet' ? (
+        {guide.kind === 'course' ? (
+          <CourseLessonList
+            steps={guide.steps}
+            editing={editMode}
+            courseId={guide.id}
+            onChange={(steps) => commit((g) => ({ ...g, steps }))}
+            onAttachShot={(i, file) => void attachShot(i, file)}
+          />
+        ) : guide.kind === 'booklet' ? (
           <BookletBlockList
             steps={guide.steps}
             editing={editMode}
@@ -1374,6 +1523,9 @@ export function EditorPage({ trainAckTimeoutMs }: { trainAckTimeoutMs?: number }
           />
           )
         )}
+        </>
+          )}
+        </CourseTrack>
         {pickEmbedAt !== null && (
           <EmbedPicker
             onClose={() => setPickEmbedAt(null)}

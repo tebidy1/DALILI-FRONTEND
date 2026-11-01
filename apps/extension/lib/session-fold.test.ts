@@ -77,8 +77,14 @@ describe('foldWithPrev — تفاعل واحد لا يصير خطوتين', () =
     expect(foldWithPrev(undefined, ev('toggle'))).toBe('append')
   })
 
-  it('كتابة بعد نقرة لا تُطوى أبدًا — خطوتان مقصودتان (فخ 45)', () => {
-    expect(foldWithPrev(step(ev('click', { ts: 1000 })), ev('input', { ts: 1005, value: 'س' }))).toBe('append')
+  it('كتابة بعد نقرة زرٍّ لا تُطوى أبدًا — خطوتان مقصودتان (فخ 45)', () => {
+    const btn = { anchor, role: 'button' }
+    expect(foldWithPrev(step(ev('click', { ts: 1000, target: btn })), ev('input', { ts: 1005, value: 'س' }))).toBe('append')
+  })
+
+  it('بلاغ أودو: نقر الحقل نفسه ثم الكتابة فيه (ولو بعد ثوانٍ) = خطوة «أدخل» واحدة', () => {
+    const field = { anchor, role: 'textarea' }
+    expect(foldWithPrev(step(ev('click', { ts: 1000, target: field })), ev('input', { ts: 5100, value: 'A' }))).toBe('replace')
   })
 
   it('تنقّل لا يُطوى في نقرة — له كبته الخاص (shouldDropConsequentNav)', () => {

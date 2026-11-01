@@ -9,7 +9,8 @@ import { makeContentInjector } from '@/lib/content-inject'
 import { ensureOffscreenDocument } from '@/lib/offscreen'
 import { createActivity } from '@/lib/activity'
 import { WEB_BASE } from '@/lib/config'
-import { startTraining, onTrainProgress, onTabUpdated, trainLoaded } from '@/lib/train-bg'
+import { startTraining, onTrainOutcome, onTrainProgress, onTabUpdated, trainLoaded } from '@/lib/train-bg'
+import { flushTrainRuns } from '@/lib/train-runs'
 import { t } from '@/lib/i18n'
 import { initI18nLocale } from '@/lib/locale-choice'
 
@@ -217,6 +218,8 @@ export default defineBackground(() => {
   // وبعد الإقلاع نعيد بث الحالة لكل التبويبات لتصحيح من قيل له «idle» خطأً أثناء موت العامل.
   const metaReady = store.load()
   const trainReady = trainLoaded()
+  // ث٢: ما بقي في الطابور من تدريبات سابقة (شبكة منقطعة، عامل مات) يُرسل عند كل إقلاع
+  void flushTrainRuns()
 
   void metaReady.then((meta) => {
     if (meta.state === 'saving') {
@@ -232,6 +235,22 @@ export default defineBackground(() => {
     const active = await store.activeTab()
     if (active?.id !== undefined) await chrome.tabs.sendMessage(active.id, msg).catch(() => {})
   }
+
+  // هـ ج١ (مراجعة I1/I2): تبويب وضع «ما هذا؟» يُسجَّل عند تشغيله — فhelp-off يصله هو
+  // (لا التبويب النشط الجديد)، وانقطاع منفذ الحياة (إغلاق اللوحة) يطفئه ولو ماتت اللوحة
+  let helpTabId: number | null = null
+  const helpOffToModeTab = async (): Promise<void> => {
+    const tid = helpTabId
+    helpTabId = null
+    if (tid !== null) await chrome.tabs.sendMessage(tid, { t: 'help-off' }).catch(() => {})
+    else await sendToActive({ t: 'help-off' })
+  }
+  chrome.runtime.onConnect.addListener((port) => {
+    if (port.name !== 'help-mode') return
+    port.onDisconnect.addListener(() => {
+      if (helpTabId !== null) void helpOffToModeTab()
+    })
+  })
 
   chrome.runtime.onMessage.addListener((msg: BgMsg, sender, sendResponse) => {
     const expectsResponse =
@@ -278,14 +297,19 @@ export default defineBackground(() => {
           break
         case 'train-start':
           // دربني: العارض بالرمز العام أو المحرر بالدليل نفسه — الرد بعد فتح تبويب الهدف
-          sendResponse(await startTraining({ token: msg.token, guide: msg.guide }))
+          sendResponse(await startTraining({ token: msg.token, guide: msg.guide, trial: msg.trial, hosts: msg.hosts }))
           break
         case 'train-progress':
           void onTrainProgress(msg.result, sender.tab?.id)
           break
+        case 'train-outcome':
+          void onTrainOutcome(msg, sender.tab?.id)
+          break
         case 'auth-changed':
           // AUTH-LIVE: دخول/خروج في تبويب الويب — ختم يوقظ لوحة اللوحة عبر storage.onChanged
           await chrome.storage.local.set({ [AUTH_PING_KEY]: Date.now() })
+          // ث٢: تدريبات بقيت لأن الموظف كان خارج الجلسة تُرسل الآن
+          void flushTrainRuns()
           break
         case 'pause':
           if (store.get().state === 'capturing') {
@@ -315,6 +339,18 @@ export default defineBackground(() => {
         case 'blur-mode':
           // CAP-13: زر الطمس في اللوحة يفعّل سحب الطمس على التبويب النشط فقط
           if (store.get().state === 'capturing') await sendToActive({ t: 'blur-mode', on: msg.on })
+          break
+        case 'help-tab':
+          // هـ ج١: اللوحة ترسل وضع «ما هذا؟» — التشغيل يُسجّل تبويبَه، والإطفاء يصله هو لا التبويب الجديد
+          if (msg.msg.t === 'help-on') {
+            const active = await store.activeTab()
+            if (active?.id !== undefined) helpTabId = active.id
+            await sendToActive(msg.msg)
+          } else if (msg.msg.t === 'help-off') {
+            await helpOffToModeTab()
+          } else {
+            await sendToActive(msg.msg)
+          }
           break
         case 'toggle-bar-cmd':
           // CAP-15: زر «إخفاء الشريط» في اللوحة — يطوي/يظهر شريط الصفحة النشطة

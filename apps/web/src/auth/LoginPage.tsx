@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { DaliliApiError } from '@dalili/shared'
 import { client } from '../api'
 import { notifyAuthChanged } from '../lib/ext-bridge'
@@ -87,6 +87,7 @@ export function LoginPage() {
         <Button type="submit" busy={busy}>
           {mode === 'login' ? t('login.submitLogin') : t('login.submitRegister')}
         </Button>
+        {mode === 'login' && <Link to="/forgot">{t('login.forgot')}</Link>}
       </form>
     </div>
   )

@@ -1,29 +1,30 @@
 // 644 سطرًا فوق قانون الـ400 — أقرب نتوءين للاقتطاع: كتلة AUTH-LIVE وفتح/استعادة القارئ (خطّافا useAuthLive/useReaderOpen)؛
 // الاستخراج يلامس اختبارات العرض فأُجّل (فحص 2026-09-21).
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DaliliClient, type MeDto } from '@dalili/shared'
+import { DaliliApiError, DaliliClient, type MeDto } from '@dalili/shared'
 import { META_KEY, AUTH_PING_KEY, type SessionMeta, type StepSummary } from '@/lib/protocol'
 import type { AutoMemoToggleAck, MemoToggleAck } from '@/lib/protocol'
 import { readStepSummaries, readShotAt } from '@/lib/steps-read'
 import { clearAllSteps, publishSteps } from '@/lib/publish'
 import { autoTranscribeSteps } from '@/lib/voice-memo-upload'
 import { API_BASE, WEB_BASE } from '@/lib/config'
-import { filterByTitle, searchHref, type RecentGuide } from '@/lib/recent'
-import { hostOf } from '@/lib/discover'
-import { urlTokens } from '@dalili/core'
 import { toArabicDigits } from '@/lib/ar-digits'
 import { t } from '@/lib/i18n'
 import { CANCEL_ARM_WINDOW_MS, CancelArm } from '@/lib/cancel-arm'
 import { useArmCountdown } from './useArmCountdown'
-import type { DiscoverResponseDto } from '@dalili/shared'
 import { CaptureBar, HeadBar } from './parts'
 import { IdleScreen } from './IdleScreen'
+import type { SearchFilters } from '@/lib/search'
+import { AccountBar } from './AccountBar'
+import { BlockedScreen } from './ListStates'
+import { useLibrary } from './useLibrary'
 import { StepsList } from './StepsList'
 import { SettingsSheet, BellSheet } from './Sheets'
 import { usePrefs, panelActivity } from './usePrefs'
 import { READER_KEY } from '@/lib/reader'
 import { GuideReader } from './reader/GuideReader'
 import { makeReaderDeps } from './reader/deps'
+import { HelpBar } from './help/HelpBar'
 
 const client = new DaliliClient(API_BASE)
 // PNL-01: تبعيات القارئ ثابتة على مستوى الوحدة — load ثابت المرجع فلا يعيد الجلب في كل رسم
@@ -43,10 +44,10 @@ export function App() {
   const [lastShot, setLastShot] = useState<string | undefined>()
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState('')
-  const [recent, setRecent] = useState<RecentGuide[]>([])
-  const [recentErr, setRecentErr] = useState('')
-  const [query, setQuery] = useState('')
-  const [discover, setDiscover] = useState<DiscoverResponseDto | null>(null)
+  // بحث اللوحة: null = الشاشة العادية؛ القيمة = وضع البحث بكلمته وفلاتره (تبقى بعد ↵ والرجوع)
+  const [search, setSearch] = useState<SearchFilters | null>(null)
+  // ت (§٣.٥): كل العضويات معطّلة — الخادم يرفض /api/me نفسه بـE-ORG-02
+  const [memberDisabled, setMemberDisabled] = useState(false)
   // زرّا الترويسة (2026-09-10): أي لوحة مفتوحة، ومن كان جديدًا في السجل لحظة فتح الجرس
   const [sheet, setSheet] = useState<Sheet>('none')
   const [freshIds, setFreshIds] = useState<ReadonlySet<string>>(new Set())
@@ -101,10 +102,15 @@ export function App() {
     const back = readerReturn.current
     if (readerId !== null || !back) return
     readerReturn.current = null
-    requestAnimationFrame(() => {
+    // نتائج البحث تُجلب من جديد بعد الرجوع، فيُنتظر ظهور الصف (حتى ثانية تقريبًا)
+    let frames = 0
+    const restore = () => {
+      const btn = document.querySelector<HTMLButtonElement>(`.doc-enter[data-guide="${back.guideId}"]`)
+      if (!btn && frames++ < 60) return void requestAnimationFrame(restore)
       document.scrollingElement?.scrollTo(0, back.scrollTop)
-      document.querySelector<HTMLButtonElement>(`.doc-enter[data-guide="${back.guideId}"]`)?.focus()
-    })
+      btn?.focus()
+    }
+    requestAnimationFrame(restore)
   }, [readerId])
   // استعادة القارئ بعد إغلاق اللوحة وفتحها (الجلسة تُمسح بإغلاق المتصفح)
   useEffect(() => {
@@ -129,22 +135,15 @@ export function App() {
       .then((m) => {
         if (!alive()) return
         setMe(m)
+        setMemberDisabled(false)
         if (m && prevMe.current === false) setAuthHello(m.email)
         prevMe.current = !!m
-        // الأدلة الأخيرة تُجلب فقط لمن سجّل دخوله — الضيف لا أدلة له بعد
-        if (m) {
-          client
-            .listGuides({ limit: 8, sort: 'updated', order: 'desc' })
-            .then((r) => {
-              if (!alive()) return
-              setRecent(
-                r.items.map((it) => ({ id: it.id, title: it.title, updatedAt: it.updatedAt, stepCount: it.stepCount })),
-              )
-            })
-            .catch(() => alive() && setRecentErr(t('ext.recentError')))
-        }
       })
-      .catch(() => alive() && setError(t('ext.serverUnreachable')))
+      .catch((e: unknown) => {
+        if (!alive()) return
+        if (e instanceof DaliliApiError && e.code === 'E-ORG-02') setMemberDisabled(true)
+        else setError(t('ext.serverUnreachable'))
+      })
   }, [])
 
   // AUTH-LIVE: عودة النظر إلى اللوحة بعد الدخول في تبويب الويب تكفي — شبكة أمان
@@ -206,50 +205,14 @@ export function App() {
     }
   }, [])
 
-  /**
-   * SRCH-04: شارة الاكتشاف — أدلة المالك على نطاق التبويب النشط.
-   * أحداث فقط (تفعيل/تحديث تبويب) بلا دوران؛ صمت صادق عند الفشل (الشارة كمالية)،
-   * وتختفي على صفحات المتصفح الداخلية وفوق دليل بلا أدلة على نطاقه.
-   */
-  useEffect(() => {
-    if (!me) return
-    let live = true
-    const ac = new AbortController()
-    async function refresh(tab: chrome.tabs.Tab | undefined) {
-      const host = tab?.url ? hostOf(tab.url) : null
-      if (!host || !tab?.url) {
-        if (live) setDiscover(null)
-        return
-      }
-      try {
-        // SRCH-04 تطوّر: نرسل رموز الشاشة الحالية (مُجزّئ core نفسه المستعمل في الفهرس)
-        const screen = urlTokens(tab.url).screen.join(' ')
-        const res = await client.discover(host, screen, ac.signal)
-        if (live) setDiscover(res.count > 0 ? res : null)
-      } catch {
-        if (live) setDiscover(null)
-      }
-    }
-    const queryActive = () => {
-      chrome.tabs
-        .query({ active: true, currentWindow: true })
-        .then((ts) => refresh(ts[0]))
-        .catch(() => {})
-    }
-    const onActivated = () => queryActive()
-    const onUpdated = (tabId: number, info: chrome.tabs.OnUpdatedInfo, tab: chrome.tabs.Tab) => {
-      if (tab.active && (info.url || info.status === 'complete')) refresh(tab).catch(() => {})
-    }
-    queryActive()
-    chrome.tabs.onActivated.addListener(onActivated)
-    chrome.tabs.onUpdated.addListener(onUpdated)
-    return () => {
-      live = false
-      ac.abort()
-      chrome.tabs.onActivated.removeListener(onActivated)
-      chrome.tabs.onUpdated.removeListener(onUpdated)
-    }
-  }, [me])
+  // ت (§٣.٥): الحسابات وأدلة التبويب والأخيرة — الأحداث نفسها (SRCH-04) في الخطّاف
+  const lib = useLibrary(me, client)
+
+  // هـ ج١: شريط «ما هذا؟» — لمحرّر شريك زر «اشرح زراً» إضافي، والحساب النشط يطفئ الوضع عند تبديله
+  const activeAcc = lib.accounts.find((a) => a.active)
+  const helpBar = me ? (
+    <HelpBar api={client} partnerEditor={activeAcc?.kind === 'partner' && activeAcc?.role !== 'viewer'} accountKey={activeAcc?.id} onOpenGuide={openReader} />
+  ) : null
 
   async function send(msg: BtnMsg, title?: string) {
     setError('')
@@ -463,6 +426,7 @@ export function App() {
   return (
     <div className="wrap">
       <HeadBar meta={meta} unread={prefs.unread} onBell={() => void openBell()} onSettings={() => setSheet('settings')} />
+      {me && <AccountBar accounts={lib.accounts} onSwitch={(id) => void lib.switchTo(id)} lockedReason={state === 'idle' ? undefined : t('ext.switchLocked')} />}
 
       {error && <div className="body" style={{ paddingBottom: 0 }}><div className="err">{error}</div></div>}
 
@@ -497,7 +461,20 @@ export function App() {
               {t('ext.loginSuccess')} <bdi>{authHello}</bdi>
             </div>
           )}
-          <IdleScreen send={send} me={me} query={query} setQuery={setQuery} discover={discover} recent={recent} recentErr={recentErr} preferredStart={prefs.settings.preferredStart} onOpenHere={openReader} />
+          {memberDisabled ? (
+            <div className="body"><BlockedScreen kind="disabled" /></div>
+          ) : lib.blocked ? (
+            <div className="body">
+              <BlockedScreen
+                kind={lib.blocked}
+                accountName={lib.accounts.find((a) => a.active)?.name}
+                other={lib.accounts.find((a) => !a.active && a.status !== 'suspended' && a.status !== 'ended')}
+                onSwitch={(id) => void lib.switchTo(id)}
+              />
+            </div>
+          ) : (
+            <IdleScreen send={send} me={me} search={search} setSearch={setSearch} lib={lib} preferredStart={prefs.settings.preferredStart} onOpenHere={openReader} help={helpBar} />
+          )}
         </>
       )}
 

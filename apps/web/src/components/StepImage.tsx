@@ -15,6 +15,7 @@ import {
 } from '../editor/rectmath'
 import { focusViewport, OPENING_ZOOM, panViewport, type Viewport } from '../editor/focus'
 import { useInView } from '../lib/inview'
+import { shotLoader } from '../lib/shot-loader'
 import { drawAnnotation, drawHandles, drawMark, drawPreview, drawStrokePreview, hitTextAnnotation, uid } from './annotations-render'
 import { drawStepBadge } from './step-badge'
 
@@ -139,20 +140,27 @@ export function StepImage({
   const markSelected = markInteractive && (mode === 'move-target' || !!markActive)
   const markHandlesShown = markSelected
 
+  /**
+   * علّة 2026-10-23: لقطة رفضها الخادم تحت الضغط بقيت إطارًا فارغًا صامتًا. التحميل الآن
+   * عبر طابور الصفحة (حدّ تزامن + إعادة محاولة)، وحالته معروضة؛ `retryNo` يعيد الطلب يدويًّا.
+   */
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'failed'>('loading')
+  const [retryNo, setRetryNo] = useState(0)
+
   useEffect(() => {
     if (!active) return
-    const img = new Image()
-    img.onload = () => {
-      imgRef.current = img
-      render()
-      resetViewport()
-    }
-    img.src = src
-    return () => {
-      img.onload = null
-    }
+    setLoadState('loading')
+    return shotLoader.load(src, {
+      onLoad: (img) => {
+        imgRef.current = img
+        setLoadState('ready')
+        render()
+        resetViewport()
+      },
+      onFail: () => setLoadState('failed'),
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src, active])
+  }, [src, active, retryNo])
 
   useEffect(() => {
     render()
@@ -658,6 +666,19 @@ export function StepImage({
           />
         ) : (
           <div className="shot-idle" aria-hidden="true" />
+        )}
+        {active && loadState === 'loading' && (
+          <div className="shot-status" role="status">
+            {t('shot.loading')}
+          </div>
+        )}
+        {active && loadState === 'failed' && (
+          <div className="shot-status failed" role="alert">
+            <span>{t('shot.failed')}</span>
+            <button type="button" className="shot-retry" onClick={() => setRetryNo((n) => n + 1)}>
+              {t('shot.retry')}
+            </button>
+          </div>
         )}
         {/*
           طلب المالك 2026-09-11: رقم الخطوة بلا هدف (كفتح الموقع) — شارة فوق الإطار

@@ -71,6 +71,19 @@ export const ar = {
   'dt.captureFail': 'تعذّر الالتقاط',
   'dt.burnFail': 'تعذّر حرق الحقل الحسّاس — أُسقِطت اللقطة حمايةً للسرّ',
   'dt.deviceName': 'جهاز ويندوز — إتقان',
+  // ش١: مبدّل الحساب
+  'dt.acctLabel': 'الحساب',
+  'dt.acctNote': 'التقاطك التالي يُحفظ في الحساب المختار.',
+  'dt.acctSwitched': 'تم. التقاطك التالي يُحفظ في «{name}».',
+  'dt.kindCompany': 'شركة',
+  'dt.kindPartner': 'شريك',
+  'dt.kindPersonal': 'شخصي',
+  'dt.roleAdmin': 'مدير',
+  'dt.roleCreator': 'منشئ',
+  'dt.roleViewer': 'مشاهد',
+  'dt.partnerRoleAdmin': 'مدير الشريك',
+  'dt.partnerRoleCreator': 'محرّر الشريك',
+  'dt.partnerRoleViewer': 'مراجع',
 } as const
 
 export type TKey = keyof typeof ar
@@ -137,6 +150,18 @@ export const en: Record<TKey, string> = {
   'dt.captureFail': 'Capture failed',
   'dt.burnFail': 'Could not redact the sensitive field — the screenshot was dropped to protect the secret',
   'dt.deviceName': 'Windows device — ITQAN',
+  'dt.acctLabel': 'Account',
+  'dt.acctNote': 'Your next capture is saved to the chosen account.',
+  'dt.acctSwitched': 'Done. Your next capture goes to "{name}".',
+  'dt.kindCompany': 'Company',
+  'dt.kindPartner': 'Partner',
+  'dt.kindPersonal': 'Personal',
+  'dt.roleAdmin': 'Admin',
+  'dt.roleCreator': 'Creator',
+  'dt.roleViewer': 'Viewer',
+  'dt.partnerRoleAdmin': 'Partner admin',
+  'dt.partnerRoleCreator': 'Partner editor',
+  'dt.partnerRoleViewer': 'Reviewer',
 }
 
 const DICTS: Record<Locale, Record<TKey, string>> = { ar, en }
@@ -201,6 +226,8 @@ function lastTextSlot(el: HTMLElement, text: string): void {
 /** [المحدِّد، المفتاح، الكتابة: نصّ كامل | آخر عقدة نصّية] — الثوابت من مرجع الودجة */
 const TEXT_SLOTS: Array<[string, TKey, 'text' | 'last']> = [
   ['#menuStart #btnCap b', 'dt.capture', 'text'],
+  ['#acctLabel', 'dt.acctLabel', 'text'],
+  ['#acctNote', 'dt.acctNote', 'text'],
   ['#menuStart #btnCapV', 'dt.captureVoice', 'last'],
   ['#menuStart .menu-cap', 'dt.menuCap', 'text'],
   ['#pillzBox .train-tag', 'dt.trainTag', 'text'],

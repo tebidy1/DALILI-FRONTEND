@@ -46,7 +46,7 @@ const CREATOR_VIEW: LibraryOverviewDto = { ...ADMIN_VIEW, myRole: 'creator' }
 
 const MEMBERS: MemberDto[] = [
   { id: 'u-admin', email: 'owner@dalili.sa', role: 'admin', department: '', joinedAt: NOW, pending: false, guideCount: 5, teamId: null, teamName: null },
-  { id: 'u-creator', email: 'sara@dalili.sa', role: 'creator', department: '', joinedAt: NOW, pending: false, guideCount: 2, teamId: 't1', teamName: 'المبيعات' },
+  { id: 'u-creator', email: 'sara@dalili.sa', name: 'سارة', role: 'creator', department: '', joinedAt: NOW, pending: false, guideCount: 2, teamId: 't1', teamName: 'المبيعات' },
   { id: 'u-pending', email: 'new@dalili.sa', role: 'viewer', department: '', joinedAt: NOW, pending: true, guideCount: 0, teamId: null, teamName: null },
 ]
 
@@ -66,6 +66,9 @@ function renderTeam(overview: LibraryOverviewDto = ADMIN_VIEW) {
   return client
 }
 
+/** البريد في خلية الجدول — لوحة الأقسام تعرضه أيضاً في قائمة «أضف مديراً» */
+const ROW = { selector: 'td bdi' }
+
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
@@ -74,13 +77,13 @@ beforeEach(() => {
 describe('جدول الأعضاء (المرحلة د)', () => {
   it('يعرض كل عضو ببريده ودوره وفريقه وعدد أدلته — و«دعوة معلقة» لمن لم يقبل بعد', async () => {
     renderTeam()
-    await screen.findByText('sara@dalili.sa')
+    await screen.findByText('sara@dalili.sa', ROW)
 
-    expect(screen.getByText('owner@dalili.sa')).toBeTruthy()
-    expect(screen.getByText('new@dalili.sa')).toBeTruthy()
+    expect(screen.getByText('owner@dalili.sa', ROW)).toBeTruthy()
+    expect(screen.getByText('new@dalili.sa', ROW)).toBeTruthy()
     expect(screen.getByText(t('team.pending'))).toBeTruthy()
     // دور سارة من قيمة قائمتها المنسدلة (نص «منشئ» مكرر بخيارات كل الصفوف)
-    const saraRow = screen.getByText('sara@dalili.sa').closest('tr') as HTMLElement
+    const saraRow = screen.getByText('sara@dalili.sa', ROW).closest('tr') as HTMLElement
     expect((within(saraRow).getByLabelText(t('team.roleA11y')) as HTMLSelectElement).value).toBe('creator')
     // فريقها «المبيعات» من قيمة قائمة الفريق (النص مكرر بخيارات الصفوف ورقاقة الفرق)
     expect((within(saraRow).getByLabelText(t('team.colTeam')) as HTMLSelectElement).value).toBe('t1')
@@ -89,11 +92,19 @@ describe('جدول الأعضاء (المرحلة د)', () => {
     expect(screen.getByText('٢')).toBeTruthy()
   })
 
+  it('م٢: صف العضو يعرض اسمه وبريده تحته، ومن لا اسم له ببريده وحده', async () => {
+    renderTeam()
+    const row = (await screen.findByText('sara@dalili.sa', ROW)).closest('tr') as HTMLElement
+    expect(within(row).getByText('سارة')).toBeTruthy()
+    const owner = screen.getByText('owner@dalili.sa', ROW).closest('tr') as HTMLElement
+    expect(within(owner).queryByText('سارة')).toBeNull()
+  })
+
   it('المدير يغيّر الدور من القائمة المنسدلة — وينتقل PATCH للخادم', async () => {
     renderTeam()
-    await screen.findByText('sara@dalili.sa')
+    await screen.findByText('sara@dalili.sa', ROW)
 
-    const row = screen.getByText('sara@dalili.sa').closest('tr') as HTMLElement
+    const row = screen.getByText('sara@dalili.sa', ROW).closest('tr') as HTMLElement
     const roleSelect = within(row).getByLabelText(t('team.roleA11y')) as HTMLSelectElement
     fireEvent.change(roleSelect, { target: { value: 'viewer' } })
     await waitFor(() => expect(vi.mocked(client.updateMember)).toHaveBeenCalledWith('u-creator', { role: 'viewer' }))
@@ -101,9 +112,9 @@ describe('جدول الأعضاء (المرحلة د)', () => {
 
   it('تجميع العضو في فريق من عمود الفريق — PATCH بمعرف الفريق', async () => {
     renderTeam()
-    await screen.findByText('owner@dalili.sa')
+    await screen.findByText('owner@dalili.sa', ROW)
 
-    const row = screen.getByText('owner@dalili.sa').closest('tr') as HTMLElement
+    const row = screen.getByText('owner@dalili.sa', ROW).closest('tr') as HTMLElement
     const teamSelect = within(row).getByLabelText(t('team.colTeam')) as HTMLSelectElement
     fireEvent.change(teamSelect, { target: { value: 't1' } })
     await waitFor(() => expect(vi.mocked(client.updateMember)).toHaveBeenCalledWith('u-admin', { teamId: 't1' }))
@@ -112,9 +123,9 @@ describe('جدول الأعضاء (المرحلة د)', () => {
   it('الإزالة تستأذن بتأكيد يذكر نقل الأدلة بعددها ثم تحذف العضو', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderTeam()
-    await screen.findByText('sara@dalili.sa')
+    await screen.findByText('sara@dalili.sa', ROW)
 
-    const row = screen.getByText('sara@dalili.sa').closest('tr') as HTMLElement
+    const row = screen.getByText('sara@dalili.sa', ROW).closest('tr') as HTMLElement
     fireEvent.click(within(row).getByText(t('team.remove')))
     await waitFor(() => expect(vi.mocked(client.removeMember)).toHaveBeenCalledWith('u-creator'))
     expect(confirmSpy.mock.calls[0]?.[0]).toContain('٢')
@@ -123,8 +134,8 @@ describe('جدول الأعضاء (المرحلة د)', () => {
 
   it('صف المالك بلا زر إزالة — مالك المساحة لا يُزال', async () => {
     renderTeam()
-    await screen.findByText('owner@dalili.sa')
-    const row = screen.getByText('owner@dalili.sa').closest('tr') as HTMLElement
+    await screen.findByText('owner@dalili.sa', ROW)
+    const row = screen.getByText('owner@dalili.sa', ROW).closest('tr') as HTMLElement
     expect(within(row).queryByText(t('team.remove'))).toBeNull()
   })
 })
@@ -141,7 +152,7 @@ describe('دعوة برابط واتساب (المرحلة د)', () => {
       createdAt: NOW,
     })
     renderTeam()
-    await screen.findByText('sara@dalili.sa')
+    await screen.findByText('sara@dalili.sa', ROW)
 
     fireEvent.change(screen.getByLabelText(t('team.email')), { target: { value: 'khaled@dalili.sa' } })
     fireEvent.click(screen.getByText(t('team.inviteBtn')))
@@ -155,11 +166,30 @@ describe('دعوة برابط واتساب (المرحلة د)', () => {
     expect(wa.href).toContain(encodeURIComponent('http://localhost:5174/invite/tok123'))
   })
 
+  it('م١: الدعوة المرسلة بالبريد تقول ذلك، والرابط يبقى للنسخ', async () => {
+    vi.mocked(client.createInvite).mockResolvedValue({
+      id: 'i2',
+      email: 'khaled@dalili.sa',
+      role: 'creator',
+      token: 'tok456',
+      inviteUrl: 'http://localhost:5174/invite/tok456',
+      createdAt: NOW,
+      emailed: true,
+    })
+    renderTeam()
+    await screen.findByText('sara@dalili.sa', ROW)
+    fireEvent.change(screen.getByLabelText(t('team.email')), { target: { value: 'khaled@dalili.sa' } })
+    fireEvent.click(screen.getByText(t('team.inviteBtn')))
+
+    const box = await screen.findByText(t('team.inviteEmailed', { email: 'khaled@dalili.sa' })).then((el) => el.closest('.invite-box') as HTMLElement)
+    expect(within(box).getByText(t('team.copyLink'))).toBeTruthy()
+  })
+
   it('بريد له حساب فعليًا (409) يُضاف مباشرة بلفتة صادقة — ولا مستخدم معلق أبدًا', async () => {
     vi.mocked(client.createInvite).mockRejectedValue({ name: 'DaliliApiError', status: 409 })
     vi.mocked(client.inviteMember).mockResolvedValue(MEMBERS[1]!)
     renderTeam()
-    await screen.findByText('sara@dalili.sa')
+    await screen.findByText('sara@dalili.sa', ROW)
 
     fireEvent.change(screen.getByLabelText(t('team.email')), { target: { value: 'sara@dalili.sa' } })
     fireEvent.click(screen.getByText(t('team.inviteBtn')))
@@ -169,33 +199,47 @@ describe('دعوة برابط واتساب (المرحلة د)', () => {
   })
 })
 
-describe('الفرق ككيان (المرحلة د)', () => {
-  it('إنشاء فريق باسمه وظهوره بعدّاد أعضائه — وحذفه يستأذن', async () => {
-    vi.mocked(client.createTeam).mockResolvedValue({ id: 't2', name: 'المستودعات', memberCount: 0 })
+describe('الأقسام (أ٢ — ORG-01)', () => {
+  it('المدير يرى لوحة الأقسام، والقائمة تُجلب بالمؤرشفة', async () => {
     renderTeam()
-    await screen.findByText('sara@dalili.sa')
+    await screen.findByText('sara@dalili.sa', ROW)
+    expect(screen.getByRole('heading', { name: t('dept.title') })).toBeTruthy()
+    expect(vi.mocked(client.listTeams)).toHaveBeenCalledWith(expect.anything(), true)
+  })
 
-    fireEvent.change(screen.getByLabelText(t('team.newTeam')), { target: { value: 'المستودعات' } })
-    fireEvent.click(screen.getByText(t('team.createTeam')))
-    await waitFor(() => expect(vi.mocked(client.createTeam)).toHaveBeenCalledWith('المستودعات'))
+  it('قسم مؤرشف لا يُعرض خياراً لنقل عضو إليه', async () => {
+    vi.mocked(client.libraryOverview).mockResolvedValue(ADMIN_VIEW)
+    vi.mocked(client.getTeamMembers).mockResolvedValue(MEMBERS)
+    vi.mocked(client.listTeams).mockResolvedValue([...TEAMS, { id: 't-old', name: 'القديم', memberCount: 0, archivedAt: '2026-10-01T00:00:00Z' }])
+    render(
+      <MemoryRouter>
+        <OverviewProvider>
+          <TeamPage />
+        </OverviewProvider>
+      </MemoryRouter>,
+    )
+    const row = (await screen.findByText('new@dalili.sa', ROW)).closest('tr') as HTMLElement
+    const options = Array.from((within(row).getByLabelText(t('team.colTeam')) as HTMLSelectElement).options).map((o) => o.value)
+    expect(options).not.toContain('t-old')
+  })
 
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
-    fireEvent.click(screen.getByLabelText(`${t('team.deleteTeam')} — المبيعات`))
-    await waitFor(() => expect(vi.mocked(client.deleteTeam)).toHaveBeenCalledWith('t1'))
-    expect(confirmSpy.mock.calls[0]?.[0]).toContain('المبيعات')
+  it('غير المدير لا يرى لوحة الأقسام', async () => {
+    renderTeam(CREATOR_VIEW)
+    await screen.findByText('sara@dalili.sa', ROW)
+    expect(screen.queryByRole('heading', { name: t('dept.title') })).toBeNull()
   })
 })
 
 describe('غير المدير يرى العرض فقط (المرحلة د)', () => {
   it('المنشئ: بلا صندوق دعوة ولا قوائم تعديل ولا أزرار إزالة — مع ملاحظة صدق', async () => {
     renderTeam(CREATOR_VIEW)
-    await screen.findByText('sara@dalili.sa')
+    await screen.findByText('sara@dalili.sa', ROW)
 
     expect(screen.queryByText(t('team.inviteBtn'))).toBeNull()
     expect(screen.queryByLabelText(t('team.roleA11y'))).toBeNull()
     expect(screen.queryByText(t('team.remove'))).toBeNull()
     expect(screen.getByText(t('team.readonlyNote'))).toBeTruthy()
     // لكن القائمة نفسها تُقرأ — «من في المنظمة» معرفة مشتركة
-    expect(screen.getByText('new@dalili.sa')).toBeTruthy()
+    expect(screen.getByText('new@dalili.sa', ROW)).toBeTruthy()
   })
 })

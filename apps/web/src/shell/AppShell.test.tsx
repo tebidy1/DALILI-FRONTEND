@@ -16,6 +16,7 @@ import { AppShell } from './AppShell'
 vi.mock('../api', () => ({
   client: {
     libraryOverview: vi.fn(),
+    listMyWorkspaces: vi.fn().mockResolvedValue([]),
     listFolders: vi.fn().mockResolvedValue([]),
     createFolder: vi.fn().mockResolvedValue({ id: 'f9', name: 'x', count: 0, createdAt: '2026-01-01T00:00:00Z' }),
     renameFolder: vi.fn(),
@@ -81,7 +82,8 @@ describe('الشريط الجانبي بنمط المرجع (WS-06)', () => {
     expect(await screen.findAllByText('مساحة الفواتير')).toBeTruthy()
     // البحث لم يعد في الشريط الجانبي — عنصر أساسي يعرض في متن الشاشات الأولى
     expect(screen.queryByPlaceholderText(t('library.searchHintShort'))).toBeNull()
-    for (const label of [t('home.navHome'), t('home.navMine'), t('home.navSaved'), t('home.navTeam'), t('home.navSettings')]) {
+    // م٢: المدير يرى «لوحة الشركة» مكان «الفريق»
+    for (const label of [t('home.navHome'), t('home.navMine'), t('home.navSaved'), t('admin.title'), t('home.navSettings')]) {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0)
     }
     expect(screen.getByText(t('home.wsAllDocs'))).toBeTruthy()
@@ -96,6 +98,20 @@ describe('الشريط الجانبي بنمط المرجع (WS-06)', () => {
     // بند المجلد بشارة حرف وعدد الأدلة في الطرف المقابل (نمط المرجع)
     const folderRow = screen.getByText('الفواتير').closest('.side-item') as HTMLElement
     expect(folderRow.textContent).toContain(arDigits(2))
+  })
+
+  it('م٢: الشريط يعرض اسم المستخدم بدل بريده، ورابط «إدارة المنصة» لمن في قائمتها', async () => {
+    renderShell('/', { ...ADMIN, myName: 'سارة العتيبي', isPlatformAdmin: true })
+    const chip = await screen.findByText('سارة العتيبي')
+    expect(chip.getAttribute('title')).toBe('owner@dalili.sa')
+    expect(screen.getByRole('link', { name: t('platform.title') }).getAttribute('href')).toBe('/platform')
+    expect(screen.getByRole('link', { name: t('admin.title') }).getAttribute('href')).toBe('/admin/members')
+  })
+
+  it('م٢: الموظف يرى «الفريق»، ولا رابط لإدارة المنصة', async () => {
+    renderShell('/', { ...ADMIN, myRole: 'creator' })
+    expect(await screen.findByRole('link', { name: t('home.navTeam') })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: t('platform.title') })).toBeNull()
   })
 
   it('بند «أُسند إليّ» يظهر بشارة العدد الجديد وينقل إلى /assigned', async () => {

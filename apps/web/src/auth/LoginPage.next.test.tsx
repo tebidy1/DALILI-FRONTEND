@@ -32,6 +32,13 @@ async function submit() {
   fireEvent.click(screen.getAllByText(t('login.submitLogin')).at(-1)!)
 }
 
+describe('LoginPage: نسيت كلمة المرور (م١)', () => {
+  it('رابط «نسيت كلمة المرور؟» يقود إلى /forgot', () => {
+    renderLogin('/login')
+    expect(screen.getByRole('link', { name: t('login.forgot') }).getAttribute('href')).toBe('/forgot')
+  })
+})
+
 describe('LoginPage ?next=', () => {
   it('يعود إلى /device?code=… بعد الدخول', async () => {
     renderLogin(`/login?next=${encodeURIComponent('/device?code=BCDF-GHJK')}`)
